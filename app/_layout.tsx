@@ -45,6 +45,6 @@ export default function DeliveryRootLayout() {
           </Stack>
         </DriverAuthProvider>
       </QueryClientProvider>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
