@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "DaloaDelivery",
+    "slug": "daloadelivery",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "daloadelivery",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#090D16"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.daloamarket.delivery"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#090D16"
+      },
+      "package": "com.daloamarket.delivery",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "POST_NOTIFICATIONS",
+        "CALL_PHONE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "DaloaDelivery a besoin de votre localisation pour vous assigner des courses proches et valider le ramassage chez les vendeurs."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "DaloaDelivery utilise la caméra pour prendre la photo de preuve du colis au ramassage et à la livraison."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "DaloaDelivery a besoin d'accéder à vos documents pour la vérification CNI/KYC."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "daloadelivery-app-id"
+      }
+    }
+  }
+}
