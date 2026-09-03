@@ -7,27 +7,62 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// 1. Regarder tous les dossiers du monorepo
-config.watchFolders = [workspaceRoot];
+const packagesDir = path.resolve(projectRoot, 'packages');
 
-// 2. Résolution stricte à instance unique
+// 1. Regarder les dossiers du workspace et les packages locaux
+config.watchFolders = [
+  workspaceRoot,
+  path.resolve(packagesDir, 'ui'),
+  path.resolve(packagesDir, 'api'),
+  path.resolve(packagesDir, 'types'),
+  path.resolve(packagesDir, 'config'),
+  path.resolve(packagesDir, 'utils'),
+];
+
+// 2. Résolution node_modules
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-
+// 3. Extra node modules avec shims pour l'environnement React Native
 config.resolver.extraNodeModules = {
   react: path.resolve(projectRoot, 'node_modules/react'),
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
-  '@daloa/ui': path.resolve(workspaceRoot, 'packages/ui'),
-  '@daloa/api': path.resolve(workspaceRoot, 'packages/api'),
-  '@daloa/types': path.resolve(workspaceRoot, 'packages/types'),
-  '@daloa/config': path.resolve(workspaceRoot, 'packages/config'),
-  '@daloa/utils': path.resolve(workspaceRoot, 'packages/utils'),
+  stream: path.resolve(projectRoot, 'src/shims/stream.js'),
+  ws: path.resolve(projectRoot, 'src/shims/ws.js'),
+  zlib: path.resolve(projectRoot, 'src/shims/zlib.js'),
+  '@daloa/ui': path.resolve(packagesDir, 'ui'),
+  '@daloa/api': path.resolve(packagesDir, 'api'),
+  '@daloa/types': path.resolve(packagesDir, 'types'),
+  '@daloa/config': path.resolve(packagesDir, 'config'),
+  '@daloa/utils': path.resolve(packagesDir, 'utils'),
 };
 
-// 3. Cache local isolé pour éviter les verrous Windows Temp
+// 4. Interception forcée des modules Node.js (ws, zlib, stream) pour React Native
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'ws') {
+    return {
+      filePath: path.resolve(projectRoot, 'src/shims/ws.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (moduleName === 'zlib') {
+    return {
+      filePath: path.resolve(projectRoot, 'src/shims/zlib.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (moduleName === 'stream') {
+    return {
+      filePath: path.resolve(projectRoot, 'src/shims/stream.js'),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
+// 5. Cache local isolé pour éviter les verrous Windows Temp
 config.cacheStores = [
   new FileStore({
     root: path.join(projectRoot, '.metro-cache'),
