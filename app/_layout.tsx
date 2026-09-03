@@ -15,6 +15,13 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
+import { useDeliveryPushNotifications } from '../src/hooks/useDeliveryPushNotifications';
+
+function DeliveryPushRegistrar() {
+  useDeliveryPushNotifications();
+  return null;
+}
+
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 const queryClient = new QueryClient({
@@ -49,6 +56,7 @@ export default function DeliveryRootLayout() {
       <ThemeProvider app="delivery">
         <QueryClientProvider client={queryClient}>
           <DriverAuthProvider>
+            <DeliveryPushRegistrar />
             <StatusBar style="dark" backgroundColor={colors.neutrals.surface} />
           <Stack
             screenOptions={{

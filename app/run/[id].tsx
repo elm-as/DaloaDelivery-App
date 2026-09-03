@@ -121,15 +121,23 @@ export default function DeliveryRunExecutionScreen() {
   const isCompleted = assignment.status === 'delivered';
   const netGain = Math.round((assignment.delivery_price || 500) * 0.9);
 
-  const handleOpenGpsNavigation = (locationStr: string) => {
+  const handleOpenGpsNavigation = (locationStr: string, lat?: number | null, lng?: number | null) => {
     Haptics.lightImpact();
-    const query = encodeURIComponent(`${locationStr}, Daloa, Côte d'Ivoire`);
+    let destParam = '';
+    if (lat && lng) {
+      destParam = `${lat},${lng}`;
+    } else {
+      destParam = encodeURIComponent(`${locationStr}, Daloa, Côte d'Ivoire`);
+    }
+
     const url = Platform.select({
-      ios: `maps:0,0?q=${query}`,
-      android: `geo:0,0?q=${query}`,
-      default: `https://www.google.com/maps/search/?api=1&query=${query}`,
+      ios: lat && lng ? `maps:0,0?q=${lat},${lng}` : `maps:0,0?q=${destParam}`,
+      android: lat && lng ? `google.navigation:q=${lat},${lng}&mode=l` : `geo:0,0?q=${destParam}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${destParam}&travelmode=two_wheeler`,
     });
-    Linking.openURL(url as string);
+    Linking.openURL(url as string).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destParam}`);
+    });
   };
 
   const handleCallSeller = () => {
@@ -290,7 +298,13 @@ export default function DeliveryRunExecutionScreen() {
                 <Text style={[styles.actionBtnOutlineText, { color: '#059669' }]}>Appeler</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleOpenGpsNavigation(assignment.pickup_location)}
+                onPress={() =>
+                  handleOpenGpsNavigation(
+                    assignment.pickup_location,
+                    order.seller?.shop_latitude,
+                    order.seller?.shop_longitude
+                  )
+                }
                 style={styles.actionBtnOutline}
               >
                 <Navigation size={15} color={colors.primary[600]} />
@@ -353,7 +367,13 @@ export default function DeliveryRunExecutionScreen() {
                 <Text style={[styles.actionBtnOutlineText, { color: '#0066CC' }]}>Appeler</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleOpenGpsNavigation(assignment.dropoff_location)}
+                onPress={() =>
+                  handleOpenGpsNavigation(
+                    assignment.dropoff_location,
+                    order.delivery_lat,
+                    order.delivery_lng
+                  )
+                }
                 style={styles.actionBtnOutline}
               >
                 <Navigation size={15} color={colors.primary[600]} />
