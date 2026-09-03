@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, radii, spacing, typography, Header, Card, Button } from '@daloa/ui';
@@ -31,17 +37,17 @@ export default function DriverHelpScreen() {
     },
     {
       q: 'Quand mes gains sont-ils versés ?',
-      a: 'Vos gains nets sont immédiatement crédités sur votre portefeuille dans l’application. Vous pouvez demander un virement Wave ou Orange Money à tout moment.',
+      a: 'Vos gains nets (90%) sont immédiatement crédités sur votre portefeuille dans l’application. Vous pouvez demander un virement Wave ou Orange Money à tout moment.',
     },
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Assistance Livreur" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.supportCard}>
-          <Text style={styles.supportTitle}>Ligne Directe Logistique</Text>
+        <View style={styles.supportCard}>
+          <Text style={styles.supportTitle}>Ligne Directe Logistique Daloa</Text>
           <Text style={styles.supportSub}>
             L’équipe de régulation des courses est à votre disposition en direct pour tout blocage sur le terrain.
           </Text>
@@ -49,7 +55,7 @@ export default function DriverHelpScreen() {
           <View style={styles.btnRow}>
             <Button
               title="WhatsApp Livreur"
-              variant="success"
+              variant="whatsapp"
               size="md"
               leftIcon={<MessageCircle size={18} color="#FFFFFF" />}
               onPress={handleWhatsApp}
@@ -57,20 +63,20 @@ export default function DriverHelpScreen() {
             />
             <Button
               title="Appeler"
-              variant="secondary"
+              variant="outline"
               size="md"
-              leftIcon={<Phone size={18} color={colors.dark.text} />}
+              leftIcon={<Phone size={18} color="#111827" />}
               onPress={handleCall}
             />
           </View>
-        </Card>
+        </View>
 
         <Text style={styles.sectionTitle}>Foire Aux Questions (Livreurs)</Text>
         {faqs.map((faq, idx) => (
-          <Card key={idx} style={styles.faqCard}>
+          <View key={idx} style={styles.faqCard}>
             <Text style={styles.faqQ}>❓ {faq.q}</Text>
             <Text style={styles.faqA}>{faq.a}</Text>
-          </Card>
+          </View>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -80,23 +86,28 @@ export default function DriverHelpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
+    backgroundColor: '#F8F9FA',
   },
   supportCard: {
     padding: spacing[4],
     gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   supportTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
   },
   supportSub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
     lineHeight: 16,
     marginBottom: spacing[2],
@@ -106,7 +117,7 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   sectionTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     marginTop: spacing[2],
@@ -114,14 +125,18 @@ const styles = StyleSheet.create({
   faqCard: {
     padding: spacing[4],
     gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   faqQ: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   faqA: {
-    color: colors.dark.textDim,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
     lineHeight: 18,
   },

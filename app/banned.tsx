@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, radii, spacing, typography, Header, Input, Button, Card } from '@daloa/ui';
+import { colors, radii, spacing, typography, Header, Input, Button } from '@daloa/ui';
 import { ShieldAlert, Send } from 'lucide-react-native';
 import { useDriverAuth } from '../src/context/DriverAuthContext';
 import { supabase } from '@daloa/api';
@@ -39,7 +45,7 @@ export default function DriverBannedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Compte Livreur Suspendu" onBack={() => logout()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -69,15 +75,15 @@ export default function DriverBannedScreen() {
           loading={isSubmitting}
           onPress={handleAppeal}
           leftIcon={<Send size={16} color="#FFFFFF" />}
-          style={{ marginTop: spacing[2] }}
+          style={{ marginTop: spacing[2], width: '100%' }}
         />
 
         <Button
           title="Se déconnecter"
-          variant="secondary"
+          variant="outline"
           size="md"
           onPress={() => logout()}
-          style={{ marginTop: spacing[4] }}
+          style={{ marginTop: spacing[4], width: '100%' }}
         />
       </ScrollView>
     </SafeAreaView>
@@ -87,30 +93,31 @@ export default function DriverBannedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
     alignItems: 'center',
+    backgroundColor: '#F8F9FA',
   },
   iconBox: {
     width: 80,
     height: 80,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: '#FEF2F2',
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: spacing[4],
   },
   title: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     textAlign: 'center',
     marginBottom: spacing[2],
   },
   sub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[500],
     fontSize: typography.sizes.sm,
     textAlign: 'center',
     lineHeight: 18,

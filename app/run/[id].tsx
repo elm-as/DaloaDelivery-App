@@ -8,6 +8,7 @@ import {
   Linking,
   Alert,
   Platform,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,13 +19,8 @@ import {
   radii,
   spacing,
   typography,
-  Header,
-  Card,
   Button,
-  CurrencyText,
-  StatusPill,
   BottomSheet,
-  Input,
 } from '@daloa/ui';
 import {
   MapPin,
@@ -32,12 +28,15 @@ import {
   PhoneCall,
   ShieldCheck,
   KeyRound,
+  ScanLine,
   Camera,
   AlertTriangle,
   CheckCircle2,
+  ChevronLeft,
 } from 'lucide-react-native';
 import { OtpVerificationModal } from '../../src/components/OtpVerificationModal';
-import { formatWhatsAppPhone, isWithinOtpProximity, Haptics } from '@daloa/utils';
+import { QrScannerModal } from '../../src/components/QrScannerModal';
+import { formatFCFA, Haptics } from '@daloa/utils';
 
 export default function DeliveryRunExecutionScreen() {
   const { id: assignmentId } = useLocalSearchParams<{ id: string }>();
@@ -49,6 +48,8 @@ export default function DeliveryRunExecutionScreen() {
   const [loading, setLoading] = useState(true);
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scannedOtp, setScannedOtp] = useState('');
   const [otpType, setOtpType] = useState<'pickup' | 'delivery'>('pickup');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
@@ -100,10 +101,16 @@ export default function DeliveryRunExecutionScreen() {
 
   if (loading || !assignment || !order) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <Header title="Course en direct" onBack={() => router.back()} />
-        <View style={{ padding: spacing[4] }}>
-          <Text style={{ color: colors.dark.text }}>Chargement des données de la course...</Text>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <ChevronLeft size={22} color="#111827" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Course en direct</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Chargement des détails de la course...</Text>
         </View>
       </SafeAreaView>
     );
@@ -112,7 +119,7 @@ export default function DeliveryRunExecutionScreen() {
   const isPickupStage = assignment.status === 'accepted';
   const isDeliveryStage = assignment.status === 'picked_up' || assignment.status === 'in_transit';
   const isCompleted = assignment.status === 'delivered';
-  const netGain = (assignment.delivery_price || 0) - (assignment.driver_fee || 0);
+  const netGain = Math.round((assignment.delivery_price || 500) * 0.9);
 
   const handleOpenGpsNavigation = (locationStr: string) => {
     Haptics.lightImpact();
@@ -137,46 +144,69 @@ export default function DeliveryRunExecutionScreen() {
     Linking.openURL(`tel:${order.buyer_phone || order.buyer?.phone}`);
   };
 
+  // Ouvre le scanner QR en priorité (moderne, rapide)
   const handleStartPickup = () => {
     setOtpType('pickup');
-    setIsOtpModalOpen(true);
+    setIsScannerOpen(true);
   };
 
   const handleStartDelivery = () => {
     setOtpType('delivery');
+    setIsScannerOpen(true);
+  };
+
+  // Fallback : saisie manuelle du code OTP
+  const handleManualEntry = () => {
     setIsOtpModalOpen(true);
+  };
+
+  // Code scanné via QR -> on enchaîne sur la photo de preuve via la modale OTP
+  const handleCodeScanned = (code: string) => {
+    setScannedOtp(code);
+    setIsScannerOpen(false);
+    setIsOtpModalOpen(true); // on réutilise la modale (photo de preuve + confirmation)
   };
 
   const handleConfirmOtp = async (otp: string, photoUri: string) => {
     try {
       setIsVerifyingOtp(true);
 
-      // 1. Upload photo de preuve vers Supabase Storage
       const uploadedPhotoUrl = await deliveryService.uploadDeliveryProof(photoUri);
 
-      // 2. Validation OTP selon l'étape
       if (otpType === 'pickup') {
+        const sellerCoords =
+          order?.seller?.shop_latitude != null && order?.seller?.shop_longitude != null
+            ? { lat: Number(order.seller.shop_latitude), lng: Number(order.seller.shop_longitude) }
+            : null;
+
         await deliveryService.verifyPickupOtp(
           assignment.id,
           otp,
           uploadedPhotoUrl,
-          driverLocation || undefined
+          driverLocation || undefined,
+          sellerCoords
         );
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        Alert.alert('Ramassage validé !', 'Vous pouvez maintenant acheminer le colis chez l’acheteur.');
+        Alert.alert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez l’acheteur.');
       } else {
+        const dropoffCoords =
+          order?.delivery_lat != null && order?.delivery_lng != null
+            ? { lat: Number(order.delivery_lat), lng: Number(order.delivery_lng) }
+            : null;
+
         await deliveryService.verifyDeliveryOtp(
           assignment.id,
           otp,
           uploadedPhotoUrl,
-          driverLocation || undefined
+          driverLocation || undefined,
+          dropoffCoords
         );
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        Alert.alert('Livraison réussie ! 🎉', `Félicitations ! Vos gains de ${netGain} FCFA ont été crédités sur votre solde.`);
+        Alert.alert('Livraison réussie ! 🚀', `Félicitations ! Vos gains de ${formatFCFA(netGain)} ont été crédités.`);
       }
     } catch (err: any) {
       throw err;
@@ -202,31 +232,33 @@ export default function DeliveryRunExecutionScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header
-        title={`Course #${assignment.id.slice(0, 8).toUpperCase()}`}
-        onBack={() => router.back()}
-      />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ChevronLeft size={22} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          Course #{assignment.id.slice(0, 8).toUpperCase()}
+        </Text>
+        <View style={{ width: 36 }} />
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Statut & Gains */}
-        <Card variant="glowDelivery" style={styles.headerCard}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.gainLabel}>Votre Gain Net</Text>
-              <CurrencyText
-                amount={netGain}
-                size="2xl"
-                weight="extrabold"
-                color={colors.delivery.primary}
-              />
-            </View>
-            <StatusPill status={assignment.status} size="md" />
+        {/* Statut & Gain Net */}
+        <View style={styles.gainCard}>
+          <View>
+            <Text style={styles.gainLabel}>Gain Net (90%)</Text>
+            <Text style={styles.gainAmount}>{formatFCFA(netGain)}</Text>
           </View>
-        </Card>
+          <View style={styles.stageStatusBadge}>
+            <Text style={styles.stageStatusText}>
+              {isPickupStage ? 'Étape 1 : Ramassage' : isDeliveryStage ? 'Étape 2 : Livraison' : 'Livrée'}
+            </Text>
+          </View>
+        </View>
 
         {/* Étape 1 : Ramassage Vendeur */}
-        <Card
+        <View
           style={[
             styles.stageCard,
             isPickupStage && styles.stageCardActive,
@@ -241,7 +273,7 @@ export default function DeliveryRunExecutionScreen() {
               <Text style={styles.stageTitle}>Ramassage chez le Vendeur</Text>
               <Text style={styles.stageDistrict}>📍 {assignment.pickup_location}</Text>
             </View>
-            {isDeliveryStage && <CheckCircle2 size={20} color="#10B981" />}
+            {isDeliveryStage && <CheckCircle2 size={20} color="#059669" />}
           </View>
 
           <View style={styles.partnerInfo}>
@@ -253,39 +285,36 @@ export default function DeliveryRunExecutionScreen() {
 
           {isPickupStage && (
             <View style={styles.actionRow}>
-              <Button
-                title="Appeler Vendeur"
-                variant="secondary"
-                size="sm"
-                leftIcon={<PhoneCall size={16} color={colors.dark.text} />}
-                onPress={handleCallSeller}
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="Itinéraire GPS"
-                variant="outline"
-                size="sm"
-                leftIcon={<Navigation size={16} color={colors.delivery.primary} />}
+              <TouchableOpacity onPress={handleCallSeller} style={styles.actionBtnOutline}>
+                <PhoneCall size={15} color="#059669" />
+                <Text style={[styles.actionBtnOutlineText, { color: '#059669' }]}>Appeler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={() => handleOpenGpsNavigation(assignment.pickup_location)}
-                style={{ flex: 1 }}
-              />
+                style={styles.actionBtnOutline}
+              >
+                <Navigation size={15} color={colors.primary[600]} />
+                <Text style={[styles.actionBtnOutlineText, { color: colors.primary[600] }]}>GPS</Text>
+              </TouchableOpacity>
             </View>
           )}
 
           {isPickupStage && (
-            <Button
-              title="Valider le Ramassage (Code OTP)"
-              variant="delivery"
-              size="lg"
-              onPress={handleStartPickup}
-              leftIcon={<KeyRound size={18} color="#090D16" />}
-              style={{ marginTop: spacing[3] }}
-            />
+            <View style={{ marginTop: 12 }}>
+              <Button
+                title="Scanner le QR code du vendeur"
+                variant="primary"
+                size="lg"
+                onPress={handleStartPickup}
+                leftIcon={<ScanLine size={18} color="#FFFFFF" />}
+                fullWidth
+              />
+            </View>
           )}
-        </Card>
+        </View>
 
         {/* Étape 2 : Livraison Acheteur */}
-        <Card
+        <View
           style={[
             styles.stageCard,
             isDeliveryStage && styles.stageCardActive,
@@ -300,7 +329,7 @@ export default function DeliveryRunExecutionScreen() {
               <Text style={styles.stageTitle}>Livraison chez l'Acheteur</Text>
               <Text style={styles.stageDistrict}>📍 {assignment.dropoff_location}</Text>
             </View>
-            {isCompleted && <CheckCircle2 size={20} color="#10B981" />}
+            {isCompleted && <CheckCircle2 size={20} color="#059669" />}
           </View>
 
           <View style={styles.partnerInfo}>
@@ -319,45 +348,42 @@ export default function DeliveryRunExecutionScreen() {
 
           {isDeliveryStage && (
             <View style={styles.actionRow}>
-              <Button
-                title="Appeler Acheteur"
-                variant="secondary"
-                size="sm"
-                leftIcon={<PhoneCall size={16} color={colors.dark.text} />}
-                onPress={handleCallBuyer}
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="Itinéraire GPS"
-                variant="outline"
-                size="sm"
-                leftIcon={<Navigation size={16} color={colors.delivery.primary} />}
+              <TouchableOpacity onPress={handleCallBuyer} style={styles.actionBtnOutline}>
+                <PhoneCall size={15} color="#0066CC" />
+                <Text style={[styles.actionBtnOutlineText, { color: '#0066CC' }]}>Appeler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={() => handleOpenGpsNavigation(assignment.dropoff_location)}
-                style={{ flex: 1 }}
-              />
+                style={styles.actionBtnOutline}
+              >
+                <Navigation size={15} color={colors.primary[600]} />
+                <Text style={[styles.actionBtnOutlineText, { color: colors.primary[600] }]}>GPS</Text>
+              </TouchableOpacity>
             </View>
           )}
 
           {isDeliveryStage && (
-            <Button
-              title="Valider la Livraison (Code OTP)"
-              variant="delivery"
-              size="lg"
-              onPress={handleStartDelivery}
-              leftIcon={<ShieldCheck size={18} color="#090D16" />}
-              style={{ marginTop: spacing[3] }}
-            />
+            <View style={{ marginTop: 12 }}>
+              <Button
+                title="Scanner le QR code de l'acheteur"
+                variant="secondary"
+                size="lg"
+                onPress={handleStartDelivery}
+                leftIcon={<ScanLine size={18} color="#FFFFFF" />}
+                fullWidth
+              />
+            </View>
           )}
-        </Card>
+        </View>
 
-        {/* Détail Colis */}
-        <Card style={styles.itemCard}>
-          <Text style={styles.itemCardTitle}>Détails du Colis</Text>
+        {/* Détails du Colis */}
+        <View style={styles.itemCard}>
+          <Text style={styles.itemCardTitle}>Contenu du Colis</Text>
           <Text style={styles.itemTitle}>
-            📦 {order.listing?.title || 'Colis Marchandise'}
+            📦 {order.listing?.title || 'Marchandise DaloaMarket'}
           </Text>
           <Text style={styles.itemSub}>Quantité : x{order.quantity || 1}</Text>
-        </Card>
+        </View>
 
         {/* Signalement Problème / Incident */}
         {!isCompleted && (
@@ -365,7 +391,7 @@ export default function DeliveryRunExecutionScreen() {
             onPress={() => setIsIncidentModalOpen(true)}
             style={styles.incidentBtn}
           >
-            <AlertTriangle size={16} color={colors.status.error} />
+            <AlertTriangle size={15} color={colors.status.error} />
             <Text style={styles.incidentBtnText}>Signaler un incident (Client absent, refus...)</Text>
           </TouchableOpacity>
         )}
@@ -373,40 +399,53 @@ export default function DeliveryRunExecutionScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Modale OTP + Photo */}
+      {/* Scanner QR — validation instantanée */}
+      <QrScannerModal
+        visible={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        type={otpType}
+        onCodeScanned={handleCodeScanned}
+        onManualEntry={handleManualEntry}
+      />
+
+      {/* Modale OTP + Photo (fallback saisie / confirmation après scan) */}
       <OtpVerificationModal
         visible={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
         type={otpType}
+        initialCode={scannedOtp}
         onSubmit={handleConfirmOtp}
-        isLoading={isVerifyingOtp}
+        loading={isVerifyingOtp}
       />
 
-      {/* Modale Déclaration d'Incident */}
+      {/* Modale Incident */}
       <BottomSheet
         visible={isIncidentModalOpen}
         onClose={() => setIsIncidentModalOpen(false)}
-        title="Signaler un incident de course"
+        title="Signaler un incident de livraison"
       >
-        <Text style={styles.incidentModalSub}>
-          Précisez la nature du problème (ex: vendeur fermé, client injoignable, adresse introuvable).
-        </Text>
-        <Input
-          label="Description de l'incident *"
-          placeholder="Détaillez le problème..."
-          value={incidentReason}
-          onChangeText={setIncidentReason}
-          multiline
-          numberOfLines={4}
-          inputStyle={{ minHeight: 90, textAlignVertical: 'top' }}
-        />
-        <Button
-          title="Transmettre au support"
-          variant="danger"
-          loading={isSubmittingIncident}
-          onPress={handleReportIncident}
-          style={{ marginTop: spacing[3] }}
-        />
+        <View style={{ padding: 16 }}>
+          <Text style={{ fontSize: 13, color: colors.grey[600], marginBottom: 12 }}>
+            Indiquez la raison du blocage (Destinataire injoignable, adresse introuvable, incident sur la route).
+          </Text>
+          <TextInput
+            style={styles.incidentInput}
+            multiline
+            numberOfLines={4}
+            placeholder="Détails de l’incident..."
+            value={incidentReason}
+            onChangeText={setIncidentReason}
+          />
+          <View style={{ marginTop: 16 }}>
+            <Button
+              title="Transmettre l'incident"
+              variant="danger"
+              onPress={handleReportIncident}
+              loading={isSubmittingIncident}
+              fullWidth
+            />
+          </View>
+        </View>
       </BottomSheet>
     </SafeAreaView>
   );
@@ -415,131 +454,216 @@ export default function DeliveryRunExecutionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
-  scrollContent: {
-    padding: spacing[4],
-    gap: spacing[3],
-  },
-  headerCard: {
-    padding: spacing[4],
-  },
-  headerTop: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: colors.grey[500],
+    fontWeight: '600',
+  },
+  scrollContent: {
+    padding: 14,
+    backgroundColor: '#F8F9FA',
+  },
+  gainCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 12,
   },
   gainLabel: {
-    color: colors.dark.textDim,
-    fontSize: typography.sizes.xs,
-    marginBottom: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.grey[500],
+    textTransform: 'uppercase',
+  },
+  gainAmount: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.primary[600],
+    marginTop: 2,
+  },
+  stageStatusBadge: {
+    backgroundColor: '#FFF4E6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
+  stageStatusText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary[700],
   },
   stageCard: {
-    padding: spacing[4],
-    borderWidth: 1.5,
-    borderColor: colors.dark.border,
-    gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 12,
   },
   stageCardActive: {
-    borderColor: colors.delivery.primary,
-    backgroundColor: 'rgba(6, 182, 212, 0.06)',
+    borderColor: colors.primary.DEFAULT,
+    borderWidth: 1.5,
   },
   stageCardDone: {
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-    opacity: 0.85,
+    backgroundColor: '#F9FAFB',
   },
   stageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    gap: 10,
+    marginBottom: 8,
   },
   stageBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.dark.surfaceRaised,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stageBadgeActive: {
-    backgroundColor: colors.delivery.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
   stageBadgeText: {
+    fontSize: 12,
+    fontWeight: '900',
     color: '#FFFFFF',
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
   },
   stageTitle: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#111827',
   },
   stageDistrict: {
-    color: colors.dark.textDim,
-    fontSize: 11,
+    fontSize: 11.5,
+    color: colors.grey[600],
+    marginTop: 1,
   },
   partnerInfo: {
-    backgroundColor: colors.dark.surfaceRaised,
-    borderRadius: radii.xl,
-    padding: spacing[3],
-    marginVertical: 4,
+    backgroundColor: '#F9FAFB',
+    borderRadius: radii.lg,
+    padding: 10,
+    marginVertical: 6,
     gap: 2,
   },
   partnerName: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
   },
   partnerPhone: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 12,
+    color: colors.grey[600],
   },
   partnerAddress: {
-    color: colors.dark.textDim,
-    fontSize: 11,
+    fontSize: 11.5,
+    color: colors.primary[700],
+    fontWeight: '600',
     marginTop: 2,
   },
   actionRow: {
     flexDirection: 'row',
-    gap: spacing[2],
-    marginTop: 4,
+    gap: 8,
+    marginTop: 8,
+  },
+  actionBtnOutline: {
+    flex: 1,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionBtnOutlineText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   itemCard: {
-    padding: spacing[4],
-    gap: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 12,
   },
   itemCardTitle: {
-    color: colors.dark.textDim,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 6,
   },
   itemTitle: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    marginTop: 2,
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: colors.grey[800],
   },
   itemSub: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 11.5,
+    color: colors.grey[500],
+    marginTop: 2,
   },
   incidentBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: spacing[3],
+    padding: 12,
+    borderRadius: radii.lg,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   incidentBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
     color: colors.status.error,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
   },
-  incidentModalSub: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
-    marginBottom: spacing[3],
+  incidentInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: radii.lg,
+    padding: 10,
+    fontSize: 13,
+    textAlignVertical: 'top',
   },
 });

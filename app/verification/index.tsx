@@ -20,7 +20,6 @@ import {
   typography,
   Header,
   Button,
-  Card,
 } from '@daloa/ui';
 import { ShieldCheck, Camera, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
@@ -49,16 +48,29 @@ export default function VerificationScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!driverProfile?.id) {
+      Alert.alert('Session requise', 'Veuillez vous reconnecter pour soumettre votre dossier de vérification.');
+      return;
+    }
+
     if (!cniFront || !cniBack || !selfie) {
-      Alert.alert('Documents requis', 'Veuillez prendre en photo le recto, le verso de votre CNI et votre selfie.');
+      Alert.alert('Documents requis', 'Veuillez photographier le recto, le verso de votre CNI et votre selfie.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const frontUrl = await deliveryService.uploadDeliveryProof(cniFront);
-      const backUrl = await deliveryService.uploadDeliveryProof(cniBack);
-      const selfieUrl = await deliveryService.uploadDeliveryProof(selfie);
+      const frontPath = await deliveryService.uploadKycDocument(cniFront, driverProfile.id, 'cni_front');
+      const backPath = await deliveryService.uploadKycDocument(cniBack, driverProfile.id, 'cni_back');
+      const selfiePath = await deliveryService.uploadKycDocument(selfie, driverProfile.id, 'selfie');
+
+      await deliveryService.submitKycVerification(driverProfile.id, {
+        cniUrl: frontPath,
+        selfieCniUrl: selfiePath,
+        portraitLiveUrl: backPath,
+      });
+
+      await refreshDriverProfile?.();
 
       Haptics.success();
       Alert.alert(
@@ -67,19 +79,19 @@ export default function VerificationScreen() {
         [{ text: 'Super', onPress: () => router.back() }]
       );
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Échec du téléversement');
+      Alert.alert('Erreur', err.message || 'Échec de l’envoi du dossier');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Vérification CNI / KYC" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroBox}>
-          <ShieldCheck size={36} color={colors.delivery.primary} />
+          <ShieldCheck size={36} color={colors.primary.DEFAULT} />
           <Text style={styles.heroTitle}>Devenez Livreur Certifié DaloaDelivery</Text>
           <Text style={styles.heroSub}>
             La vérification de votre identité est obligatoire pour garantir la sécurité des colis et accéder à toutes les courses.
@@ -92,7 +104,7 @@ export default function VerificationScreen() {
           <Image source={{ uri: cniFront }} style={styles.previewImage} />
         ) : (
           <TouchableOpacity onPress={() => handlePickDocument('front')} style={styles.uploadBox}>
-            <Camera size={24} color={colors.delivery.primary} />
+            <Camera size={24} color={colors.primary.DEFAULT} />
             <Text style={styles.uploadText}>Prendre en photo le recto</Text>
           </TouchableOpacity>
         )}
@@ -103,7 +115,7 @@ export default function VerificationScreen() {
           <Image source={{ uri: cniBack }} style={styles.previewImage} />
         ) : (
           <TouchableOpacity onPress={() => handlePickDocument('back')} style={styles.uploadBox}>
-            <Camera size={24} color={colors.delivery.primary} />
+            <Camera size={24} color={colors.primary.DEFAULT} />
             <Text style={styles.uploadText}>Prendre en photo le verso</Text>
           </TouchableOpacity>
         )}
@@ -114,20 +126,22 @@ export default function VerificationScreen() {
           <Image source={{ uri: selfie }} style={styles.previewImage} />
         ) : (
           <TouchableOpacity onPress={() => handlePickDocument('selfie')} style={styles.uploadBox}>
-            <Camera size={24} color={colors.delivery.primary} />
+            <Camera size={24} color={colors.primary.DEFAULT} />
             <Text style={styles.uploadText}>Prendre un selfie avec votre pièce</Text>
           </TouchableOpacity>
         )}
 
-        <Button
-          title="Envoyer mes documents pour validation"
-          variant="delivery"
-          size="lg"
-          loading={isSubmitting}
-          disabled={!cniFront || !cniBack || !selfie || isSubmitting}
-          onPress={handleSubmit}
-          style={{ marginTop: spacing[4] }}
-        />
+        <View style={{ marginTop: 16 }}>
+          <Button
+            title="Envoyer mes documents pour validation"
+            variant="primary"
+            size="lg"
+            loading={isSubmitting}
+            disabled={!cniFront || !cniBack || !selfie || isSubmitting}
+            onPress={handleSubmit}
+            fullWidth
+          />
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -138,52 +152,53 @@ export default function VerificationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
+    backgroundColor: '#F8F9FA',
   },
   heroBox: {
     alignItems: 'center',
-    backgroundColor: colors.dark.surface,
-    borderRadius: radii['2xl'],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: '#E5E7EB',
     padding: spacing[4],
     gap: spacing[2],
   },
   heroTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
     textAlign: 'center',
   },
   heroSub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
     textAlign: 'center',
     lineHeight: 16,
   },
   sectionTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     marginTop: spacing[2],
   },
   uploadBox: {
     borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.4)',
+    borderColor: colors.primary[200],
     borderStyle: 'dashed',
     borderRadius: radii.xl,
-    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    backgroundColor: '#FFF4E6',
     padding: spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
   uploadText: {
-    color: colors.delivery.primary,
+    color: colors.primary[700],
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
@@ -191,6 +206,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     borderRadius: radii.xl,
-    backgroundColor: colors.dark.surfaceRaised,
+    backgroundColor: '#F3F4F6',
   },
 });

@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { authService } from '@daloa/api';
@@ -33,12 +39,12 @@ export default function DriverResetPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Mot de passe oublié" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.iconBox}>
-          <KeyRound size={32} color={colors.delivery.primary} />
+          <KeyRound size={32} color={colors.primary.DEFAULT} />
         </View>
 
         <Text style={styles.title}>Récupération de compte</Text>
@@ -53,18 +59,20 @@ export default function DriverResetPasswordScreen() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
-          leftIcon={<Mail size={18} color={colors.dark.textDim} />}
+          leftIcon={<Mail size={18} color={colors.grey[400]} />}
           containerStyle={{ width: '100%', marginTop: spacing[3] }}
         />
 
-        <Button
-          title="Envoyer le lien"
-          variant="delivery"
-          size="lg"
-          loading={isLoading}
-          onPress={handleReset}
-          style={{ width: '100%', marginTop: spacing[3] }}
-        />
+        <View style={{ width: '100%', marginTop: spacing[3] }}>
+          <Button
+            title="Envoyer le lien"
+            variant="primary"
+            size="lg"
+            loading={isLoading}
+            onPress={handleReset}
+            fullWidth
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -73,30 +81,33 @@ export default function DriverResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   content: {
     padding: spacing[4],
     alignItems: 'center',
     paddingTop: spacing[6],
+    backgroundColor: '#F8F9FA',
   },
   iconBox: {
     width: 64,
     height: 64,
     borderRadius: radii['2xl'],
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: '#FFF4E6',
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
   },
   title: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     marginBottom: 4,
   },
   sub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[500],
     fontSize: typography.sizes.sm,
     textAlign: 'center',
     maxWidth: 280,

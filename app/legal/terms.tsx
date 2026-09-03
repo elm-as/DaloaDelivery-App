@@ -1,18 +1,23 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, spacing, typography, Header, Card } from '@daloa/ui';
+import { colors, spacing, typography, Header, radii } from '@daloa/ui';
 
 export default function DriverTermsScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Charte du Livreur DaloaDelivery" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.card}>
+        <View style={styles.card}>
           <Text style={styles.title}>1. Engagement & Ponctualité</Text>
           <Text style={styles.text}>
             Dès l'acceptation d'une course, le livreur s'engage à rejoindre le vendeur sous 15 minutes et à livrer le colis avec soin.
@@ -32,7 +37,7 @@ export default function DriverTermsScreen() {
           <Text style={styles.text}>
             Les gains nets (90% du montant de livraison) sont crédités instantanément après validation OTP et reversés sous 24h par Mobile Money.
           </Text>
-        </Card>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -41,23 +46,28 @@ export default function DriverTermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
+    backgroundColor: '#F8F9FA',
   },
   card: {
     padding: spacing[4],
     gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   title: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     marginTop: spacing[2],
   },
   text: {
-    color: colors.dark.textMuted,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
     lineHeight: 18,
   },

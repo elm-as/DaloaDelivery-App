@@ -16,14 +16,9 @@ import {
   radii,
   spacing,
   typography,
-  Header,
-  Card,
-  StatusPill,
-  CurrencyText,
-  EmptyState,
 } from '@daloa/ui';
-import { Clock, CheckCircle2, Navigation } from 'lucide-react-native';
-import { formatDate } from '@daloa/utils';
+import { Clock, CheckCircle2, Navigation, ChevronRight } from 'lucide-react-native';
+import { formatDate, formatFCFA, Haptics } from '@daloa/utils';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -60,8 +55,10 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Historique des Livraisons" onBack={() => router.back()} />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Historique des Livraisons</Text>
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -70,23 +67,29 @@ export default function HistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.delivery.primary}
+            tintColor={colors.primary.DEFAULT}
+            colors={[colors.primary.DEFAULT]}
           />
         }
       >
         {historyRuns.length === 0 ? (
-          <EmptyState
-            icon={<Clock size={32} color={colors.delivery.primary} />}
-            title="Aucune course passée"
-            description="Vos livraisons terminées et vos gains apparaîtront ici."
-          />
+          <View style={styles.emptyBox}>
+            <Clock size={42} color={colors.grey[300]} />
+            <Text style={styles.emptyTitle}>Aucune course passée</Text>
+            <Text style={styles.emptySub}>
+              Vos livraisons terminées et vos gains apparaîtront ici dès que vous aurez complété vos premières courses.
+            </Text>
+          </View>
         ) : (
           historyRuns.map((run) => {
-            const gain = (run.delivery_price || 0) - (run.driver_fee || 0);
+            const gain = Math.round((run.delivery_price || 500) * 0.9);
+            const isDelivered = run.status === 'delivered';
+
             return (
-              <Card
+              <TouchableOpacity
                 key={run.id}
-                onPress={() => router.push(`/run/${run.id}`)}
+                activeOpacity={0.9}
+                onPress={() => router.push(`/run/${run.id}` as any)}
                 style={styles.card}
               >
                 <View style={styles.cardHeader}>
@@ -94,27 +97,29 @@ export default function HistoryScreen() {
                     <Text style={styles.orderNumber}>Course #{run.id.slice(0, 8).toUpperCase()}</Text>
                     <Text style={styles.dateText}>{formatDate(run.delivered_at || run.created_at, true)}</Text>
                   </View>
-                  <StatusPill status={run.status} size="sm" />
+                  <View style={[styles.statusBadge, { backgroundColor: isDelivered ? '#ECFDF5' : '#FEF2F2' }]}>
+                    <Text style={[styles.statusText, { color: isDelivered ? '#059669' : '#DC2626' }]}>
+                      {isDelivered ? 'Livrée' : run.status}
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.routeRow}>
-                  <Text style={styles.districtText}>
-                    📍 {run.pickup_location} ➔ {run.dropoff_location}
-                  </Text>
+                  <View style={styles.routeCol}>
+                    <Text style={styles.routeLabel}>Départ :</Text>
+                    <Text numberOfLines={1} style={styles.routeVal}>{run.pickup_location || 'Daloa'}</Text>
+                  </View>
+                  <View style={styles.routeCol}>
+                    <Text style={styles.routeLabel}>Arrivée :</Text>
+                    <Text numberOfLines={1} style={styles.routeVal}>{run.dropoff_location || 'Daloa'}</Text>
+                  </View>
                 </View>
 
-                <View style={styles.cardBottom}>
-                  <Text style={styles.itemTitle} numberOfLines={1}>
-                    📦 {run.orders?.listings?.title || 'Colis DaloaMarket'}
-                  </Text>
-                  <CurrencyText
-                    amount={gain}
-                    size="base"
-                    weight="bold"
-                    color={colors.delivery.primary}
-                  />
+                <View style={styles.cardFooter}>
+                  <Text style={styles.gainLabel}>Gain perçu :</Text>
+                  <Text style={styles.gainVal}>{formatFCFA(gain)}</Text>
                 </View>
-              </Card>
+              </TouchableOpacity>
             );
           })
         )}
@@ -126,54 +131,115 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
   },
   scrollContent: {
-    padding: spacing[4],
-    gap: spacing[3],
+    padding: 14,
+    backgroundColor: '#F8F9FA',
   },
   card: {
-    padding: spacing[3] + 2,
-    gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-    paddingBottom: spacing[2],
+    borderBottomColor: '#F9FAFB',
   },
   orderNumber: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#111827',
   },
   dateText: {
-    color: colors.dark.textDim,
     fontSize: 11,
-    marginTop: 1,
+    color: colors.grey[400],
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  statusText: {
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   routeRow: {
-    marginVertical: 2,
+    marginVertical: 10,
+    gap: 4,
   },
-  districtText: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
+  routeCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  cardBottom: {
+  routeLabel: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.grey[500],
+    width: 54,
+  },
+  routeVal: {
+    fontSize: 12,
+    color: colors.grey[800],
+    fontWeight: '600',
+    flex: 1,
+  },
+  cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-    paddingTop: spacing[2],
+    borderTopColor: '#F9FAFB',
   },
-  itemTitle: {
-    color: colors.dark.textDim,
-    fontSize: typography.sizes.xs,
-    flex: 1,
-    marginRight: spacing[2],
+  gainLabel: {
+    fontSize: 11.5,
+    color: colors.grey[600],
+    fontWeight: '600',
+  },
+  gainVal: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: colors.primary[600],
+  },
+  emptyBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    marginTop: 12,
+  },
+  emptySub: {
+    fontSize: 12.5,
+    color: colors.grey[500],
+    textAlign: 'center',
+    marginTop: 4,
+    maxWidth: 260,
+    lineHeight: 17,
   },
 });

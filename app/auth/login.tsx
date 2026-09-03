@@ -56,7 +56,7 @@ export default function DriverLoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Connexion Livreur" onBack={() => router.back()} />
 
       <KeyboardAvoidingView
@@ -66,7 +66,7 @@ export default function DriverLoginScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerBox}>
             <View style={styles.logoBox}>
-              <Bike size={36} color={colors.delivery.primary} />
+              <Bike size={36} color={colors.primary.DEFAULT} />
             </View>
             <Text style={styles.welcomeTitle}>Espace Livreur DaloaDelivery</Text>
             <Text style={styles.welcomeSub}>
@@ -79,7 +79,7 @@ export default function DriverLoginScreen() {
             placeholder="Ex: 07 01 02 03 04"
             value={emailOrPhone}
             onChangeText={setEmailOrPhone}
-            leftIcon={<Mail size={18} color={colors.dark.textDim} />}
+            leftIcon={<Mail size={18} color={colors.grey[400]} />}
             autoCapitalize="none"
           />
 
@@ -89,11 +89,11 @@ export default function DriverLoginScreen() {
             value={password}
             onChangeText={setPassword}
             isPassword
-            leftIcon={<Lock size={18} color={colors.dark.textDim} />}
+            leftIcon={<Lock size={18} color={colors.grey[400]} />}
           />
 
           <TouchableOpacity
-            onPress={() => router.push('/auth/reset-password')}
+            onPress={() => router.push('/auth/reset-password' as any)}
             style={styles.forgotBtn}
           >
             <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
@@ -101,19 +101,21 @@ export default function DriverLoginScreen() {
 
           {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
-          <Button
-            title="Se connecter"
-            variant="delivery"
-            size="lg"
-            loading={isLoading}
-            onPress={handleLogin}
-            style={styles.submitBtn}
-          />
+          <View style={{ marginTop: 12 }}>
+            <Button
+              title="Se connecter"
+              variant="primary"
+              size="lg"
+              loading={isLoading}
+              onPress={handleLogin}
+              fullWidth
+            />
+          </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Pas encore livreur ?</Text>
-            <TouchableOpacity onPress={() => router.replace('/auth/register')}>
-              <Text style={styles.registerLink}>S'inscrire</Text>
+          <View style={styles.registerRow}>
+            <Text style={styles.registerPrompt}>Pas encore de compte livreur ?</Text>
+            <TouchableOpacity onPress={() => router.push('/auth/register' as any)}>
+              <Text style={styles.registerLink}>Devenir coursier partenaire</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -125,43 +127,47 @@ export default function DriverLoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
+    backgroundColor: '#F8F9FA',
   },
   headerBox: {
     alignItems: 'center',
-    marginVertical: spacing[4],
+    marginBottom: spacing[6],
+    marginTop: spacing[2],
   },
   logoBox: {
     width: 68,
     height: 68,
     borderRadius: radii['2xl'],
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: '#FFF4E6',
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
   },
   welcomeTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
-    marginBottom: 4,
+    textAlign: 'center',
   },
   welcomeSub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[500],
     fontSize: typography.sizes.xs,
     textAlign: 'center',
-    maxWidth: 280,
-    lineHeight: 16,
+    marginTop: 4,
+    maxWidth: 260,
   },
   forgotBtn: {
     alignSelf: 'flex-end',
-    marginBottom: spacing[4],
+    marginBottom: spacing[3],
   },
   forgotText: {
-    color: colors.delivery.primary,
+    color: colors.primary.DEFAULT,
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
@@ -171,22 +177,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing[3],
   },
-  submitBtn: {
-    marginTop: spacing[1],
-  },
-  footerRow: {
-    flexDirection: 'row',
+  registerRow: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     marginTop: spacing[6],
+    gap: 4,
   },
-  footerText: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.sm,
+  registerPrompt: {
+    color: colors.grey[500],
+    fontSize: typography.sizes.xs,
   },
   registerLink: {
-    color: colors.delivery.primary,
+    color: colors.primary.DEFAULT,
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },

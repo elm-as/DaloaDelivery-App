@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,14 +15,12 @@ import {
   spacing,
   typography,
   Avatar,
-  Card,
-  Button,
-  Badge,
   RatingStars,
 } from '@daloa/ui';
 import {
   Bike,
   ShieldCheck,
+  ShieldAlert,
   CreditCard,
   Users,
   Store,
@@ -37,7 +34,7 @@ import { Haptics } from '@daloa/utils';
 
 export default function DriverProfileScreen() {
   const router = useRouter();
-  const { user, driverProfile, logout, isAuthenticated } = useDriverAuth();
+  const { user, driverProfile, logout, isAuthenticated, isAdmin } = useDriverAuth();
 
   const isVerified = Boolean(driverProfile?.is_verified);
 
@@ -47,26 +44,30 @@ export default function DriverProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Mon Profil Livreur</Text>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Profile Card */}
-        <Card style={styles.profileCard}>
+        <View style={styles.profileCard}>
           <View style={styles.profileRow}>
             <Avatar
               uri={driverProfile?.photo_url}
               name={driverProfile?.name || 'Livreur'}
-              size={64}
+              size={60}
             />
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.driverName} numberOfLines={1}>
                   {driverProfile?.name || 'Livreur Daloa'}
                 </Text>
-                {isVerified ? (
-                  <Badge label="VÉRIFIÉ" variant="verified" />
-                ) : (
-                  <Badge label="NON VÉRIFIÉ" variant="default" />
-                )}
+                <View style={[styles.badge, { backgroundColor: isVerified ? '#ECFDF5' : '#FFFBEB' }]}>
+                  <Text style={[styles.badgeText, { color: isVerified ? '#059669' : '#D97706' }]}>
+                    {isVerified ? 'VÉRIFIÉ' : 'EN ATTENTE'}
+                  </Text>
+                </View>
               </View>
               <Text style={styles.driverPhone}>{driverProfile?.phone || user?.email}</Text>
               <Text style={styles.driverVehicle}>
@@ -75,83 +76,102 @@ export default function DriverProfileScreen() {
               <RatingStars
                 rating={driverProfile?.rating || 5.0}
                 totalReviews={driverProfile?.total_reviews || 0}
-                size={12}
+                size={11}
               />
             </View>
           </View>
-        </Card>
+        </View>
 
         {/* Espace Vérification CNI / KYC */}
         {!isVerified && (
           <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/verification')}
+            activeOpacity={0.88}
+            onPress={() => router.push('/verification' as any)}
             style={styles.kycCard}
           >
-            <ShieldCheck size={22} color="#090D16" />
+            <View style={styles.kycIconWrapper}>
+              <ShieldCheck size={22} color={colors.primary.DEFAULT} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.kycTitle}>Faites vérifier votre profil</Text>
               <Text style={styles.kycSub}>
-                Téléversez votre CNI ou permis de conduire pour recevoir plus de courses et accéder aux courses premium.
+                Téléversez votre CNI ou permis pour débloquer toutes les courses à Daloa.
               </Text>
             </View>
-            <ChevronRight size={18} color="#090D16" />
+            <ChevronRight size={18} color={colors.grey[400]} />
           </TouchableOpacity>
         )}
 
-        {/* Gestion & Outils */}
-        <Text style={styles.sectionTitle}>Gestion & Paramètres</Text>
-        <Card style={styles.menuCard}>
+        {/* Paramètres & Réseau */}
+        <Text style={styles.sectionHeading}>Opérations & Règlements</Text>
+        <View style={styles.menuCard}>
           <MenuItem
-            icon={<CreditCard size={20} color={colors.delivery.primary} />}
+            icon={<CreditCard size={18} color={colors.primary.DEFAULT} />}
             title="Paramètres de retrait (Mobile Money)"
-            subtitle="Configurer Wave, Orange, MTN ou Moov"
-            onPress={() => router.push('/payout-setup')}
+            subtitle="Configurer Wave, Orange Money, MTN MoMo, Moov"
+            onPress={() => router.push('/payout-setup' as any)}
           />
           <MenuItem
-            icon={<Store size={20} color="#F59E0B" />}
-            title="Mes Boutiques Affiliées"
-            subtitle="Voir les commerçants partenaires"
-            onPress={() => router.push('/affiliations')}
+            icon={<Users size={18} color={colors.secondary.DEFAULT} />}
+            title="Annuaire des Livreurs Daloa"
+            subtitle="Voir les coursiers partenaires enregistrés"
+            onPress={() => router.push('/directory' as any)}
           />
           <MenuItem
-            icon={<Users size={20} color="#3B82F6" />}
-            title="Annuaire des Livreurs de Daloa"
-            subtitle="Voir tous les livreurs actifs de la ville"
-            onPress={() => router.push('/directory')}
+            icon={<Store size={18} color="#8B5CF6" />}
+            title="Mes Affiliations Boutiques"
+            subtitle="Vendeurs qui vous ont désigné comme livreur attitré"
+            onPress={() => router.push('/affiliations' as any)}
             isLast
           />
-        </Card>
+        </View>
 
-        {/* Aide & Juridique */}
-        <Text style={styles.sectionTitle}>Assistance & Règles</Text>
-        <Card style={styles.menuCard}>
+        {/* Administration — masquée aux non-admins. L'autorisation réelle est
+            appliquée en base (policies is_admin() et trigger de protection). */}
+        {isAdmin ? (
+          <>
+            <Text style={styles.sectionHeading}>Administration</Text>
+            <View style={styles.menuCard}>
+              <MenuItem
+                icon={<ShieldAlert size={18} color={colors.status.infoDark} />}
+                title="Console d'administration"
+                subtitle="Vérifier les livreurs et arbitrer les litiges"
+                onPress={() => router.push('/admin' as any)}
+                isLast
+              />
+            </View>
+          </>
+        ) : null}
+
+        {/* Support & Règles */}
+        <Text style={styles.sectionHeading}>Assistance & Légal</Text>
+        <View style={styles.menuCard}>
           <MenuItem
-            icon={<HelpCircle size={20} color={colors.dark.textMuted} />}
-            title="Centre d'aide livreur"
-            subtitle="Procédures OTP, litiges et support WhatsApp"
-            onPress={() => router.push('/legal/help')}
+            icon={<HelpCircle size={18} color={colors.grey[600]} />}
+            title="Assistance & Support DaloaDelivery"
+            subtitle="FAQ et contact équipe régulation"
+            onPress={() => router.push('/legal/help' as any)}
           />
           <MenuItem
-            icon={<FileText size={20} color={colors.dark.textMuted} />}
-            title="Conditions Générales des Livreurs"
-            subtitle="Charte de livraison et règles de sécurité"
-            onPress={() => router.push('/legal/terms')}
+            icon={<FileText size={18} color={colors.grey[600]} />}
+            title="Charte des Coursiers & CGU"
+            subtitle="Règles d'éthique, ponctualité et sécurité"
+            onPress={() => router.push('/legal/terms' as any)}
             isLast
           />
-        </Card>
+        </View>
 
-        {/* Déconnexion */}
+        {/* Bouton Déconnexion */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleLogout}
           style={styles.logoutBtn}
         >
-          <LogOut size={18} color={colors.status.error} />
+          <LogOut size={16} color={colors.status.error} />
           <Text style={styles.logoutText}>Se déconnecter</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>DaloaDelivery v1.0.0 • ElmasCore © 2026</Text>
+        <Text style={styles.versionText}>DaloaDelivery Mobile • Version Officielle v2.0</Text>
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -167,25 +187,22 @@ function MenuItem({
 }: {
   icon: React.ReactNode;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   onPress: () => void;
   isLast?: boolean;
 }) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={() => {
-        Haptics.lightImpact();
-        onPress();
-      }}
+      onPress={onPress}
       style={[styles.menuItem, !isLast && styles.menuItemBorder]}
     >
-      <View style={styles.menuIconContainer}>{icon}</View>
+      <View style={styles.menuIconBox}>{icon}</View>
       <View style={styles.menuContent}>
         <Text style={styles.menuTitle}>{title}</Text>
-        {subtitle && <Text style={styles.menuSub}>{subtitle}</Text>}
+        <Text style={styles.menuSub}>{subtitle}</Text>
       </View>
-      <ChevronRight size={18} color={colors.dark.textDim} />
+      <ChevronRight size={18} color={colors.grey[300]} />
     </TouchableOpacity>
   );
 }
@@ -193,125 +210,170 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
   },
   scrollContent: {
-    padding: spacing[4],
-    gap: spacing[3],
+    padding: 14,
+    backgroundColor: '#F8F9FA',
   },
   profileCard: {
-    padding: spacing[4],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 12,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    gap: 12,
   },
   profileInfo: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: 8,
   },
   driverName: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#111827',
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  badgeText: {
+    fontSize: 9.5,
+    fontWeight: '900',
   },
   driverPhone: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 12,
+    color: colors.grey[500],
+    fontWeight: '500',
   },
   driverVehicle: {
-    color: colors.delivery.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: 11.5,
+    color: colors.primary[700],
+    fontWeight: '600',
   },
   kycCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.delivery.primary,
-    borderRadius: radii['2xl'],
-    padding: spacing[4],
-    gap: spacing[3],
+    gap: 10,
+    backgroundColor: '#FFF4E6',
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+    borderRadius: radii.xl,
+    padding: 12,
+    marginBottom: 14,
+  },
+  kycIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   kycTitle: {
-    color: '#090D16',
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    marginBottom: 2,
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: colors.primary[800],
   },
   kycSub: {
-    color: 'rgba(9, 13, 22, 0.85)',
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10.5,
+    color: colors.primary[900],
+    marginTop: 2,
+    lineHeight: 14,
   },
-  sectionTitle: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing[2],
+  sectionHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.grey[600],
+    marginTop: 8,
+    marginBottom: 8,
+    marginLeft: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   menuCard: {
-    padding: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     overflow: 'hidden',
+    marginBottom: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing[3] + 2,
-    paddingHorizontal: spacing[4],
-    gap: spacing[3],
+    padding: 12,
+    gap: 12,
   },
   menuItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: '#F3F4F6',
   },
-  menuIconContainer: {
+  menuIconBox: {
     width: 36,
     height: 36,
-    borderRadius: radii.lg,
-    backgroundColor: colors.dark.surfaceRaised,
+    borderRadius: radii.md,
+    backgroundColor: '#F9FAFB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuContent: {
     flex: 1,
+    gap: 2,
   },
   menuTitle: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
   },
   menuSub: {
-    color: colors.dark.textDim,
     fontSize: 11,
-    marginTop: 2,
+    color: colors.grey[400],
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    paddingVertical: spacing[3],
-    borderRadius: radii.xl,
-    gap: spacing[2],
-    marginTop: spacing[3],
+    borderColor: '#FECACA',
+    borderRadius: radii.lg,
+    padding: 12,
+    marginTop: 10,
   },
   logoutText: {
+    fontSize: 13,
+    fontWeight: '800',
     color: colors.status.error,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
   },
   versionText: {
-    color: colors.dark.textDim,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
+    color: colors.grey[400],
     textAlign: 'center',
-    marginTop: spacing[2],
+    marginTop: 14,
+    fontWeight: '500',
   },
 });

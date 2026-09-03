@@ -11,8 +11,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { useAvailableRuns, deliveryService } from '@daloa/api';
-import { colors, radii, spacing, typography, Header, EmptyState, Skeleton, Button } from '@daloa/ui';
-import { DeliveryRunCard } from '../../src/components/DeliveryRunCard';
+import { AvailableDeliveryRun } from '@daloa/types';
+import {
+  colors,
+  radii,
+  spacing,
+  typography,
+  DeliveryOrderCard,
+  Skeleton,
+  Button,
+} from '@daloa/ui';
 import { Zap, AlertCircle } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
@@ -38,7 +46,7 @@ export default function AvailableRunsScreen() {
       setAcceptingId(assignmentId);
       await deliveryService.acceptRun(assignmentId, driverProfile.id);
       Haptics.success();
-      router.push(`/run/${assignmentId}`);
+      router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
       Alert.alert('Course déjà prise', 'Un autre coursier vient d’accepter cette course.');
       refetch();
@@ -48,31 +56,29 @@ export default function AvailableRunsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header
-        title="Courses Disponibles"
-        onBack={() => router.back()}
-        rightAction={
-          <View style={styles.badgeCount}>
-            <Text style={styles.badgeText}>{runList.length}</Text>
-          </View>
-        }
-      />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Courses Disponibles</Text>
+        <View style={styles.badgeCount}>
+          <Text style={styles.badgeText}>{runList.length} active(s)</Text>
+        </View>
+      </View>
 
       {!isOnline ? (
         <View style={styles.offlineBox}>
-          <AlertCircle size={36} color="#F59E0B" />
+          <AlertCircle size={38} color="#D97706" />
           <Text style={styles.offlineTitle}>Vous êtes Hors Ligne</Text>
           <Text style={styles.offlineSub}>
-            Passez En Ligne pour voir et accepter les livraisons en direct à Daloa.
+            Basculez En Ligne pour voir et accepter les livraisons en direct à Daloa.
           </Text>
-          <Button
-            title="Passer En Ligne"
-            variant="delivery"
-            size="md"
-            onPress={() => toggleOnlineStatus(true)}
-            style={{ marginTop: spacing[3] }}
-          />
+          <View style={{ marginTop: 14 }}>
+            <Button
+              title="Passer En Ligne"
+              variant="primary"
+              size="md"
+              onPress={() => toggleOnlineStatus(true)}
+            />
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -82,29 +88,44 @@ export default function AvailableRunsScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={colors.delivery.primary}
+              tintColor={colors.primary.DEFAULT}
+              colors={[colors.primary.DEFAULT]}
             />
           }
         >
           {isLoading ? (
-            <View style={{ gap: spacing[3] }}>
-              <Skeleton height={160} borderRadius={radii['2xl']} />
-              <Skeleton height={160} borderRadius={radii['2xl']} />
+            <View style={{ gap: 12 }}>
+              <Skeleton width="100%" height={160} borderRadius={radii.xl} />
+              <Skeleton width="100%" height={160} borderRadius={radii.xl} />
             </View>
           ) : runList.length === 0 ? (
-            <EmptyState
-              icon={<Zap size={32} color={colors.delivery.primary} />}
-              title="Aucune course disponible"
-              description="Toutes les livraisons en cours sont déjà prises en charge. Restez connecté, de nouvelles courses arrivent !"
-            />
+            <View style={styles.emptyBox}>
+              <Zap size={44} color={colors.grey[300]} />
+              <Text style={styles.emptyTitle}>Aucune course en attente</Text>
+              <Text style={styles.emptySub}>
+                Toutes les livraisons à Daloa sont prises en charge. Restez connecté, de nouvelles commandes arrivent !
+              </Text>
+            </View>
           ) : (
-            runList.map((run) => (
-              <DeliveryRunCard
+            runList.map((run: AvailableDeliveryRun) => (
+              <DeliveryOrderCard
                 key={run.assignmentId}
-                run={run}
+                order={{
+                  id: run.assignmentId,
+                  status: 'awaiting_pickup',
+                  delivery_price: run.deliveryPrice,
+                  pickup_location: run.pickupLocation,
+                  dropoff_location: run.dropoffLocation,
+                  pickup_lat: run.pickupCoordinates?.lat,
+                  pickup_lng: run.pickupCoordinates?.lng,
+                  dropoff_lat: run.dropoffCoordinates?.lat,
+                  dropoff_lng: run.dropoffCoordinates?.lng,
+                  seller_phone: run.sellerPhone,
+                  buyer_phone: run.buyerPhone,
+                  created_at: run.createdAt,
+                }}
+                onPress={() => handleAcceptRun(run.assignmentId)}
                 onAccept={() => handleAcceptRun(run.assignmentId)}
-                onPressDetails={() => router.push(`/run/${run.assignmentId}`)}
-                isAccepting={acceptingId === run.assignmentId}
               />
             ))
           )}
@@ -117,38 +138,78 @@ export default function AvailableRunsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
-  scrollContent: {
-    padding: spacing[4],
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
   },
   badgeCount: {
-    backgroundColor: colors.delivery.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    backgroundColor: '#FFF4E6',
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: radii.full,
   },
   badgeText: {
-    color: '#090D16',
-    fontSize: 12,
-    fontWeight: typography.weights.extrabold,
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary[700],
+  },
+  scrollContent: {
+    padding: 14,
+    backgroundColor: '#F8F9FA',
   },
   offlineBox: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing[6],
-    gap: spacing[2],
+    padding: 24,
+    backgroundColor: '#F8F9FA',
   },
   offlineTitle: {
-    color: colors.dark.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#111827',
+    marginTop: 12,
   },
   offlineSub: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.sm,
+    fontSize: 13,
+    color: colors.grey[600],
     textAlign: 'center',
+    marginTop: 6,
     lineHeight: 18,
+    maxWidth: 260,
+  },
+  emptyBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    marginTop: 12,
+  },
+  emptySub: {
+    fontSize: 12.5,
+    color: colors.grey[500],
+    textAlign: 'center',
+    marginTop: 4,
+    maxWidth: 250,
+    lineHeight: 17,
   },
 });

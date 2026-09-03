@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AvailableDeliveryRun } from '@daloa/types';
-import { colors, radii, spacing, typography, Card, CurrencyText, Button, Badge } from '@daloa/ui';
-import { MapPin, Navigation, ArrowRight, ShieldCheck, Clock } from 'lucide-react-native';
-import { formatDistance, Haptics } from '@daloa/utils';
+import { colors, radii, spacing, typography, Card, Button } from '@daloa/ui';
+import { Navigation } from 'lucide-react-native';
+import { formatDistance, formatFCFA, Haptics } from '@daloa/utils';
 
 export interface DeliveryRunCardProps {
   run: AvailableDeliveryRun;
@@ -21,19 +21,13 @@ export const DeliveryRunCard: React.FC<DeliveryRunCardProps> = ({
   return (
     <Card
       onPress={onPressDetails}
-      variant="glowDelivery"
       style={styles.card}
     >
       {/* Header : Gain Livreur & Distance */}
       <View style={styles.topRow}>
         <View>
           <Text style={styles.gainLabel}>Gain net livreur</Text>
-          <CurrencyText
-            amount={run.driverNetGain}
-            size="xl"
-            weight="extrabold"
-            color={colors.delivery.primary}
-          />
+          <Text style={styles.gainAmount}>{formatFCFA(run.driverNetGain)}</Text>
         </View>
 
         <View style={styles.distanceBadge}>
@@ -85,13 +79,14 @@ export const DeliveryRunCard: React.FC<DeliveryRunCardProps> = ({
       {onAccept && (
         <Button
           title="Accepter cette course"
-          variant="delivery"
+          variant="primary"
           size="md"
           loading={isAccepting}
           onPress={() => {
             Haptics.success();
             onAccept();
           }}
+          fullWidth
           style={styles.acceptBtn}
         />
       )}
@@ -101,6 +96,10 @@ export const DeliveryRunCard: React.FC<DeliveryRunCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     padding: spacing[4],
     marginBottom: spacing[3],
     gap: spacing[3],
@@ -110,21 +109,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: '#F3F4F6',
     paddingBottom: spacing[3],
   },
   gainLabel: {
-    color: colors.dark.textMuted,
+    color: colors.grey[500],
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.medium,
+    fontWeight: '700',
     marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  gainAmount: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.primary[600],
   },
   distanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.dark.borderLight,
+    backgroundColor: colors.primary.DEFAULT,
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: radii.full,
@@ -151,15 +154,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   dotPickup: {
-    backgroundColor: colors.market.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
   dotDropoff: {
-    backgroundColor: colors.delivery.primary,
+    backgroundColor: colors.secondary.DEFAULT,
   },
   routeLine: {
     width: 2,
     height: 18,
-    backgroundColor: colors.dark.borderLight,
+    backgroundColor: '#E5E7EB',
     marginLeft: 5,
     marginVertical: -2,
   },
@@ -168,28 +171,32 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   stepLabel: {
-    color: colors.dark.textDim,
+    color: colors.grey[400],
     fontSize: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontWeight: '700',
   },
   stepDistrict: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   stepLocation: {
-    color: colors.dark.textMuted,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
   },
   productRow: {
-    backgroundColor: colors.dark.surfaceRaised,
-    borderRadius: radii.lg,
+    backgroundColor: '#F9FAFB',
+    borderRadius: radii.md,
     padding: spacing[2],
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   productText: {
-    color: colors.dark.textMuted,
+    color: colors.grey[700],
     fontSize: typography.sizes.xs,
+    fontWeight: '600',
   },
   acceptBtn: {
     marginTop: spacing[1],

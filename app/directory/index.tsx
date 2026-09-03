@@ -23,7 +23,7 @@ import {
   SearchInput,
   EmptyState,
 } from '@daloa/ui';
-import { PhoneCall, MapPin, Bike } from 'lucide-react-native';
+import { PhoneCall, Bike } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
 export default function DeliverersDirectoryScreen() {
@@ -58,7 +58,7 @@ export default function DeliverersDirectoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Annuaire des Livreurs" onBack={() => router.back()} />
 
       <View style={styles.searchBar}>
@@ -72,7 +72,7 @@ export default function DeliverersDirectoryScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {filtered.length === 0 ? (
           <EmptyState
-            icon={<Bike size={32} color={colors.delivery.primary} />}
+            icon={<Bike size={32} color={colors.primary.DEFAULT} />}
             title="Aucun livreur trouvé"
             description="Essayez un autre mot-clé."
           />
@@ -80,7 +80,7 @@ export default function DeliverersDirectoryScreen() {
           filtered.map((d) => (
             <Card
               key={d.id}
-              onPress={() => router.push(`/directory/${d.id}`)}
+              onPress={() => router.push(`/directory/${d.id}` as any)}
               style={styles.driverCard}
             >
               <Avatar uri={d.photo_url} name={d.name} size={50} />
@@ -99,7 +99,7 @@ export default function DeliverersDirectoryScreen() {
                 onPress={() => handleCall(d.phone)}
                 style={styles.callBtn}
               >
-                <PhoneCall size={16} color={colors.delivery.primary} />
+                <PhoneCall size={16} color={colors.primary.DEFAULT} />
               </TouchableOpacity>
             </Card>
           ))
@@ -112,23 +112,28 @@ export default function DeliverersDirectoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   searchBar: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[2],
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: '#F3F4F6',
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[2],
+    backgroundColor: '#F8F9FA',
   },
   driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
     gap: spacing[3],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   info: {
     flex: 1,
@@ -140,22 +145,22 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   name: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   vehicle: {
-    color: colors.delivery.primary,
+    color: colors.primary[700],
     fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   callBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.xl,
-    backgroundColor: colors.dark.surfaceRaised,
+    width: 38,
+    height: 38,
+    borderRadius: radii.lg,
+    backgroundColor: '#FFF4E6',
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: '#FFE0B2',
     alignItems: 'center',
     justifyContent: 'center',
   },

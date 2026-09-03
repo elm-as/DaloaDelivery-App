@@ -1,66 +1,139 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { LayoutDashboard, Zap, Clock, Wallet, UserCheck } from 'lucide-react-native';
-import { colors, typography } from '@daloa/ui';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { colors, useAccent } from '@daloa/ui';
+
+/* Icône d'onglet avec pill de fond animée (fidèle au BottomNavBar web DaloaDelivery) */
+function DeliveryTabIcon({
+  icon: Icon,
+  color,
+  focused,
+  pillColor,
+}: {
+  icon: any;
+  color: string;
+  focused: boolean;
+  pillColor: string;
+}) {
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withSpring(focused ? 1 : 0, { stiffness: 400, damping: 25 });
+  }, [focused, progress]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.6 + progress.value * 0.4 }],
+  }));
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + progress.value * 0.1 }],
+  }));
+
+  return (
+    <View style={styles.iconWrapper}>
+      <Animated.View style={[styles.activePill, { backgroundColor: pillColor }, pillStyle]} />
+      <Animated.View style={iconStyle}>
+        <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function DeliveryTabLayout() {
+  const accent = useAccent();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: colors.delivery.primary,
-        tabBarInactiveTintColor: colors.dark.textDim,
+        tabBarActiveTintColor: accent.DEFAULT,
+        tabBarInactiveTintColor: colors.grey[400],
         tabBarStyle: {
-          backgroundColor: '#0E1422',
-          borderTopColor: colors.dark.border,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#F3F4F6',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: typography.weights.semibold,
+          fontSize: 10.5,
+          fontWeight: '700',
+          marginTop: 2,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tableau de bord',
-          tabBarIcon: ({ color, size }) => <LayoutDashboard size={size - 2} color={color} />,
+          title: 'Console',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon icon={LayoutDashboard} color={color} focused={focused} pillColor={accent[50]} />
+          ),
         }}
       />
       <Tabs.Screen
         name="available"
         options={{
           title: 'Courses',
-          tabBarIcon: ({ color, size }) => <Zap size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon icon={Zap} color={color} focused={focused} pillColor={accent[50]} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'Historique',
-          tabBarIcon: ({ color, size }) => <Clock size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon icon={Clock} color={color} focused={focused} pillColor={accent[50]} />
+          ),
         }}
       />
       <Tabs.Screen
         name="earnings"
         options={{
-          title: 'Gains',
-          tabBarIcon: ({ color, size }) => <Wallet size={size - 2} color={color} />,
+          title: 'Gains & Solde',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon icon={Wallet} color={color} focused={focused} pillColor={accent[50]} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Mon Profil',
-          tabBarIcon: ({ color, size }) => <UserCheck size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon icon={UserCheck} color={color} focused={focused} pillColor={accent[50]} />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrapper: {
+    width: 44,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activePill: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12,
+  },
+});

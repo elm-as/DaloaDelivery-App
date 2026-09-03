@@ -11,6 +11,12 @@ interface DriverAuthContextType {
   driverLocation: Coordinates | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /**
+   * Confort d'affichage uniquement : masque la console admin aux non-admins.
+   * L'autorisation réelle est appliquée en base (policies is_admin() et
+   * trigger protect_delivery_persons_columns), jamais par ce booléen.
+   */
+  isAdmin: boolean;
   toggleOnlineStatus: (status?: boolean) => Promise<void>;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
@@ -19,6 +25,9 @@ interface DriverAuthContextType {
 }
 
 const DriverAuthContext = createContext<DriverAuthContextType | undefined>(undefined);
+
+/** Rôles donnant accès à la console d'administration. */
+const ADMIN_ROLES = ['admin', 'superadmin'];
 
 export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
@@ -111,8 +120,9 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           .select('*')
           .eq('user_id', session.user.id)
           .maybeSingle();
-        setDriverProfile(dp);
-        setIsOnline(Boolean(dp?.is_available));
+        const driverRow = dp as DeliveryPersonRow | null;
+        setDriverProfile(driverRow);
+        setIsOnline(Boolean(driverRow?.is_available));
       } else {
         setUser(null);
         setProfile(null);
@@ -147,8 +157,9 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .select('*')
         .eq('user_id', result.user.id)
         .maybeSingle();
-      setDriverProfile(dp);
-      setIsOnline(Boolean(dp?.is_available));
+      const driverRow = dp as DeliveryPersonRow | null;
+      setDriverProfile(driverRow);
+      setIsOnline(Boolean(driverRow?.is_available));
     }
   };
 
@@ -160,9 +171,6 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const logout = async () => {
-    if (driverProfile?.id) {
-      await deliveryService.setDriverAvailability(driverProfile.id, false);
-    }
     await authService.logout();
     setUser(null);
     setProfile(null);
@@ -177,8 +185,9 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      setDriverProfile(dp);
-      setIsOnline(Boolean(dp?.is_available));
+      const driverRow = dp as DeliveryPersonRow | null;
+      setDriverProfile(driverRow);
+      setIsOnline(Boolean(driverRow?.is_available));
     }
   };
 
@@ -192,6 +201,7 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         driverLocation,
         isLoading,
         isAuthenticated: Boolean(user),
+        isAdmin: ADMIN_ROLES.includes(String((profile as any)?.role || '').toLowerCase()),
         toggleOnlineStatus,
         login,
         register,

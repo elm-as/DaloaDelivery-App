@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@daloa/api';
@@ -38,7 +44,7 @@ export default function DelivererDetailScreen() {
 
   if (!deliverer) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container}>
         <Header title="Profil Livreur" onBack={() => router.back()} />
       </SafeAreaView>
     );
@@ -57,7 +63,7 @@ export default function DelivererDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title={deliverer.name} onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -66,21 +72,21 @@ export default function DelivererDetailScreen() {
           <Text style={styles.name}>{deliverer.name}</Text>
           {deliverer.is_verified && <Badge label="LIVREUR VÉRIFIÉ" variant="verified" />}
 
-          <Text style={styles.vehicle}>🛵 Véhicule : {deliverer.vehicle_type?.toUpperCase()}</Text>
+          <Text style={styles.vehicle}>🛵 Véhicule : {deliverer.vehicle_type?.toUpperCase() || 'MOTO'}</Text>
           <RatingStars rating={deliverer.rating || 5.0} totalReviews={deliverer.total_reviews || 0} size={14} />
 
           <View style={styles.btnRow}>
             <Button
               title="Appeler"
-              variant="delivery"
+              variant="primary"
               size="md"
-              leftIcon={<PhoneCall size={16} color="#090D16" />}
+              leftIcon={<PhoneCall size={16} color="#FFFFFF" />}
               onPress={handleCall}
               style={{ flex: 1 }}
             />
             <Button
               title="WhatsApp"
-              variant="success"
+              variant="whatsapp"
               size="md"
               leftIcon={<MessageCircle size={16} color="#FFFFFF" />}
               onPress={handleWhatsApp}
@@ -96,26 +102,31 @@ export default function DelivererDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
+    backgroundColor: '#F8F9FA',
   },
   card: {
     alignItems: 'center',
     padding: spacing[5],
     gap: spacing[2],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   name: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     marginTop: spacing[2],
   },
   vehicle: {
-    color: colors.delivery.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    color: colors.primary[700],
+    fontSize: 12,
+    fontWeight: '700',
   },
   btnRow: {
     flexDirection: 'row',

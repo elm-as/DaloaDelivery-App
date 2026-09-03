@@ -20,7 +20,6 @@ import {
   Header,
   Input,
   Button,
-  Card,
 } from '@daloa/ui';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
@@ -76,19 +75,19 @@ export default function PayoutSetupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Compte de Retrait" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.securityCard}>
-          <ShieldCheck size={24} color={colors.delivery.primary} />
+        <View style={styles.securityCard}>
+          <ShieldCheck size={24} color={colors.primary.DEFAULT} />
           <View style={{ flex: 1 }}>
             <Text style={styles.securityTitle}>Versement de vos gains</Text>
             <Text style={styles.securityDesc}>
               Vos gains de livraison vous sont versés automatiquement sur ce numéro.
             </Text>
           </View>
-        </Card>
+        </View>
 
         {/* Sélection du Réseau */}
         <Text style={styles.sectionTitle}>Réseau Mobile Money *</Text>
@@ -108,7 +107,7 @@ export default function PayoutSetupScreen() {
                 <Text style={[styles.networkName, isSelected && styles.networkNameActive]}>
                   {net.name}
                 </Text>
-                {isSelected && <CheckCircle2 size={16} color={colors.delivery.primary} />}
+                {isSelected && <CheckCircle2 size={16} color={colors.primary.DEFAULT} />}
               </TouchableOpacity>
             );
           })}
@@ -130,14 +129,16 @@ export default function PayoutSetupScreen() {
           helperText="Le nom doit correspondre au compte opérateur"
         />
 
-        <Button
-          title="Enregistrer mon compte"
-          variant="delivery"
-          size="lg"
-          loading={isSaving}
-          onPress={handleSave}
-          style={{ marginTop: spacing[4] }}
-        />
+        <View style={{ marginTop: 14 }}>
+          <Button
+            title="Enregistrer mon compte"
+            variant="primary"
+            size="lg"
+            loading={isSaving}
+            onPress={handleSave}
+            fullWidth
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -146,31 +147,36 @@ export default function PayoutSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
+    backgroundColor: '#F8F9FA',
   },
   securityCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[4],
     gap: spacing[3],
+    backgroundColor: '#FFF4E6',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
   },
   securityTitle: {
-    color: colors.delivery.primary,
+    color: colors.primary[800],
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   securityDesc: {
-    color: colors.dark.textMuted,
+    color: colors.primary[900],
     fontSize: 11,
     lineHeight: 15,
     marginTop: 2,
   },
   sectionTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
@@ -181,16 +187,16 @@ const styles = StyleSheet.create({
   networkCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surfaceRaised,
+    backgroundColor: '#FFFFFF',
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1.5,
-    borderColor: colors.dark.border,
+    borderColor: '#E5E7EB',
     gap: spacing[3],
   },
   networkCardActive: {
-    borderColor: colors.delivery.primary,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: '#FFF4E6',
   },
   networkDot: {
     width: 12,
@@ -198,12 +204,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   networkName: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
     flex: 1,
   },
   networkNameActive: {
     fontWeight: typography.weights.bold,
+    color: colors.primary[700],
   },
 });

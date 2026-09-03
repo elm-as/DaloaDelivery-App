@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -34,21 +39,21 @@ export default function DriverAffiliationsScreen() {
   }, [driverProfile?.id]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <Header title="Boutiques Partenaires" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.infoBox}>
-          <Store size={24} color={colors.delivery.primary} />
+          <Store size={24} color={colors.primary.DEFAULT} />
           <Text style={styles.infoTitle}>Vos Boutiques Affiliées</Text>
           <Text style={styles.infoSub}>
-            Ces commerçants de Daloa vous ont sélectionné comme livreur prioritaire pour leurs commandes.
+            Ces commerçants de Daloa vous ont sélectionné comme livreur attitré pour leurs commandes.
           </Text>
         </View>
 
         {shops.length === 0 ? (
           <EmptyState
-            icon={<Store size={32} color={colors.delivery.primary} />}
+            icon={<Store size={32} color={colors.primary.DEFAULT} />}
             title="Aucune boutique affiliée"
             description="Proposez aux commerçants de DaloaMarket de vous ajouter dans leurs livreurs dédiés."
           />
@@ -63,7 +68,7 @@ export default function DriverAffiliationsScreen() {
                   <Text style={styles.shopPhone}>{seller?.phone}</Text>
                   <Text style={styles.shopDistrict}>📍 {seller?.district || 'Daloa'}</Text>
                 </View>
-                <CheckCircle2 size={20} color="#10B981" />
+                <CheckCircle2 size={20} color="#059669" />
               </Card>
             );
           })
@@ -76,28 +81,29 @@ export default function DriverAffiliationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
+    backgroundColor: '#F8F9FA',
   },
   infoBox: {
-    backgroundColor: colors.dark.surface,
-    borderRadius: radii['2xl'],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: '#E5E7EB',
     padding: spacing[4],
     alignItems: 'center',
     gap: spacing[1],
   },
   infoTitle: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
   },
   infoSub: {
-    color: colors.dark.textMuted,
+    color: colors.grey[600],
     fontSize: typography.sizes.xs,
     textAlign: 'center',
     lineHeight: 16,
@@ -107,22 +113,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing[3],
     gap: spacing[3],
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   shopInfo: {
     flex: 1,
     gap: 2,
   },
   shopName: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   shopPhone: {
-    color: colors.dark.textMuted,
+    color: colors.grey[500],
     fontSize: typography.sizes.xs,
   },
   shopDistrict: {
-    color: colors.dark.textDim,
+    color: colors.grey[400],
     fontSize: 11,
   },
 });

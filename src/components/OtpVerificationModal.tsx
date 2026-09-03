@@ -17,20 +17,31 @@ export interface OtpVerificationModalProps {
   visible: boolean;
   onClose: () => void;
   type: 'pickup' | 'delivery';
+  /** Code pré-rempli (ex. issu d'un scan QR). */
+  initialCode?: string;
   onSubmit: (otp: string, photoUri: string) => Promise<void>;
-  isLoading?: boolean;
+  loading?: boolean;
 }
 
 export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   visible,
   onClose,
   type,
+  initialCode = '',
   onSubmit,
-  isLoading = false,
+  loading = false,
 }) => {
-  const [otpCode, setOtpCode] = useState('');
+  const [otpCode, setOtpCode] = useState(initialCode);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Synchronise le code pré-rempli (ex. après un scan QR) à l'ouverture.
+  React.useEffect(() => {
+    if (visible) {
+      setOtpCode(initialCode);
+      setErrorMsg(null);
+    }
+  }, [visible, initialCode]);
 
   const isPickup = type === 'pickup';
   const modalTitle = isPickup ? 'Validation Ramassage Vendeur' : 'Validation Livraison Acheteur';
@@ -40,7 +51,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     Haptics.lightImpact();
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission requise', 'L’accès à la caméra est obligatoire pour photographier le colis.');
+      Alert.alert('Permission requise', 'L’accès à la caméra est nécessaire pour photographier le colis.');
       return;
     }
 
@@ -103,7 +114,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
               onPress={handleTakePhoto}
               style={styles.retakeBtn}
             >
-              <Camera size={16} color="#FFFFFF" />
+              <Camera size={16} color={colors.grey[700]} />
               <Text style={styles.retakeText}>Reprendre la photo</Text>
             </TouchableOpacity>
           </View>
@@ -113,11 +124,11 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
             activeOpacity={0.8}
             style={styles.cameraBox}
           >
-            <Camera size={28} color={colors.delivery.primary} />
+            <Camera size={28} color={colors.primary.DEFAULT} />
             <Text style={styles.cameraText}>
               {isPickup ? 'Prendre la photo du colis' : 'Prendre la photo de la livraison'}
             </Text>
-            <Text style={styles.cameraSub}>Photo claire du paquet ou du produit</Text>
+            <Text style={styles.cameraSub}>Photo nette du paquet ou de l’article</Text>
           </TouchableOpacity>
         )}
 
@@ -126,11 +137,12 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
         {/* Submit */}
         <Button
           title={isPickup ? 'Confirmer le ramassage' : 'Confirmer la livraison'}
-          variant="delivery"
+          variant={isPickup ? 'primary' : 'secondary'}
           size="lg"
-          loading={isLoading}
-          disabled={otpCode.length !== 4 || !photoUri || isLoading}
+          loading={loading}
+          disabled={otpCode.length !== 4 || !photoUri || loading}
           onPress={handleConfirm}
+          fullWidth
           style={styles.submitBtn}
         />
       </View>
@@ -143,23 +155,23 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[4],
   },
   instructions: {
-    color: colors.dark.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    color: colors.grey[600],
+    fontSize: 12,
+    lineHeight: 17,
     marginBottom: spacing[4],
   },
   inputLabel: {
-    color: colors.dark.text,
+    color: '#111827',
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
     marginBottom: spacing[2],
   },
   cameraBox: {
     borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.4)',
+    borderColor: colors.primary[200],
     borderStyle: 'dashed',
-    borderRadius: radii['2xl'],
-    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    borderRadius: radii.xl,
+    backgroundColor: '#FFF4E6',
     padding: spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
@@ -167,12 +179,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cameraText: {
-    color: colors.delivery.primary,
+    color: colors.primary[700],
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   cameraSub: {
-    color: colors.dark.textDim,
+    color: colors.grey[500],
     fontSize: 11,
   },
   photoPreviewContainer: {
@@ -183,20 +195,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     borderRadius: radii.xl,
-    backgroundColor: colors.dark.surfaceRaised,
+    backgroundColor: '#F3F4F6',
   },
   retakeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surfaceRaised,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     gap: 6,
     marginTop: spacing[2],
   },
   retakeText: {
-    color: colors.dark.text,
+    color: colors.grey[800],
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
@@ -207,6 +221,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   submitBtn: {
-    marginTop: spacing[1],
+    marginTop: spacing[2],
   },
 });
