@@ -25,12 +25,16 @@
       },
       "package": "com.daloamarket.delivery",
       "permissions": [
-        "CAMERA",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "POST_NOTIFICATIONS",
-        "CALL_PHONE"
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CALL_PHONE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -59,9 +63,11 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "elmas.rt",
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "daloadelivery-app-id"
+        "projectId": "ad6fcbd5-9cdb-4f8d-a1d2-029fd33a4a99"
       }
     }
   }
