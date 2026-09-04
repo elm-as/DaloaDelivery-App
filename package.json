@@ -9,7 +9,7 @@
     "start:tunnel": "expo start --port 8082 --tunnel",
     "android": "expo start --android --port 8082",
     "ios": "expo start --ios --port 8082",
-    "web": "expo start --web --port 8082",
+    "web": "expo start --web --port 8082 --offline",
     "typecheck": "tsc --noEmit",
     "build": "expo export",
     "build:preview": "eas build --profile preview --platform android",

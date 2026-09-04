@@ -28,12 +28,8 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.CALL_PHONE",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -58,6 +54,7 @@
           "photosPermission": "DaloaDelivery a besoin d'accéder à vos documents pour la vérification CNI/KYC."
         }
       ],
+      "expo-notifications",
       "expo-font"
     ],
     "experiments": {

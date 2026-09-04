@@ -7,16 +7,20 @@ import { notificationsService } from '@daloa/api';
 import { useDriverAuth } from '../context/DriverAuthContext';
 
 if (Platform.OS !== 'web') {
-  Notifications.setNotificationHandler({
-    handleNotification: async () =>
-      ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      } as any),
-  });
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () =>
+        ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        } as any),
+    });
+  } catch (err) {
+    console.warn('[Push Delivery] Impossible d’initialiser le handler:', err);
+  }
 }
 
 /**

@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { VEHICLE_TYPES } from '@daloa/config';
@@ -16,15 +13,17 @@ import {
   colors,
   radii,
   spacing,
-  typography,
-  Header,
-  Input,
+  AppText,
+  AppPressable,
   Button,
+  Input,
+  KeyboardScreen,
 } from '@daloa/ui';
-import { Bike, User, Phone, Lock, Mail } from 'lucide-react-native';
+import { Bike, User, Phone, Lock, ArrowLeft, Car, Truck } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
 export default function DriverRegisterScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { register } = useDriverAuth();
 
@@ -33,7 +32,7 @@ export default function DriverRegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [vehicleType, setVehicleType] = useState<string>('moto');
-  const [district, setDistrict] = useState('Lobia');
+  const [district] = useState('Lobia');
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -66,7 +65,8 @@ export default function DriverRegisterScreen() {
       });
 
       Haptics.success();
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace('/(tabs)' as any);
     } catch (err: any) {
       setErrorMsg(err.message || 'Échec de l’inscription');
     } finally {
@@ -74,31 +74,68 @@ export default function DriverRegisterScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Inscription Livreur" onBack={() => router.back()} />
+  const handleBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/auth/login' as any);
+  };
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+  const renderVehicleIcon = (id: string, isSelected: boolean) => {
+    const iconColor = isSelected ? '#FFFFFF' : '#6B7280';
+    if (id === 'voiture') return <Car size={16} color={iconColor} />;
+    if (id === 'triporteur') return <Truck size={16} color={iconColor} />;
+    return <Bike size={16} color={iconColor} />;
+  };
+
+  return (
+    <KeyboardScreen>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.headerBox}>
-            <View style={styles.logoBox}>
-              <Bike size={32} color={colors.primary.DEFAULT} />
-            </View>
-            <Text style={styles.welcomeTitle}>Rejoignez la Flotte DaloaDelivery</Text>
-            <Text style={styles.welcomeSub}>
-              Devenez coursier partenaire et recevez des commandes de livraison partout à Daloa.
-            </Text>
+        {/* 1. En-tête courbé dégradé */}
+        <LinearGradient
+          colors={['#FFA726', '#FF9800', '#E65100']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.curvedHeader}
+        >
+          <AppPressable
+            onPress={handleBack}
+            rippleBorderless
+            style={styles.backBtn}
+            accessibilityLabel="Retour"
+          >
+            <ArrowLeft size={18} color={colors.text.inverse} />
+          </AppPressable>
+
+          <View style={styles.logoBadge}>
+            <Bike size={32} color="#E65100" />
           </View>
+
+          <AppText variant="h1" color={colors.text.inverse} style={styles.titleText}>
+            Rejoindre la Flotte
+          </AppText>
+          <AppText variant="body" color="#FFE0B2">
+            Devenez coursier partenaire DaloaDelivery
+          </AppText>
+        </LinearGradient>
+
+        {/* 2. Formulaire dans la carte flottante */}
+        <View style={styles.formCard}>
+          {errorMsg && (
+            <View style={styles.errorBox}>
+              <AppText variant="caption" color={colors.status.errorDark}>
+                {errorMsg}
+              </AppText>
+            </View>
+          )}
 
           <Input
             label="Nom & Prénoms *"
             placeholder="Ex: Kouamé Konan"
             value={fullName}
             onChangeText={setFullName}
-            leftIcon={<User size={18} color={colors.grey[400]} />}
+            leftIcon={<User size={16} color={colors.text.subtle} />}
           />
 
           <Input
@@ -107,27 +144,36 @@ export default function DriverRegisterScreen() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
-            leftIcon={<Phone size={18} color={colors.grey[400]} />}
+            leftIcon={<Phone size={16} color={colors.text.subtle} />}
           />
 
           {/* Type de véhicule */}
-          <Text style={styles.inputLabel}>Votre moyen de transport *</Text>
+          <AppText variant="caption" color={colors.text.DEFAULT} style={styles.vehicleLabel}>
+            Votre moyen de transport *
+          </AppText>
           <View style={styles.vehicleRow}>
             {VEHICLE_TYPES.map((v) => {
               const isSelected = vehicleType === v.id;
               return (
-                <TouchableOpacity
+                <AppPressable
                   key={v.id}
-                  onPress={() => {
-                    Haptics.selection();
-                    setVehicleType(v.id);
-                  }}
-                  style={[styles.vehicleCard, isSelected && styles.vehicleCardActive]}
+                  haptic="selection"
+                  onPress={() => setVehicleType(v.id)}
+                  style={[
+                    styles.vehiclePill,
+                    isSelected && styles.vehiclePillActive,
+                  ]}
+                  accessibilityLabel={v.label}
                 >
-                  <Text style={[styles.vehicleText, isSelected && styles.vehicleTextActive]}>
+                  {renderVehicleIcon(v.id, isSelected)}
+                  <AppText
+                    variant="caption"
+                    color={isSelected ? colors.text.inverse : colors.text.body}
+                    style={styles.vehiclePillText}
+                  >
                     {v.label}
-                  </Text>
-                </TouchableOpacity>
+                  </AppText>
+                </AppPressable>
               );
             })}
           </View>
@@ -138,14 +184,12 @@ export default function DriverRegisterScreen() {
             value={password}
             onChangeText={setPassword}
             isPassword
-            leftIcon={<Lock size={18} color={colors.grey[400]} />}
+            leftIcon={<Lock size={16} color={colors.text.subtle} />}
           />
 
-          {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
-
-          <View style={{ marginTop: 10 }}>
+          <View style={{ marginTop: spacing[3] }}>
             <Button
-              title="Créer mon compte livreur"
+              title={isLoading ? 'Création du compte...' : 'Créer mon compte livreur'}
               variant="primary"
               size="lg"
               loading={isLoading}
@@ -155,59 +199,95 @@ export default function DriverRegisterScreen() {
           </View>
 
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Déjà inscrit ?</Text>
-            <TouchableOpacity onPress={() => router.replace('/auth/login' as any)}>
-              <Text style={styles.loginLink}>Se connecter</Text>
-            </TouchableOpacity>
+            <AppText variant="body" color={colors.text.muted}>
+              Déjà inscrit ?{' '}
+            </AppText>
+            <AppPressable
+              haptic="light"
+              onPress={() => router.replace('/auth/login' as any)}
+              accessibilityRole="link"
+            >
+              <AppText variant="bodyStrong" color="#E65100">
+                Se connecter
+              </AppText>
+            </AppPressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      </ScrollView>
+    </KeyboardScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   scrollContent: {
-    padding: spacing[4],
-    backgroundColor: '#F8F9FA',
+    flexGrow: 1,
+    backgroundColor: '#F9FAFB',
+    paddingBottom: spacing[8],
   },
-  headerBox: {
+  curvedHeader: {
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[4],
+    paddingBottom: spacing[9],
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
     alignItems: 'center',
-    marginVertical: spacing[3],
+    position: 'relative',
   },
-  logoBox: {
-    width: 60,
-    height: 60,
-    borderRadius: radii['2xl'],
-    backgroundColor: '#FFF4E6',
-    borderWidth: 1,
-    borderColor: '#FFE0B2',
+  backBtn: {
+    position: 'absolute',
+    top: spacing[4],
+    left: spacing[4],
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing[2],
+    zIndex: 10,
   },
-  welcomeTitle: {
-    color: '#111827',
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[3],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  titleText: {
+    marginTop: 2,
     marginBottom: 4,
   },
-  welcomeSub: {
-    color: colors.grey[500],
-    fontSize: typography.sizes.xs,
-    textAlign: 'center',
-    maxWidth: 280,
-    lineHeight: 16,
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: spacing[4],
+    marginTop: -spacing[6],
+    borderRadius: radii['2xl'],
+    padding: spacing[5],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
-  inputLabel: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    borderRadius: radii.lg,
+    padding: spacing[3],
+    marginBottom: spacing[4],
+  },
+  vehicleLabel: {
+    marginBottom: spacing[2],
+    fontWeight: '600',
   },
   vehicleRow: {
     flexDirection: 'row',
@@ -215,47 +295,28 @@ const styles = StyleSheet.create({
     gap: spacing[2],
     marginBottom: spacing[4],
   },
-  vehicleCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    paddingVertical: spacing[2],
+  vehiclePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing[3],
-    borderWidth: 1.5,
+    paddingVertical: spacing[2],
+    borderRadius: radii.full,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  vehicleCardActive: {
-    borderColor: colors.primary.DEFAULT,
-    backgroundColor: '#FFF4E6',
+  vehiclePillActive: {
+    backgroundColor: '#E65100',
+    borderColor: '#E65100',
   },
-  vehicleText: {
-    color: colors.grey[600],
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.medium,
-  },
-  vehicleTextActive: {
-    color: colors.primary[700],
-    fontWeight: typography.weights.bold,
-  },
-  errorText: {
-    color: colors.status.error,
-    fontSize: typography.sizes.xs,
-    textAlign: 'center',
-    marginBottom: spacing[3],
+  vehiclePillText: {
+    fontWeight: '600',
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
     marginTop: spacing[5],
-  },
-  footerText: {
-    color: colors.grey[500],
-    fontSize: typography.sizes.sm,
-  },
-  loginLink: {
-    color: colors.primary.DEFAULT,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
   },
 });

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform, View, StyleSheet } from 'react-native';
-import { LayoutDashboard, Zap, Clock, Wallet, UserCheck } from 'lucide-react-native';
+import { Home, Search, Truck } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -40,7 +40,7 @@ function DeliveryTabIcon({
     <View style={styles.iconWrapper}>
       <Animated.View style={[styles.activePill, { backgroundColor: pillColor }, pillStyle]} />
       <Animated.View style={iconStyle}>
-        <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />
+        <Icon size={21} color={color} strokeWidth={focused ? 2.5 : 1.8} />
       </Animated.View>
     </View>
   );
@@ -54,15 +54,15 @@ export default function DeliveryTabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: accent.DEFAULT,
+        tabBarActiveTintColor: '#FF6B00',
         tabBarInactiveTintColor: colors.grey[400],
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#F3F4F6',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-          paddingTop: 6,
+          height: Platform.OS === 'ios' ? 84 : 58,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 4,
+          paddingTop: 4,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -3 },
           shadowOpacity: 0.05,
@@ -70,55 +70,85 @@ export default function DeliveryTabLayout() {
           elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 10.5,
+          fontSize: 10,
           fontWeight: '700',
-          marginTop: 2,
+          marginTop: 0,
         },
       }}
     >
+      {/* ── 3 ONGLETS PUBLICS & UNIVERSELS (Fidèles au Web DaloaDelivery) ── */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Console',
+          title: 'Accueil',
           tabBarIcon: ({ color, focused }) => (
-            <DeliveryTabIcon icon={LayoutDashboard} color={color} focused={focused} pillColor={accent[50]} />
+            <DeliveryTabIcon
+              icon={Home}
+              color={color}
+              focused={focused}
+              pillColor="#FFF4E6"
+            />
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="annuaire"
+        options={{
+          title: 'Annuaire',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon
+              icon={Search}
+              color={color}
+              focused={focused}
+              pillColor="#FFF4E6"
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="livreur"
+        options={{
+          title: 'Livreur',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon
+              icon={Truck}
+              color={color}
+              focused={focused}
+              pillColor="#FFF4E6"
+            />
+          ),
+        }}
+      />
+
+      {/* ── ROUTES INTERNES LIVREUR (Masquées de la barre mais navigables) ── */}
       <Tabs.Screen
         name="available"
         options={{
+          href: null,
           title: 'Courses',
-          tabBarIcon: ({ color, focused }) => (
-            <DeliveryTabIcon icon={Zap} color={color} focused={focused} pillColor={accent[50]} />
-          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
+          href: null,
           title: 'Historique',
-          tabBarIcon: ({ color, focused }) => (
-            <DeliveryTabIcon icon={Clock} color={color} focused={focused} pillColor={accent[50]} />
-          ),
         }}
       />
       <Tabs.Screen
         name="earnings"
         options={{
-          title: 'Gains & Solde',
-          tabBarIcon: ({ color, focused }) => (
-            <DeliveryTabIcon icon={Wallet} color={color} focused={focused} pillColor={accent[50]} />
-          ),
+          href: null,
+          title: 'Gains',
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Mon Profil',
-          tabBarIcon: ({ color, focused }) => (
-            <DeliveryTabIcon icon={UserCheck} color={color} focused={focused} pillColor={accent[50]} />
-          ),
+          href: null,
+          title: 'Profil',
         }}
       />
     </Tabs>
@@ -127,13 +157,18 @@ export default function DeliveryTabLayout() {
 
 const styles = StyleSheet.create({
   iconWrapper: {
-    width: 44,
-    height: 30,
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    width: 36,
+    height: 24,
   },
   activePill: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 12,
+    position: 'absolute',
+    top: -2,
+    bottom: -2,
+    left: 2,
+    right: 2,
+    borderRadius: 10,
   },
 });
