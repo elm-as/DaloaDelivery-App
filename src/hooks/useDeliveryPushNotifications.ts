@@ -6,7 +6,10 @@ import { useRouter } from 'expo-router';
 import { notificationsService } from '@daloa/api';
 import { useDriverAuth } from '../context/DriverAuthContext';
 
-if (Platform.OS !== 'web') {
+let isHandlerInitialized = false;
+
+function ensureNotificationHandler() {
+  if (Platform.OS === 'web' || isHandlerInitialized) return;
   try {
     Notifications.setNotificationHandler({
       handleNotification: async () =>
@@ -18,6 +21,7 @@ if (Platform.OS !== 'web') {
           shouldShowList: true,
         } as any),
     });
+    isHandlerInitialized = true;
   } catch (err) {
     console.warn('[Push Delivery] Impossible d’initialiser le handler:', err);
   }
@@ -35,6 +39,7 @@ export function useDeliveryPushNotifications() {
   // 1. Enregistrement du token push pour l'app 'delivery'
   useEffect(() => {
     if (Platform.OS === 'web') return;
+    ensureNotificationHandler();
     if (!user?.id) return;
 
     (async () => {

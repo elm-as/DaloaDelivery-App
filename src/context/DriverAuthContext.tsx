@@ -105,7 +105,7 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     fetchSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (session?.user) {
         setUser(session.user);
         const { data: p } = await supabase

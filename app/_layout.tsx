@@ -45,9 +45,14 @@ export default function DeliveryRootLayout() {
   });
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => undefined);
+    }, 3000);
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync().catch(() => undefined);
+      clearTimeout(timer);
     }
+    return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
@@ -81,6 +86,7 @@ export default function DeliveryRootLayout() {
             <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
             <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
             <Stack.Screen name="legal/help" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
           </Stack>
           </DriverAuthProvider>
         </QueryClientProvider>
