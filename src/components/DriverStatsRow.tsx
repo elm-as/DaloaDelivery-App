@@ -31,7 +31,7 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
           Gains du jour
         </AppText>
-        <AppText variant="h3" color="#E65100" style={styles.tabularNumbers}>
+        <AppText variant="title" color="#E65100" style={styles.tabularNumbers}>
           {formatFCFA(earningsToday)}
         </AppText>
       </AppPressable>
@@ -43,7 +43,7 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
           Livrées
         </AppText>
-        <AppText variant="h3" color="#059669" style={styles.tabularNumbers}>
+        <AppText variant="title" color="#059669" style={styles.tabularNumbers}>
           {completedRunsToday}
         </AppText>
       </View>
@@ -55,7 +55,7 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
           Note
         </AppText>
-        <AppText variant="h3" color="#D97706" style={styles.tabularNumbers}>
+        <AppText variant="title" color="#D97706" style={styles.tabularNumbers}>
           {rating.toFixed(1)}
         </AppText>
       </View>

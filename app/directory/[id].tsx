@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   heroGradient: {
     paddingTop: spacing[6],
-    paddingBottom: spacing[9],
+    paddingBottom: 36,
     alignItems: 'center',
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,

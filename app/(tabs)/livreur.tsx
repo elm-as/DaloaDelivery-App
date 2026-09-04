@@ -140,11 +140,12 @@ export default function LivreurTabScreen() {
           isOnline={isOnline}
           onToggleOnline={handleToggleOnline}
           onRefresh={handleRefresh}
+          isRefreshing={isRefetching}
         />
 
         <DriverStatsRow
-          todayEarnings={stats?.today_earnings_cents || 0}
-          deliveredCount={stats?.today_deliveries_count || 0}
+          earningsToday={stats?.earningsToday || 0}
+          completedRunsToday={stats?.completedRunsToday || 0}
           rating={driverProfile?.rating || 5.0}
         />
 
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
   unauthHero: {
     paddingTop: spacing[5],
     paddingHorizontal: spacing[4],
-    paddingBottom: spacing[7],
+    paddingBottom: 28,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     alignItems: 'center',

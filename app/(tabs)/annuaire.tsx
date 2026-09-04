@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing[4],
     paddingTop: spacing[3],
-    paddingBottom: spacing[2.5],
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
     gap: 10,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   counterRow: {
     paddingHorizontal: spacing[4],
     paddingTop: spacing[3],
-    paddingBottom: spacing[1.5],
+    paddingBottom: 6,
   },
   counterText: {
     fontSize: 11,

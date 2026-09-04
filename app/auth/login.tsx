@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   curvedHeader: {
     paddingHorizontal: spacing[5],
     paddingTop: spacing[4],
-    paddingBottom: spacing[9],
+    paddingBottom: 36,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     alignItems: 'center',
