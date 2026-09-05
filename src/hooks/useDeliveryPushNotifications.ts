@@ -64,7 +64,8 @@ export function useDeliveryPushNotifications() {
 
         const projectId =
           (Constants.expoConfig?.extra as any)?.eas?.projectId ||
-          (Constants as any)?.easConfig?.projectId;
+          (Constants as any)?.easConfig?.projectId ||
+          'ad6fcbd5-9cdb-4f8d-a1d2-029fd33a4a99';
 
         const tokenData = await Notifications.getExpoPushTokenAsync(
           projectId ? { projectId } : undefined
@@ -72,6 +73,7 @@ export function useDeliveryPushNotifications() {
 
         if (tokenData?.data) {
           await notificationsService.registerPushToken(user.id, tokenData.data, 'delivery');
+          console.log('[useDeliveryPushNotifications] Token Expo enregistré:', tokenData.data);
         }
       } catch (err) {
         console.warn('[Push Delivery] Enregistrement échoué:', err);
