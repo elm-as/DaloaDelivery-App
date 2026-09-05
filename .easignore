@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.DS_Store
+.metro-cache/
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
