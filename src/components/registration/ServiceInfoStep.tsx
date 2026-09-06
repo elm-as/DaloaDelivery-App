@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Bike, Car, Truck, MapPin, ChevronRight, Check } from 'lucide-react-native';
 import { colors, radii, spacing } from '@daloa/ui';
 
@@ -35,6 +36,8 @@ export const ServiceInfoStep: React.FC<Props> = ({
   termsAccepted,
   setTermsAccepted,
 }) => {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <Text style={styles.stepTitle}>Informations de service</Text>
@@ -139,8 +142,14 @@ export const ServiceInfoStep: React.FC<Props> = ({
           {termsAccepted && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
         </View>
         <Text style={styles.termsText}>
-          J'accepte les <Text style={styles.termsBold}>Conditions Générales d'Utilisation</Text> de
-          DaloaDelivery et m'engage à fournir un service de livraison sérieux et ponctuel.
+          J'accepte les{' '}
+          <Text
+            style={[styles.termsBold, { textDecorationLine: 'underline', color: '#FF6B00' }]}
+            onPress={() => router.push('/legal/terms' as any)}
+          >
+            Conditions Générales d'Utilisation
+          </Text>{' '}
+          de DaloaDelivery et m'engage à fournir un service de livraison sérieux et ponctuel.
         </Text>
       </TouchableOpacity>
     </View>
