@@ -40,11 +40,7 @@ export default function LivreurTabScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <DeliveryTopBar title="Espace Livreur" />
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.unauthContent}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.unauthContent}>
           <LinearGradient
             colors={['#FFA726', '#FF9800', '#E65100']}
             start={{ x: 0, y: 0 }}
@@ -54,14 +50,11 @@ export default function LivreurTabScreen() {
             <View style={styles.unauthIconCircle}>
               <Bike size={32} color="#E65100" />
             </View>
-            <Text style={styles.unauthHeroTitle}>
-              Rejoignez la flotte{'\n'}DaloaDelivery
-            </Text>
+            <Text style={styles.unauthHeroTitle}>Rejoignez la flotte{'\n'}DaloaDelivery</Text>
             <Text style={styles.unauthHeroSub}>
               Devenez coursier partenaire à Daloa et générez des revenus réguliers avec des paiements directs.
             </Text>
           </LinearGradient>
-
           <View style={styles.perksCard}>
             <Text style={styles.perksHeader}>Pourquoi livrer avec nous ?</Text>
 

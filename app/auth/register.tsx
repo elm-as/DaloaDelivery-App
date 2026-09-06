@@ -1,322 +1,347 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
-  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useDriverAuth } from '../../src/context/DriverAuthContext';
-import { VEHICLE_TYPES } from '@daloa/config';
-import {
-  colors,
-  radii,
-  spacing,
-  AppText,
-  AppPressable,
-  Button,
-  Input,
-  KeyboardScreen,
-} from '@daloa/ui';
-import { Bike, User, Phone, Lock, ArrowLeft, Car, Truck } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { colors } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { supabase, deliveryPersonService } from '@daloa/api';
+import { useDriverAuth } from '../../src/context/DriverAuthContext';
+import { signInWithGoogle } from '../../src/lib/googleAuth';
+import { RegistrationStepHeader } from '../../src/components/registration/RegistrationStepHeader';
+import { AuthStep } from '../../src/components/registration/AuthStep';
+import { PersonalInfoStep } from '../../src/components/registration/PersonalInfoStep';
+import { ServiceInfoStep } from '../../src/components/registration/ServiceInfoStep';
+import { ZonesSelectionModal } from '../../src/components/registration/ZonesSelectionModal';
+import { AlreadyDriverView } from '../../src/components/registration/AlreadyDriverView';
+import { RegistrationNavButtons } from '../../src/components/registration/RegistrationNavButtons';
+import { registrationStyles as styles } from '../../src/components/registration/registrationStyles';
 
 export default function DriverRegisterScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { register } = useDriverAuth();
+  const { user, refreshDriverProfile } = useDriverAuth();
+
+  const [step, setStep] = useState(1);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
+
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [vehicleType, setVehicleType] = useState<string>('moto');
-  const [district] = useState('Lobia');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [payoutNetwork, setPayoutNetwork] = useState('wave');
+  const [payoutNumber, setPayoutNumber] = useState('');
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [vehicleType, setVehicleType] = useState('Moto');
+  const [vehicleDetails, setVehicleDetails] = useState('');
+  const [coverageZones, setCoverageZones] = useState<string[]>([]);
+  const [pricingDescription, setPricingDescription] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const [showZonesModal, setShowZonesModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleRegister = async () => {
-    if (!fullName.trim()) {
-      setErrorMsg('Veuillez renseigner votre nom complet');
+  useEffect(() => {
+    async function checkAuthAndProfile() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
+          if (profile) {
+            setHasExistingProfile(true);
+            return;
+          }
+          if (session.user.user_metadata?.full_name) {
+            setFullName(session.user.user_metadata.full_name);
+          }
+          if (session.user.email) {
+            setEmail(session.user.email);
+          }
+          setStep(2);
+        }
+      } catch (err) {
+        console.warn('Erreur vérification profil livreur:', err);
+      } finally {
+        setIsCheckingProfile(false);
+      }
+    }
+    checkAuthAndProfile();
+  }, [user]);
+
+  const handlePickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setErrorMsg("Autorisation d'accès aux photos refusée.");
       return;
     }
-    if (!phone.trim() || phone.length < 8) {
-      setErrorMsg('Veuillez renseigner un numéro de téléphone valide');
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setIsGoogleLoading(true);
+    setErrorMsg(null);
+    try {
+      await signInWithGoogle();
+      Haptics.success();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const existing = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
+        if (existing) {
+          router.replace('/(tabs)');
+          return;
+        }
+        if (session.user.user_metadata?.full_name) setFullName(session.user.user_metadata.full_name);
+        if (session.user.email) setEmail(session.user.email);
+        setStep(2);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Échec de la connexion Google');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const canGoNext = (): boolean => {
+    if (step === 1) return email.trim().length > 0 && password.length >= 6 && password === confirmPassword;
+    if (step === 2) return fullName.trim().length >= 2 && phone.trim().length >= 8;
+    if (step === 3) return vehicleType.length > 0 && coverageZones.length > 0 && termsAccepted;
+    return false;
+  };
+
+  const handleNext = () => {
+    setErrorMsg(null);
+    if (step === 1) {
+      if (!email.includes('@')) {
+        setErrorMsg('Veuillez renseigner un email valide.');
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMsg('Le mot de passe doit comporter au moins 6 caractères.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg('Les mots de passe ne correspondent pas.');
+        return;
+      }
+      Haptics.lightImpact();
+      setStep(2);
+    } else if (step === 2) {
+      if (!phone.trim()) {
+        setErrorMsg('Veuillez renseigner un numéro de téléphone joignable.');
+        return;
+      }
+      Haptics.lightImpact();
+      setStep(3);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!termsAccepted) {
+      setErrorMsg('Veuillez accepter les CGU pour finaliser votre inscription.');
       return;
     }
-    if (!password || password.length < 6) {
-      setErrorMsg('Le mot de passe doit comporter au moins 6 caractères');
-      return;
-    }
+    setSubmitting(true);
+    setErrorMsg(null);
 
     try {
-      setIsLoading(true);
-      setErrorMsg(null);
-      await register({
-        fullName: fullName.trim(),
+      let authUserId = user?.id;
+
+      if (!authUserId) {
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+              role: 'livreur',
+            },
+          },
+        });
+        if (signUpErr) throw signUpErr;
+        authUserId = signUpData.user?.id;
+      }
+
+      if (!authUserId) {
+        throw new Error('Impossible de valider votre compte utilisateur.');
+      }
+
+      let uploadedPhotoUrl: string | null = null;
+      if (photoUri) {
+        try {
+          uploadedPhotoUrl = await deliveryPersonService.uploadProfilePhoto(photoUri, authUserId);
+        } catch (photoErr) {
+          console.warn('Upload photo échoué (non bloquant):', photoErr);
+        }
+      }
+
+      await supabase
+        .from('users')
+        .update({
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          avatar_url: uploadedPhotoUrl || null,
+          role: 'livreur',
+          payout_network: payoutNetwork,
+          payout_number: payoutNumber || phone.trim(),
+        } as any)
+        .eq('id', authUserId);
+
+      await deliveryPersonService.createDeliveryPerson({
+        user_id: authUserId,
+        name: fullName.trim(),
         phone: phone.trim(),
-        email: email.trim() || `${phone.replace(/\D/g, '')}@delivery.daloamarket.ci`,
-        password,
-        role: 'delivery',
-        district,
-        vehicleType: vehicleType as any,
+        photo_url: uploadedPhotoUrl || null,
+        is_available: true,
+        vehicle_type: vehicleType,
+        vehicle_details: vehicleDetails.trim(),
+        coverage_zones: coverageZones,
+        pricing_description: pricingDescription.trim(),
+        payout_network: payoutNetwork,
+        payout_number: payoutNumber || phone.trim(),
       });
 
       Haptics.success();
-      if (router.canGoBack()) router.back();
-      else router.replace('/(tabs)' as any);
+      await refreshDriverProfile();
+      router.replace('/(tabs)');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Échec de l’inscription');
+      console.error('Erreur inscription:', err);
+      setErrorMsg(err.message || "Une erreur est survenue lors de l'inscription.");
     } finally {
-      setIsLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleBack = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/auth/login' as any);
-  };
+  if (isCheckingProfile) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+      </View>
+    );
+  }
 
-  const renderVehicleIcon = (id: string, isSelected: boolean) => {
-    const iconColor = isSelected ? '#FFFFFF' : '#6B7280';
-    if (id === 'voiture') return <Car size={16} color={iconColor} />;
-    if (id === 'triporteur') return <Truck size={16} color={iconColor} />;
-    return <Bike size={16} color={iconColor} />;
-  };
+  if (hasExistingProfile) {
+    return <AlreadyDriverView onGoToDashboard={() => router.replace('/(tabs)')} />;
+  }
 
   return (
-    <KeyboardScreen>
+    <SafeAreaView style={styles.safeArea}>
+      <RegistrationStepHeader
+        step={step}
+        totalSteps={3}
+        onBack={() => (step > 1 ? setStep(step - 1) : router.back())}
+      />
+
       <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
       >
-        {/* 1. En-tête courbé dégradé */}
-        <LinearGradient
-          colors={['#FFA726', '#FF9800', '#E65100']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.curvedHeader}
-        >
-          <AppPressable
-            onPress={handleBack}
-            rippleBorderless
-            style={styles.backBtn}
-            accessibilityLabel="Retour"
-          >
-            <ArrowLeft size={18} color={colors.text.inverse} />
-          </AppPressable>
-
-          <View style={styles.logoBadge}>
-            <Bike size={32} color="#E65100" />
+        {errorMsg && (
+          <View style={styles.errorBanner}>
+            <AlertCircle size={18} color="#DC2626" />
+            <Text style={styles.errorText}>{errorMsg}</Text>
           </View>
+        )}
 
-          <AppText variant="h1" color={colors.text.inverse} style={styles.titleText}>
-            Rejoindre la Flotte
-          </AppText>
-          <AppText variant="body" color="#FFE0B2">
-            Devenez coursier partenaire DaloaDelivery
-          </AppText>
-        </LinearGradient>
-
-        {/* 2. Formulaire dans la carte flottante */}
-        <View style={styles.formCard}>
-          {errorMsg && (
-            <View style={styles.errorBox}>
-              <AppText variant="caption" color={colors.status.errorDark}>
-                {errorMsg}
-              </AppText>
-            </View>
+        <View style={styles.card}>
+          {step === 1 && (
+            <AuthStep
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              confirmPassword={confirmPassword}
+              setConfirmPassword={setConfirmPassword}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              onGoogleAuth={handleGoogleAuth}
+              isGoogleLoading={isGoogleLoading}
+            />
           )}
 
-          <Input
-            label="Nom & Prénoms *"
-            placeholder="Ex: Kouamé Konan"
-            value={fullName}
-            onChangeText={setFullName}
-            leftIcon={<User size={16} color={colors.text.subtle} />}
-          />
-
-          <Input
-            label="Numéro de téléphone (+225) *"
-            placeholder="Ex: 07 01 02 03 04"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            leftIcon={<Phone size={16} color={colors.text.subtle} />}
-          />
-
-          {/* Type de véhicule */}
-          <AppText variant="caption" color={colors.text.DEFAULT} style={styles.vehicleLabel}>
-            Votre moyen de transport *
-          </AppText>
-          <View style={styles.vehicleRow}>
-            {VEHICLE_TYPES.map((v) => {
-              const isSelected = vehicleType === v.id;
-              return (
-                <AppPressable
-                  key={v.id}
-                  haptic="selection"
-                  onPress={() => setVehicleType(v.id)}
-                  style={[
-                    styles.vehiclePill,
-                    isSelected && styles.vehiclePillActive,
-                  ]}
-                  accessibilityLabel={v.label}
-                >
-                  {renderVehicleIcon(v.id, isSelected)}
-                  <AppText
-                    variant="caption"
-                    color={isSelected ? colors.text.inverse : colors.text.body}
-                    style={styles.vehiclePillText}
-                  >
-                    {v.label}
-                  </AppText>
-                </AppPressable>
-              );
-            })}
-          </View>
-
-          <Input
-            label="Mot de passe *"
-            placeholder="Au moins 6 caractères"
-            value={password}
-            onChangeText={setPassword}
-            isPassword
-            leftIcon={<Lock size={16} color={colors.text.subtle} />}
-          />
-
-          <View style={{ marginTop: spacing[3] }}>
-            <Button
-              title={isLoading ? 'Création du compte...' : 'Créer mon compte livreur'}
-              variant="primary"
-              size="lg"
-              loading={isLoading}
-              onPress={handleRegister}
-              fullWidth
+          {step === 2 && (
+            <PersonalInfoStep
+              fullName={fullName}
+              setFullName={setFullName}
+              phone={phone}
+              setPhone={setPhone}
+              photoUri={photoUri}
+              onPickPhoto={handlePickPhoto}
+              payoutNetwork={payoutNetwork}
+              setPayoutNetwork={setPayoutNetwork}
+              payoutNumber={payoutNumber}
+              setPayoutNumber={setPayoutNumber}
             />
-          </View>
+          )}
 
-          <View style={styles.footerRow}>
-            <AppText variant="body" color={colors.text.muted}>
-              Déjà inscrit ?{' '}
-            </AppText>
-            <AppPressable
-              haptic="light"
-              onPress={() => router.replace('/auth/login' as any)}
-              accessibilityRole="link"
-            >
-              <AppText variant="bodyStrong" color="#E65100">
-                Se connecter
-              </AppText>
-            </AppPressable>
-          </View>
+          {step === 3 && (
+            <ServiceInfoStep
+              vehicleType={vehicleType}
+              setVehicleType={setVehicleType}
+              vehicleDetails={vehicleDetails}
+              setVehicleDetails={setVehicleDetails}
+              coverageZones={coverageZones}
+              onOpenZonesModal={() => setShowZonesModal(true)}
+              pricingDescription={pricingDescription}
+              setPricingDescription={setPricingDescription}
+              termsAccepted={termsAccepted}
+              setTermsAccepted={setTermsAccepted}
+            />
+          )}
         </View>
+
+        <RegistrationNavButtons
+          step={step}
+          submitting={submitting}
+          canGoNext={canGoNext()}
+          onPrev={() => setStep(step - 1)}
+          onNext={handleNext}
+          onSubmit={handleSubmit}
+        />
+
+        {step === 1 && (
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Déjà coursier partenaire ? </Text>
+            <TouchableOpacity onPress={() => router.replace('/auth/login')}>
+              <Text style={styles.loginLink}>Se connecter</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
-    </KeyboardScreen>
+
+      <ZonesSelectionModal
+        visible={showZonesModal}
+        onClose={() => setShowZonesModal(false)}
+        selectedZones={coverageZones}
+        onToggleZone={(zone) => {
+          setCoverageZones((prev) =>
+            prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
+          );
+        }}
+      />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: '#F9FAFB',
-    paddingBottom: spacing[8],
-  },
-  curvedHeader: {
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[4],
-    paddingBottom: 36,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  backBtn: {
-    position: 'absolute',
-    top: spacing[4],
-    left: spacing[4],
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  logoBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[3],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  titleText: {
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  formCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: spacing[4],
-    marginTop: -spacing[6],
-    borderRadius: radii['2xl'],
-    padding: spacing[5],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  errorBox: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    borderRadius: radii.lg,
-    padding: spacing[3],
-    marginBottom: spacing[4],
-  },
-  vehicleLabel: {
-    marginBottom: spacing[2],
-    fontWeight: '600',
-  },
-  vehicleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-    marginBottom: spacing[4],
-  },
-  vehiclePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: radii.full,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  vehiclePillActive: {
-    backgroundColor: '#E65100',
-    borderColor: '#E65100',
-  },
-  vehiclePillText: {
-    fontWeight: '600',
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing[5],
-  },
-});

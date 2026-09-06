@@ -1,0 +1,91 @@
+import { StyleSheet } from 'react-native';
+import { colors, radii, spacing } from '@daloa/ui';
+
+export const profileStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  flex1: {
+    flex: 1,
+  },
+  kycCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF4E6',
+    marginHorizontal: spacing[4],
+    marginTop: spacing[4],
+    padding: spacing[4],
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+    gap: spacing[3],
+  },
+  kycIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionHeader: {
+    marginHorizontal: spacing[4],
+    marginTop: spacing[6],
+    marginBottom: spacing[2],
+    letterSpacing: 0.8,
+  },
+  cardGroup: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: spacing[4],
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    overflow: 'hidden',
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing[4],
+    gap: spacing[3],
+  },
+  borderBottom: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF5FF',
+    marginHorizontal: spacing[4],
+    padding: spacing[3],
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#F3E8FF',
+    gap: spacing[3],
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: spacing[4],
+    marginTop: spacing[6],
+    marginBottom: spacing[4],
+    paddingVertical: spacing[3],
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    gap: spacing[2],
+  },
+});

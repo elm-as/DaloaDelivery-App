@@ -4,44 +4,28 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   Linking,
   Alert,
   Platform,
-  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
+import { formatFCFA, Haptics } from '@daloa/utils';
+import { deliveryService, supabase } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
-import { deliveryService, ordersService, supabase } from '@daloa/api';
-import {
-  colors,
-  radii,
-  spacing,
-  typography,
-  Button,
-  BottomSheet,
-} from '@daloa/ui';
-import {
-  MapPin,
-  Navigation,
-  PhoneCall,
-  ShieldCheck,
-  KeyRound,
-  ScanLine,
-  Camera,
-  AlertTriangle,
-  CheckCircle2,
-  ChevronLeft,
-} from 'lucide-react-native';
 import { OtpVerificationModal } from '../../src/components/OtpVerificationModal';
 import { QrScannerModal } from '../../src/components/QrScannerModal';
-import { formatFCFA, Haptics } from '@daloa/utils';
+import { RunStageCard } from '../../src/components/run/RunStageCard';
+import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
+import { isCurfewActive } from '../../src/utils/security';
+import { runStyles as styles } from '../../src/components/run/runStyles';
 
 export default function DeliveryRunExecutionScreen() {
   const { id: assignmentId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { driverProfile, driverLocation } = useDriverAuth();
+  const { driverLocation } = useDriverAuth();
 
   const [assignment, setAssignment] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
@@ -54,33 +38,31 @@ export default function DeliveryRunExecutionScreen() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
-  const [incidentReason, setIncidentReason] = useState('');
   const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
 
   const fetchRunData = async () => {
     if (!assignmentId) return;
     try {
-      const { data: assign, error: aErr } = await supabase
+      setLoading(true);
+      const { data: assignData, error: assignErr } = await supabase
         .from('delivery_assignments')
         .select('*')
         .eq('id', assignmentId)
         .single();
+      if (assignErr) throw assignErr;
 
-      if (aErr) throw aErr;
-      setAssignment(assign);
+      const { data: orderData, error: orderErr } = await supabase
+        .from('orders')
+        .select('*, seller:seller_id(*), buyer:buyer_id(*), listings:listing_id(*)')
+        .eq('id', assignData.order_id)
+        .single();
+      if (orderErr) throw orderErr;
 
-      if (assign?.order_id) {
-        const { data: ord, error: oErr } = await supabase
-          .from('orders')
-          .select('*, seller:seller_id(*), buyer:buyer_id(*), listing:listing_id(*)')
-          .eq('id', assign.order_id)
-          .single();
-
-        if (oErr) throw oErr;
-        setOrder(ord);
-      }
-    } catch (err) {
-      console.warn('Erreur chargement course:', err);
+      setAssignment(assignData);
+      setOrder(orderData);
+    } catch (err: any) {
+      console.error('Erreur chargement course:', err);
+      Alert.alert('Erreur', err.message || 'Impossible de charger les détails de la course.');
     } finally {
       setLoading(false);
     }
@@ -88,101 +70,50 @@ export default function DeliveryRunExecutionScreen() {
 
   useEffect(() => {
     fetchRunData();
-
-    if (assignmentId) {
-      const channel = ordersService.subscribeToOrderUpdates(assignmentId, () => {
-        fetchRunData();
-      });
-      return () => {
-        channel.unsubscribe();
-      };
-    }
   }, [assignmentId]);
 
-  if (loading || !assignment || !order) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ChevronLeft size={22} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Course en direct</Text>
-          <View style={{ width: 36 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Chargement des détails de la course...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const isPickupStage = assignment.status === 'accepted';
-  const isDeliveryStage = assignment.status === 'picked_up' || assignment.status === 'in_transit';
-  const isCompleted = assignment.status === 'delivered';
-  const netGain = Math.round((assignment.delivery_price || 500) * 0.9);
-
-  const handleOpenGpsNavigation = (locationStr: string, lat?: number | null, lng?: number | null) => {
-    Haptics.lightImpact();
-    let destParam = '';
-    if (lat && lng) {
-      destParam = `${lat},${lng}`;
-    } else {
-      destParam = encodeURIComponent(`${locationStr}, Daloa, Côte d'Ivoire`);
+  const handleCall = (phone?: string) => {
+    if (!phone) {
+      Alert.alert('Numéro indisponible', 'Aucun contact téléphonique renseigné.');
+      return;
     }
-
-    const url = Platform.select({
-      ios: lat && lng ? `maps:0,0?q=${lat},${lng}` : `maps:0,0?q=${destParam}`,
-      android: lat && lng ? `google.navigation:q=${lat},${lng}&mode=l` : `geo:0,0?q=${destParam}`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${destParam}&travelmode=two_wheeler`,
-    });
-    Linking.openURL(url as string).catch(() => {
-      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destParam}`);
-    });
+    Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`);
   };
 
-  const handleCallSeller = () => {
-    if (!order.seller?.phone) return;
-    Haptics.lightImpact();
-    Linking.openURL(`tel:${order.seller.phone}`);
+  const handleOpenGps = (address: string, lat?: number | null, lng?: number | null) => {
+    if (lat && lng) {
+      const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+      const latLng = `${lat},${lng}`;
+      const label = encodeURIComponent(address);
+      const url = Platform.select({
+        ios: `${scheme}${label}@${latLng}`,
+        android: `${scheme}${latLng}(${label})`,
+      });
+      if (url) Linking.openURL(url);
+    } else {
+      const encoded = encodeURIComponent(`${address}, Daloa, Côte d'Ivoire`);
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encoded}`);
+    }
   };
 
-  const handleCallBuyer = () => {
-    if (!order.buyer_phone && !order.buyer?.phone) return;
-    Haptics.lightImpact();
-    Linking.openURL(`tel:${order.buyer_phone || order.buyer?.phone}`);
-  };
-
-  // Ouvre le scanner QR en priorité (moderne, rapide)
-  const handleStartPickup = () => {
-    setOtpType('pickup');
-    setIsScannerOpen(true);
-  };
-
-  const handleStartDelivery = () => {
-    setOtpType('delivery');
-    setIsScannerOpen(true);
-  };
-
-  // Fallback : saisie manuelle du code OTP
-  const handleManualEntry = () => {
+  const handleCodeScanned = (code: string) => {
+    Haptics.success();
+    setIsScannerOpen(false);
+    setScannedOtp(code);
     setIsOtpModalOpen(true);
   };
 
-  // Code scanné via QR -> on enchaîne sur la photo de preuve via la modale OTP
-  const handleCodeScanned = (code: string) => {
-    setScannedOtp(code);
-    setIsScannerOpen(false);
-    setIsOtpModalOpen(true); // on réutilise la modale (photo de preuve + confirmation)
-  };
-
-  const handleConfirmOtp = async (otp: string, photoUri: string) => {
+  const handleConfirmOtp = async (otp: string, photoUri?: string) => {
     try {
       setIsVerifyingOtp(true);
+      let uploadedPhotoUrl: string | undefined = undefined;
 
-      const uploadedPhotoUrl = await deliveryService.uploadDeliveryProof(photoUri);
+      if (photoUri) {
+        uploadedPhotoUrl = await deliveryService.uploadDeliveryProof(photoUri, assignment.id);
+      }
 
       if (otpType === 'pickup') {
-        const sellerCoords =
+        const pickupCoords =
           order?.seller?.shop_latitude != null && order?.seller?.shop_longitude != null
             ? { lat: Number(order.seller.shop_latitude), lng: Number(order.seller.shop_longitude) }
             : null;
@@ -190,9 +121,9 @@ export default function DeliveryRunExecutionScreen() {
         await deliveryService.verifyPickupOtp(
           assignment.id,
           otp,
-          uploadedPhotoUrl,
+          uploadedPhotoUrl || '',
           driverLocation || undefined,
-          sellerCoords
+          pickupCoords
         );
         Haptics.success();
         setIsOtpModalOpen(false);
@@ -207,14 +138,14 @@ export default function DeliveryRunExecutionScreen() {
         await deliveryService.verifyDeliveryOtp(
           assignment.id,
           otp,
-          uploadedPhotoUrl,
+          uploadedPhotoUrl || '',
           driverLocation || undefined,
           dropoffCoords
         );
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        Alert.alert('Livraison réussie ! 🚀', `Félicitations ! Vos gains de ${formatFCFA(netGain)} ont été crédités.`);
+        Alert.alert('Livraison réussie ! 🚀', `Félicitations ! Vos gains ont été crédités.`);
       }
     } catch (err: any) {
       throw err;
@@ -223,11 +154,10 @@ export default function DeliveryRunExecutionScreen() {
     }
   };
 
-  const handleReportIncident = async () => {
-    if (!incidentReason.trim()) return;
+  const handleReportIncident = async (reason: string) => {
     try {
       setIsSubmittingIncident(true);
-      await deliveryService.reportIncident(assignment.id, incidentReason.trim());
+      await deliveryService.reportIncident(assignment.id, reason);
       Haptics.warning();
       setIsIncidentModalOpen(false);
       await fetchRunData();
@@ -239,19 +169,42 @@ export default function DeliveryRunExecutionScreen() {
     }
   };
 
+  if (loading || !assignment || !order) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF9800" />
+        <Text style={styles.loadingText}>Chargement des données de course…</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const isPickupStage = assignment.status === 'assigned' || assignment.status === 'accepted';
+  const isDeliveryStage = assignment.status === 'picked_up';
+  const isCompleted = assignment.status === 'delivered';
+  const netGain = Number(assignment.delivery_fee || 1000) * 0.9;
+  const curfew = isCurfewActive();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.8}>
           <ChevronLeft size={22} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          Course #{assignment.id.slice(0, 8).toUpperCase()}
-        </Text>
+        <Text style={styles.headerTitle}>Course #{assignment.id.slice(0, 8).toUpperCase()}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Alerte couvre-feu */}
+        {curfew && (
+          <View style={styles.curfewBanner}>
+            <AlertTriangle size={18} color="#D97706" />
+            <Text style={styles.curfewText}>
+              Couvre-feu logistique en vigueur (22h30 - 05h30). Soyez vigilant lors de vos déplacements.
+            </Text>
+          </View>
+        )}
+
         {/* Statut & Gain Net */}
         <View style={styles.gainCard}>
           <View>
@@ -266,169 +219,85 @@ export default function DeliveryRunExecutionScreen() {
         </View>
 
         {/* Étape 1 : Ramassage Vendeur */}
-        <View
-          style={[
-            styles.stageCard,
-            isPickupStage && styles.stageCardActive,
-            isDeliveryStage && styles.stageCardDone,
-          ]}
-        >
-          <View style={styles.stageHeader}>
-            <View style={[styles.stageBadge, isPickupStage && styles.stageBadgeActive]}>
-              <Text style={styles.stageBadgeText}>1</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stageTitle}>Ramassage chez le Vendeur</Text>
-              <Text style={styles.stageDistrict}>📍 {assignment.pickup_location}</Text>
-            </View>
-            {isDeliveryStage && <CheckCircle2 size={20} color="#059669" />}
-          </View>
-
-          <View style={styles.partnerInfo}>
-            <Text style={styles.partnerName}>
-              {order.seller?.shop_name || order.seller?.full_name || 'Boutique Vendeur'}
-            </Text>
-            <Text style={styles.partnerPhone}>📞 {order.seller?.phone || 'Numéro indisponible'}</Text>
-          </View>
-
-          {isPickupStage && (
-            <View style={styles.actionRow}>
-              <TouchableOpacity onPress={handleCallSeller} style={styles.actionBtnOutline}>
-                <PhoneCall size={15} color="#059669" />
-                <Text style={[styles.actionBtnOutlineText, { color: '#059669' }]}>Appeler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  handleOpenGpsNavigation(
-                    assignment.pickup_location,
-                    order.seller?.shop_latitude,
-                    order.seller?.shop_longitude
-                  )
-                }
-                style={styles.actionBtnOutline}
-              >
-                <Navigation size={15} color={colors.primary[600]} />
-                <Text style={[styles.actionBtnOutlineText, { color: colors.primary[600] }]}>GPS</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {isPickupStage && (
-            <View style={{ marginTop: 12 }}>
-              <Button
-                title="Scanner le QR code du vendeur"
-                variant="primary"
-                size="lg"
-                onPress={handleStartPickup}
-                leftIcon={<ScanLine size={18} color="#FFFFFF" />}
-                fullWidth
-              />
-            </View>
-          )}
-        </View>
+        <RunStageCard
+          stepNumber={1}
+          title="Ramassage chez le Vendeur"
+          location={assignment.pickup_location || 'Quartier Vendeur'}
+          partnerName={order.seller?.shop_name || order.seller?.full_name || 'Boutique Vendeur'}
+          partnerPhone={order.seller?.phone || 'Non renseigné'}
+          isActive={isPickupStage}
+          isDone={isDeliveryStage || isCompleted}
+          onCall={() => handleCall(order.seller?.phone)}
+          onGps={() =>
+            handleOpenGps(
+              assignment.pickup_location,
+              order.seller?.shop_latitude,
+              order.seller?.shop_longitude
+            )
+          }
+          onScan={() => {
+            setOtpType('pickup');
+            setIsScannerOpen(true);
+          }}
+          scanButtonText="Scanner le QR code du vendeur"
+        />
 
         {/* Étape 2 : Livraison Acheteur */}
-        <View
-          style={[
-            styles.stageCard,
-            isDeliveryStage && styles.stageCardActive,
-            isCompleted && styles.stageCardDone,
-          ]}
-        >
-          <View style={styles.stageHeader}>
-            <View style={[styles.stageBadge, isDeliveryStage && styles.stageBadgeActive]}>
-              <Text style={styles.stageBadgeText}>2</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stageTitle}>Livraison chez l'Acheteur</Text>
-              <Text style={styles.stageDistrict}>📍 {assignment.dropoff_location}</Text>
-            </View>
-            {isCompleted && <CheckCircle2 size={20} color="#059669" />}
-          </View>
+        <RunStageCard
+          stepNumber={2}
+          title="Livraison chez l'Acheteur"
+          location={assignment.dropoff_location || 'Quartier Destinataire'}
+          partnerName={order.buyer?.full_name || 'Client Destinataire'}
+          partnerPhone={order.buyer?.phone || 'Non renseigné'}
+          isActive={isDeliveryStage}
+          isDone={isCompleted}
+          onCall={() => handleCall(order.buyer?.phone)}
+          onGps={() =>
+            handleOpenGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)
+          }
+          onScan={() => {
+            setOtpType('delivery');
+            setIsScannerOpen(true);
+          }}
+          scanButtonText="Scanner le QR code du client"
+        />
 
-          <View style={styles.partnerInfo}>
-            <Text style={styles.partnerName}>
-              {order.buyer?.full_name || 'Client DaloaMarket'}
-            </Text>
-            <Text style={styles.partnerPhone}>
-              📞 {order.buyer_phone || order.buyer?.phone || 'Numéro indisponible'}
-            </Text>
-            {order.delivery_address && (
-              <Text style={styles.partnerAddress}>
-                Repère : {order.delivery_address}
-              </Text>
-            )}
-          </View>
-
-          {isDeliveryStage && (
-            <View style={styles.actionRow}>
-              <TouchableOpacity onPress={handleCallBuyer} style={styles.actionBtnOutline}>
-                <PhoneCall size={15} color="#0066CC" />
-                <Text style={[styles.actionBtnOutlineText, { color: '#0066CC' }]}>Appeler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  handleOpenGpsNavigation(
-                    assignment.dropoff_location,
-                    order.delivery_lat,
-                    order.delivery_lng
-                  )
-                }
-                style={styles.actionBtnOutline}
-              >
-                <Navigation size={15} color={colors.primary[600]} />
-                <Text style={[styles.actionBtnOutlineText, { color: colors.primary[600] }]}>GPS</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {isDeliveryStage && (
-            <View style={{ marginTop: 12 }}>
-              <Button
-                title="Scanner le QR code de l'acheteur"
-                variant="secondary"
-                size="lg"
-                onPress={handleStartDelivery}
-                leftIcon={<ScanLine size={18} color="#FFFFFF" />}
-                fullWidth
-              />
-            </View>
-          )}
-        </View>
-
-        {/* Détails du Colis */}
+        {/* Détails du colis */}
         <View style={styles.itemCard}>
-          <Text style={styles.itemCardTitle}>Contenu du Colis</Text>
-          <Text style={styles.itemTitle}>
-            📦 {order.listing?.title || 'Marchandise DaloaMarket'}
+          <Text style={styles.itemCardTitle}>Contenu de la commande</Text>
+          <Text style={styles.itemTitle}>{order.listings?.title || 'Article commande'}</Text>
+          <Text style={styles.itemSub}>
+            Quantité : {order.quantity || 1} • Prix article : {formatFCFA(order.total_amount || 0)}
           </Text>
-          <Text style={styles.itemSub}>Quantité : x{order.quantity || 1}</Text>
         </View>
 
-        {/* Signalement Problème / Incident */}
+        {/* Bouton Signaler Incident */}
         {!isCompleted && (
           <TouchableOpacity
             onPress={() => setIsIncidentModalOpen(true)}
             style={styles.incidentBtn}
+            activeOpacity={0.8}
           >
-            <AlertTriangle size={15} color={colors.status.error} />
-            <Text style={styles.incidentBtnText}>Signaler un incident (Client absent, refus...)</Text>
+            <AlertTriangle size={16} color="#DC2626" />
+            <Text style={styles.incidentBtnText}>Signaler un incident ou litige</Text>
           </TouchableOpacity>
         )}
-
-        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Scanner QR — validation instantanée */}
+      {/* Scanner QR natif DaloaDelivery */}
       <QrScannerModal
         visible={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         type={otpType}
         onCodeScanned={handleCodeScanned}
-        onManualEntry={handleManualEntry}
+        onManualEntry={() => {
+          setIsScannerOpen(false);
+          setScannedOtp('');
+          setIsOtpModalOpen(true);
+        }}
       />
 
-      {/* Modale OTP + Photo (fallback saisie / confirmation après scan) */}
+      {/* Modale OTP + Photo de preuve */}
       <OtpVerificationModal
         visible={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
@@ -438,252 +307,13 @@ export default function DeliveryRunExecutionScreen() {
         loading={isVerifyingOtp}
       />
 
-      {/* Modale Incident */}
-      <BottomSheet
+      {/* Modale Incident avec tags rapides */}
+      <RunIncidentModal
         visible={isIncidentModalOpen}
         onClose={() => setIsIncidentModalOpen(false)}
-        title="Signaler un incident de livraison"
-      >
-        <View style={{ padding: 16 }}>
-          <Text style={{ fontSize: 13, color: colors.grey[600], marginBottom: 12 }}>
-            Indiquez la raison du blocage (Destinataire injoignable, adresse introuvable, incident sur la route).
-          </Text>
-          <TextInput
-            style={styles.incidentInput}
-            multiline
-            numberOfLines={4}
-            placeholder="Détails de l’incident..."
-            value={incidentReason}
-            onChangeText={setIncidentReason}
-          />
-          <View style={{ marginTop: 16 }}>
-            <Button
-              title="Transmettre l'incident"
-              variant="danger"
-              onPress={handleReportIncident}
-              loading={isSubmittingIncident}
-              fullWidth
-            />
-          </View>
-        </View>
-      </BottomSheet>
+        onSubmit={handleReportIncident}
+        loading={isSubmittingIncident}
+      />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  headerTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: colors.grey[500],
-    fontWeight: '600',
-  },
-  scrollContent: {
-    padding: 14,
-    backgroundColor: '#F8F9FA',
-  },
-  gainCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
-    marginBottom: 12,
-  },
-  gainLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.grey[500],
-    textTransform: 'uppercase',
-  },
-  gainAmount: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: colors.primary[600],
-    marginTop: 2,
-  },
-  stageStatusBadge: {
-    backgroundColor: '#FFF4E6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-  },
-  stageStatusText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.primary[700],
-  },
-  stageCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
-    marginBottom: 12,
-  },
-  stageCardActive: {
-    borderColor: colors.primary.DEFAULT,
-    borderWidth: 1.5,
-  },
-  stageCardDone: {
-    backgroundColor: '#F9FAFB',
-  },
-  stageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
-  },
-  stageBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stageBadgeActive: {
-    backgroundColor: colors.primary.DEFAULT,
-  },
-  stageBadgeText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  stageTitle: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  stageDistrict: {
-    fontSize: 11.5,
-    color: colors.grey[600],
-    marginTop: 1,
-  },
-  partnerInfo: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: radii.lg,
-    padding: 10,
-    marginVertical: 6,
-    gap: 2,
-  },
-  partnerName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  partnerPhone: {
-    fontSize: 12,
-    color: colors.grey[600],
-  },
-  partnerAddress: {
-    fontSize: 11.5,
-    color: colors.primary[700],
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  actionBtnOutline: {
-    flex: 1,
-    height: 36,
-    borderRadius: radii.md,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  actionBtnOutlineText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  itemCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
-    marginBottom: 12,
-  },
-  itemCardTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 6,
-  },
-  itemTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: colors.grey[800],
-  },
-  itemSub: {
-    fontSize: 11.5,
-    color: colors.grey[500],
-    marginTop: 2,
-  },
-  incidentBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    padding: 12,
-    borderRadius: radii.lg,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  incidentBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.status.error,
-  },
-  incidentInput: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: radii.lg,
-    padding: 10,
-    fontSize: 13,
-    textAlignVertical: 'top',
-  },
-});

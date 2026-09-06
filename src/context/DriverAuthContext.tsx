@@ -164,7 +164,7 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const register = async (input: RegisterInput) => {
-    const result = await authService.register({ ...input, role: 'delivery' });
+    const result = await authService.register({ ...input, role: (input.role as any) || 'livreur' });
     setUser(result.user);
     setProfile(result.profile);
     await fetchSession();

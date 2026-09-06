@@ -30,16 +30,20 @@ export default function HomeScreen() {
   const fetchOnlineLivreurs = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('delivery_persons')
+        .from('delivery_persons_directory')
         .select('*')
+        .eq('is_available', true)
         .order('rating', { ascending: false })
         .limit(6);
 
       if (!error && data) {
-        setOnlineLivreurs(data);
+        const validDrivers = data.filter(
+          (d: any) => Boolean(d.name?.trim() && d.phone?.trim())
+        );
+        setOnlineLivreurs(validDrivers);
       }
     } catch (err) {
-      console.error('Erreur chargement livreurs en ligne:', err);
+      console.warn('Erreur chargement livreurs en ligne:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -129,21 +133,14 @@ export default function HomeScreen() {
 
         {/* Barre de recherche flottante */}
         <View style={styles.searchWrapper}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleSearchPress}
-            style={styles.floatingSearch}
-          >
+          <TouchableOpacity activeOpacity={0.9} onPress={handleSearchPress} style={styles.floatingSearch}>
             <View style={styles.searchIconWrap}>
               <Search size={18} color="#FF6B00" strokeWidth={2.4} />
             </View>
-            <Text style={styles.searchPlaceholder}>
-              Rechercher un livreur, un quartier à Daloa...
-            </Text>
+            <Text style={styles.searchPlaceholder}>Rechercher un livreur, un quartier à Daloa...</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 4 Moyens de transport */}
         <HomeTransportCategories onSelectCategory={handleCategorySelect} />
 
         {/* Section Livreurs en ligne */}
@@ -152,14 +149,8 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>LIVREURS EN LIGNE</Text>
             <View style={styles.onlinePulseDot} />
           </View>
-
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/annuaire')}
-            style={styles.seeAllBtn}
-          >
-            <Text style={styles.seeAllText}>
-              Voir tout ({onlineLivreurs.length}+)
-            </Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/annuaire')} style={styles.seeAllBtn}>
+            <Text style={styles.seeAllText}>Voir tout ({onlineLivreurs.length}+)</Text>
             <ChevronRight size={14} color="#FF6B00" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>

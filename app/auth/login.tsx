@@ -2,24 +2,21 @@ import React, { useState } from 'react';
 import {
   View,
   ScrollView,
-  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useDriverAuth } from '../../src/context/DriverAuthContext';
-import {
-  colors,
-  radii,
-  spacing,
-  AppText,
-  AppPressable,
-  Button,
-  Input,
-  KeyboardScreen,
-} from '@daloa/ui';
-import { Bike, Lock, Mail, ArrowLeft, Shield, Wallet, Zap } from 'lucide-react-native';
+import { Bike, Lock, Mail, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
+import { colors, spacing, Input, Button, KeyboardScreen } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { useDriverAuth } from '../../src/context/DriverAuthContext';
+import { signInWithGoogle } from '../../src/lib/googleAuth';
+import { GoogleIcon } from '../../src/components/GoogleIcon';
+import { LoginValueProps } from '../../src/components/auth/LoginValueProps';
+import { loginStyles as styles } from '../../src/components/auth/loginStyles';
 
 export default function DriverLoginScreen() {
   const insets = useSafeAreaInsets();
@@ -28,16 +25,18 @@ export default function DriverLoginScreen() {
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
     if (!emailOrPhone.trim()) {
-      setErrorMsg('Veuillez renseigner votre email ou numéro');
+      setErrorMsg('Veuillez renseigner votre adresse e-mail ou numéro.');
       return;
     }
     if (!password) {
-      setErrorMsg('Veuillez renseigner votre mot de passe');
+      setErrorMsg('Veuillez saisir votre mot de passe.');
       return;
     }
 
@@ -55,6 +54,20 @@ export default function DriverLoginScreen() {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    setIsGoogleLoading(true);
+    setErrorMsg(null);
+    try {
+      await signInWithGoogle();
+      Haptics.success();
+      router.replace('/(tabs)' as any);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Échec de la connexion avec Google');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)' as any);
@@ -65,47 +78,66 @@ export default function DriverLoginScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* 1. En-tête courbé en dégradé chaud DaloaDelivery */}
+        {/* En-tête avec dégradé DaloaDelivery */}
         <LinearGradient
           colors={['#FFA726', '#FF9800', '#E65100']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.curvedHeader}
         >
-          <AppPressable
+          <TouchableOpacity
             onPress={handleBack}
-            rippleBorderless
             style={styles.backBtn}
             accessibilityLabel="Retour"
+            activeOpacity={0.8}
           >
-            <ArrowLeft size={18} color={colors.text.inverse} />
-          </AppPressable>
+            <ArrowLeft size={18} color="#FFFFFF" />
+          </TouchableOpacity>
 
           <View style={styles.logoBadge}>
             <Bike size={32} color="#E65100" />
           </View>
 
-          <AppText variant="h1" color={colors.text.inverse} style={styles.titleText}>
-            Bon retour !
-          </AppText>
-          <AppText variant="body" color="#FFE0B2">
-            Espace Livreur DaloaDelivery
-          </AppText>
+          <Text style={styles.headerTitle}>Bon retour !</Text>
+          <Text style={styles.headerSubtitle}>Espace Coursier & Livreur DaloaDelivery</Text>
         </LinearGradient>
 
-        {/* 2. Carte formulaire flottante */}
+        {/* Carte de connexion */}
         <View style={styles.formCard}>
           {errorMsg && (
             <View style={styles.errorBox}>
-              <AppText variant="caption" color={colors.status.errorDark}>
-                {errorMsg}
-              </AppText>
+              <AlertCircle size={18} color="#DC2626" />
+              <Text style={styles.errorText}>{errorMsg}</Text>
             </View>
           )}
 
+          {/* Bouton Google OAuth */}
+          <TouchableOpacity
+            onPress={handleGoogleAuth}
+            disabled={isGoogleLoading || isLoading}
+            style={styles.googleBtn}
+            activeOpacity={0.85}
+          >
+            {isGoogleLoading ? (
+              <ActivityIndicator size="small" color="#4B5563" />
+            ) : (
+              <GoogleIcon size={20} />
+            )}
+            <Text style={styles.googleBtnText}>
+              {isGoogleLoading ? 'Connexion Google…' : 'Continuer avec Google'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou avec identifiants</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <Input
-            label="Email ou Téléphone *"
+            label="Email ou Numéro de téléphone *"
             placeholder="Ex: 07 01 02 03 04 ou coursier@daloa.ci"
             value={emailOrPhone}
             onChangeText={setEmailOrPhone}
@@ -113,25 +145,36 @@ export default function DriverLoginScreen() {
             autoCapitalize="none"
           />
 
-          <Input
-            label="Mot de passe *"
-            placeholder="Votre mot de passe"
-            value={password}
-            onChangeText={setPassword}
-            isPassword
-            leftIcon={<Lock size={16} color={colors.text.subtle} />}
-          />
+          <View style={{ marginTop: spacing[2] }}>
+            <Input
+              label="Mot de passe *"
+              placeholder="Votre mot de passe"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              leftIcon={<Lock size={16} color={colors.text.subtle} />}
+              rightIcon={
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} color={colors.text.subtle} />
+                  ) : (
+                    <Eye size={18} color={colors.text.subtle} />
+                  )}
+                </TouchableOpacity>
+              }
+            />
+          </View>
 
-          <AppPressable
-            haptic="none"
+          <TouchableOpacity
             onPress={() => router.push('/auth/reset-password' as any)}
             style={styles.forgotBtn}
-            accessibilityRole="button"
+            activeOpacity={0.7}
           >
-            <AppText variant="caption" color="#E65100">
-              Mot de passe oublié ?
-            </AppText>
-          </AppPressable>
+            <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+          </TouchableOpacity>
 
           <Button
             title={isLoading ? 'Connexion en cours...' : 'Se connecter'}
@@ -143,173 +186,16 @@ export default function DriverLoginScreen() {
           />
 
           <View style={styles.registerRow}>
-            <AppText variant="body" color={colors.text.muted}>
-              Pas encore de compte livreur ?{' '}
-            </AppText>
-            <AppPressable
-              haptic="light"
-              onPress={() => router.push('/auth/register' as any)}
-              accessibilityRole="link"
-            >
-              <AppText variant="bodyStrong" color="#E65100">
-                Devenir coursier partenaire
-              </AppText>
-            </AppPressable>
+            <Text style={styles.registerText}>Pas encore de compte livreur ? </Text>
+            <TouchableOpacity onPress={() => router.push('/auth/register' as any)}>
+              <Text style={styles.registerLink}>Devenir coursier partenaire</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* 3. Propositions de valeur livreur (fidèles au Web) */}
-        <View style={styles.valueSection}>
-          <View style={styles.valueCard}>
-            <View style={[styles.valueIconWrap, { backgroundColor: '#FFF4E6' }]}>
-              <Wallet size={18} color="#E65100" />
-            </View>
-            <View style={styles.valueContent}>
-              <AppText variant="label" color={colors.text.DEFAULT}>
-                Rémunération Transparente
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Reversement direct de vos gains de livraison sur Wave ou MTN.
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.valueCard}>
-            <View style={[styles.valueIconWrap, { backgroundColor: '#FEF3C7' }]}>
-              <Shield size={18} color="#D97706" />
-            </View>
-            <View style={styles.valueContent}>
-              <AppText variant="label" color={colors.text.DEFAULT}>
-                Sécurité Couvre-Feu (22h30)
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Courses suspendues la nuit pour protéger les coursiers et les colis.
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.valueCard}>
-            <View style={[styles.valueIconWrap, { backgroundColor: '#ECFDF5' }]}>
-              <Zap size={18} color="#059669" />
-            </View>
-            <View style={styles.valueContent}>
-              <AppText variant="label" color={colors.text.DEFAULT}>
-                Alertes Courses en Temps Réel
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Attribution directe dès qu'un acheteur passe commande à Daloa.
-              </AppText>
-            </View>
-          </View>
-        </View>
+        {/* Propositions de valeur (identiques au Web) */}
+        <LoginValueProps />
       </ScrollView>
     </KeyboardScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: '#F9FAFB',
-    paddingBottom: spacing[8],
-  },
-  curvedHeader: {
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[4],
-    paddingBottom: 36,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  backBtn: {
-    position: 'absolute',
-    top: spacing[4],
-    left: spacing[4],
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  logoBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[3],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  titleText: {
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  formCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: spacing[4],
-    marginTop: -spacing[6],
-    borderRadius: radii['2xl'],
-    padding: spacing[5],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  errorBox: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    borderRadius: radii.lg,
-    padding: spacing[3],
-    marginBottom: spacing[4],
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginTop: spacing[1],
-    marginBottom: spacing[4],
-    paddingVertical: spacing[1],
-  },
-  registerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing[5],
-    flexWrap: 'wrap',
-  },
-  valueSection: {
-    marginHorizontal: spacing[4],
-    marginTop: spacing[6],
-    gap: spacing[3],
-  },
-  valueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    padding: spacing[3],
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    gap: spacing[3],
-  },
-  valueIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  valueContent: {
-    flex: 1,
-  },
-});

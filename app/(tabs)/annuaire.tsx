@@ -17,6 +17,7 @@ import { Haptics } from '@daloa/utils';
 import { supabase } from '@daloa/api';
 import { DeliveryTopBar } from '../../src/components/DeliveryTopBar';
 import { DeliveryPersonCard, DeliveryPersonData } from '../../src/components/DeliveryPersonCard';
+import { annuaireStyles as styles } from '../../src/components/annuaire/annuaireStyles';
 
 const VEHICLE_FILTERS = ['Tous', 'Moto', 'Vélo', 'Voiture', 'Triporteur'];
 
@@ -40,14 +41,17 @@ export default function AnnuaireScreen() {
 
   const fetchLivreurs = useCallback(async () => {
     try {
-      let query = supabase.from('delivery_persons').select('*').order('rating', { ascending: false });
+      let query = supabase.from('delivery_persons_directory').select('*').order('rating', { ascending: false });
 
       const { data, error } = await query;
       if (!error && data) {
-        setLivreurs(data);
+        const validDrivers = data.filter(
+          (d: any) => Boolean(d.name?.trim() && d.phone?.trim())
+        );
+        setLivreurs(validDrivers);
       }
     } catch (err) {
-      console.error('Erreur chargement annuaire:', err);
+      console.warn('Erreur chargement annuaire:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -237,141 +241,3 @@ export default function AnnuaireScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  headerControls: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    gap: 10,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchInputWrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: radii.xl,
-    paddingHorizontal: 12,
-    height: 40,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: '#111827',
-    paddingVertical: 0,
-  },
-  filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.xl,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewToggleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: radii.xl,
-    padding: 3,
-  },
-  toggleBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  chipsScroll: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 2,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-    backgroundColor: '#F3F4F6',
-  },
-  filterChipActive: {
-    backgroundColor: '#FF6B00',
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-  },
-  counterRow: {
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[3],
-    paddingBottom: 6,
-  },
-  counterText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#6B7280',
-    letterSpacing: 0.5,
-    fontVariant: ['tabular-nums'],
-  },
-  listContent: {
-    paddingTop: spacing[1],
-    paddingBottom: 24,
-  },
-  loadingBox: {
-    padding: spacing[8],
-    alignItems: 'center',
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  emptyBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii['2xl'],
-    padding: spacing[8],
-    marginHorizontal: spacing[4],
-    marginTop: spacing[4],
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-  },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
-    marginTop: 4,
-  },
-  emptyDesc: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-});
