@@ -84,15 +84,31 @@ export function useDeliveryPushNotifications() {
   // 2. Gestion du tap sur une notification
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    responseSub.current = Notifications.addNotificationResponseReceivedListener((response) => {
+
+    const handleResponse = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data as any;
-      const assignmentId = data?.assignmentId || data?.assignment_id || data?.runId;
+      let assignmentId = data?.assignmentId || data?.assignment_id || data?.runId;
+      if (!assignmentId && typeof data?.tag === 'string') {
+        if (data.tag.startsWith('delivery-assign-')) {
+          assignmentId = data.tag.replace('delivery-assign-', '');
+        } else if (data.tag.startsWith('delivery-open-')) {
+          assignmentId = data.tag.replace('delivery-open-', '');
+        }
+      }
+
       if (assignmentId) {
         router.push(`/run/${assignmentId}` as any);
       } else {
         router.push('/(tabs)/available' as any);
       }
+    };
+
+    // Notification ayant ouvert l'application à froid (cold start)
+    Notifications.getLastNotificationResponseAsync().then((initial) => {
+      if (initial) handleResponse(initial);
     });
+
+    responseSub.current = Notifications.addNotificationResponseReceivedListener(handleResponse);
 
     return () => {
       responseSub.current?.remove();

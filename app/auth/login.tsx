@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Bike, Lock, Mail, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing, Input, Button, KeyboardScreen } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { supabase, deliveryPersonService } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
 import { GoogleIcon } from '../../src/components/GoogleIcon';
@@ -59,8 +60,16 @@ export default function DriverLoginScreen() {
     setErrorMsg(null);
     try {
       await signInWithGoogle();
-      Haptics.success();
-      router.replace('/(tabs)' as any);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        Haptics.success();
+        const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
+        if (driverProfile) {
+          router.replace('/(tabs)' as any);
+        } else {
+          router.replace('/auth/register' as any);
+        }
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Échec de la connexion avec Google');
     } finally {

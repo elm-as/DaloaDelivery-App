@@ -3,21 +3,21 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bike, Zap, Clock, Wallet, UserCheck, Shield, ChevronRight, CheckCircle2 } from 'lucide-react-native';
-import { colors, radii, spacing, Button, AppText } from '@daloa/ui';
+import { Bike, Zap, Clock, Wallet, UserCheck, Shield, ChevronRight } from 'lucide-react-native';
+import { Button } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 import { useActiveDriverRun, useDriverDailyStats } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { DeliveryTopBar } from '../../src/components/DeliveryTopBar';
 import { DriverHeroHeader } from '../../src/components/DriverHeroHeader';
 import { DriverStatsRow } from '../../src/components/DriverStatsRow';
+import { styles } from '../../src/components/livreur/livreurStyles';
 
 export default function LivreurTabScreen() {
   const router = useRouter();
@@ -136,6 +136,23 @@ export default function LivreurTabScreen() {
           isRefreshing={isRefetching}
         />
 
+        {/* Alerte si le compte utilisateur est connecté mais sans profil livreur */}
+        {!driverProfile && (
+          <View style={styles.missingProfileCard}>
+            <Text style={styles.missingProfileTitle}>Finalisez votre inscription livreur</Text>
+            <Text style={styles.missingProfileSub}>
+              Vous êtes connecté à DaloaDelivery. Complétez vos informations de véhicule et Mobile Money pour commencer à livrer.
+            </Text>
+            <Button
+              title="Compléter ma fiche livreur"
+              variant="primary"
+              size="sm"
+              onPress={() => router.push('/auth/register' as any)}
+              style={styles.missingProfileBtn}
+            />
+          </View>
+        )}
+
         <DriverStatsRow
           earningsToday={stats?.earningsToday || 0}
           completedRunsToday={stats?.completedRunsToday || 0}
@@ -208,139 +225,3 @@ export default function LivreurTabScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  unauthContent: {
-    paddingBottom: 32,
-  },
-  unauthHero: {
-    paddingTop: spacing[5],
-    paddingHorizontal: spacing[4],
-    paddingBottom: 28,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    alignItems: 'center',
-    textAlign: 'center',
-  },
-  unauthIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[3],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  unauthHeroTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  unauthHeroSub: {
-    fontSize: 12.5,
-    color: '#FFE0B2',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    paddingHorizontal: spacing[2],
-  },
-  perksCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii['2xl'],
-    marginHorizontal: spacing[4],
-    marginTop: -20,
-    padding: spacing[4],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    gap: 16,
-  },
-  perksHeader: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  perkRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  perkIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  perkTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  perkDesc: {
-    fontSize: 11.5,
-    color: '#6B7280',
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  actionButtonsWrap: {
-    marginTop: spacing[2],
-  },
-  quickNavSection: {
-    marginTop: spacing[4],
-    paddingHorizontal: spacing[4],
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#6B7280',
-    letterSpacing: 0.6,
-    marginBottom: 4,
-  },
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    padding: spacing[3],
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    gap: 12,
-  },
-  navIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  navSub: {
-    fontSize: 11.5,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-});
