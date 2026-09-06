@@ -44,12 +44,25 @@ export default function DeliveryRunExecutionScreen() {
     if (!assignmentId) return;
     try {
       setLoading(true);
-      const { data: assignData, error: assignErr } = await supabase
+      let assignData: any = null;
+      const { data: byId } = await supabase
         .from('delivery_assignments')
         .select('*')
         .eq('id', assignmentId)
-        .single();
-      if (assignErr) throw assignErr;
+        .maybeSingle();
+
+      if (byId) {
+        assignData = byId;
+      } else {
+        const { data: byOrder } = await supabase
+          .from('delivery_assignments')
+          .select('*')
+          .eq('order_id', assignmentId)
+          .maybeSingle();
+        assignData = byOrder;
+      }
+
+      if (!assignData) throw new Error('Course introuvable');
 
       const { data: orderData, error: orderErr } = await supabase
         .from('orders')
