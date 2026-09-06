@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { AlertCircle } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { normalizePayoutNetwork } from '@daloa/config';
 import { supabase, deliveryPersonService } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
@@ -197,6 +192,8 @@ export default function DriverRegisterScreen() {
         }
       }
 
+      const cleanPayoutNetwork = normalizePayoutNetwork(payoutNetwork);
+
       await supabase
         .from('users')
         .update({
@@ -204,7 +201,7 @@ export default function DriverRegisterScreen() {
           phone: phone.trim(),
           avatar_url: uploadedPhotoUrl || null,
           role: 'livreur',
-          payout_network: payoutNetwork,
+          payout_network: cleanPayoutNetwork,
           payout_number: payoutNumber || phone.trim(),
         } as any)
         .eq('id', authUserId);
@@ -219,7 +216,7 @@ export default function DriverRegisterScreen() {
         vehicle_details: vehicleDetails.trim(),
         coverage_zones: coverageZones,
         pricing_description: pricingDescription.trim(),
-        payout_network: payoutNetwork,
+        payout_network: cleanPayoutNetwork,
         payout_number: payoutNumber || phone.trim(),
       });
 

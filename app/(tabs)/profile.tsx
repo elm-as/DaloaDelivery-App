@@ -16,6 +16,7 @@ import {
 } from 'lucide-react-native';
 import { colors, spacing, AppText, AppPressable, ConfirmDialog } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { getSupportWhatsAppUrl } from '@daloa/config';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { UnauthenticatedProfileView } from '../../src/components/profile/UnauthenticatedProfileView';
 import { ProfileHeroHeader } from '../../src/components/profile/ProfileHeroHeader';
@@ -163,7 +164,7 @@ export default function DriverProfileScreen() {
           <AppPressable
             haptic="light"
             onPress={() => {
-              Linking.openURL('https://wa.me/2250700000000?text=Bonjour%2C%20je%20suis%20livreur%20DaloaDelivery').catch(() => {});
+              Linking.openURL(getSupportWhatsAppUrl('Bonjour Support DaloaDelivery, je suis livreur et j\'ai besoin d\'assistance')).catch(() => {});
             }}
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Assistance livreurs WhatsApp"
@@ -185,7 +186,7 @@ export default function DriverProfileScreen() {
           <AppPressable
             haptic="light"
             onPress={() => router.push('/legal/terms' as any)}
-            style={styles.menuRow}
+            style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Conditions générales"
           >
             <View style={[styles.menuIconWrap, { backgroundColor: '#F3F4F6' }]}>
@@ -193,10 +194,50 @@ export default function DriverProfileScreen() {
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Conditions Générales Livreurs
+                Conditions Générales d'Utilisation
               </AppText>
               <AppText variant="caption" color={colors.text.muted}>
-                Règles de sécurité, pourcentages et charte
+                Charte officielle, sécurité et reversement des gains
+              </AppText>
+            </View>
+            <ChevronRight size={18} color="#9CA3AF" />
+          </AppPressable>
+
+          <AppPressable
+            haptic="light"
+            onPress={() => router.push('/legal/privacy' as any)}
+            style={[styles.menuRow, styles.borderBottom]}
+            accessibilityLabel="Politique de confidentialité"
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: '#EFF6FF' }]}>
+              <Shield size={18} color="#3B82F6" />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+                Protection & Confidentialité
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                Données GPS, pièces d'identité et sécurité
+              </AppText>
+            </View>
+            <ChevronRight size={18} color="#9CA3AF" />
+          </AppPressable>
+
+          <AppPressable
+            haptic="light"
+            onPress={() => router.push('/legal/legal-notice' as any)}
+            style={styles.menuRow}
+            accessibilityLabel="Mentions légales"
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: '#F8FAFC' }]}>
+              <FileText size={18} color="#64748B" />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+                Mentions Légales & Éditeur
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                Identité juridique, hébergeur et infrastructure
               </AppText>
             </View>
             <ChevronRight size={18} color="#9CA3AF" />

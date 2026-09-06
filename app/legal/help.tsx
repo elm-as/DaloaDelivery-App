@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, radii, spacing, typography, Header, Card, Button } from '@daloa/ui';
 import { MessageCircle, Phone } from 'lucide-react-native';
-import { ENV_CONFIG } from '@daloa/config';
+import { ENV_CONFIG, getSupportWhatsAppUrl, getSupportCallUrl } from '@daloa/config';
 import { Haptics } from '@daloa/utils';
 
 export default function DriverHelpScreen() {
@@ -18,12 +18,12 @@ export default function DriverHelpScreen() {
 
   const handleWhatsApp = () => {
     Haptics.success();
-    Linking.openURL(`https://wa.me/${ENV_CONFIG.SUPPORT_WHATSAPP}?text=Bonjour%20Support%20Livreur%20DaloaDelivery`);
+    Linking.openURL(getSupportWhatsAppUrl('Bonjour Support Livreur DaloaDelivery'));
   };
 
   const handleCall = () => {
     Haptics.lightImpact();
-    Linking.openURL(`tel:${ENV_CONFIG.SUPPORT_PHONE}`);
+    Linking.openURL(getSupportCallUrl());
   };
 
   const faqs = [
