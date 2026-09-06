@@ -37,7 +37,7 @@ export default function DriverProfileScreen() {
       Haptics.warning();
       await logout();
       setShowLogoutDialog(false);
-      router.replace('/(tabs)' as any);
+      router.replace('/(tabs)/livreur' as any);
     } catch (err) {
       console.warn('Erreur déconnexion livreur:', err);
     } finally {

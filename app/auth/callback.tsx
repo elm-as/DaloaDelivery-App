@@ -28,12 +28,12 @@ export default function AuthCallbackScreen() {
         const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(userId);
         if (cancelled) return;
         if (driverProfile) {
-          router.replace('/(tabs)' as any);
+          router.replace('/(tabs)/livreur' as any);
         } else {
           router.replace('/auth/register' as any);
         }
       } catch {
-        if (!cancelled) router.replace('/(tabs)' as any);
+        if (!cancelled) router.replace('/(tabs)/livreur' as any);
       }
     };
 

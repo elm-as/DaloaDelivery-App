@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile, DeliveryPersonRow, LoginInput, RegisterInput, Coordinates } from '@daloa/types';
-import { authService, deliveryService, supabase } from '@daloa/api';
+import { authService, deliveryService, supabase, notificationsService } from '@daloa/api';
 import * as Location from 'expo-location';
 
 interface DriverAuthContextType {
@@ -171,11 +171,21 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    setProfile(null);
-    setDriverProfile(null);
-    setIsOnline(false);
+    try {
+      if (driverProfile?.id) {
+        await deliveryService.setDriverAvailability(driverProfile.id, false).catch(() => {});
+      }
+      if (user?.id) {
+        await notificationsService.deactivatePushToken(user.id).catch(() => {});
+      }
+      await authService.logout();
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setDriverProfile(null);
+      setIsOnline(false);
+      setDriverLocation(null);
+    }
   };
 
   const refreshDriverProfile = async () => {

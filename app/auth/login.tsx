@@ -22,7 +22,7 @@ import { loginStyles as styles } from '../../src/components/auth/loginStyles';
 export default function DriverLoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { login } = useDriverAuth();
+  const { login, isAuthenticated, driverProfile } = useDriverAuth();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +30,16 @@ export default function DriverLoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      if (driverProfile) {
+        router.replace('/(tabs)/livreur' as any);
+      } else {
+        router.replace('/auth/register' as any);
+      }
+    }
+  }, [isAuthenticated, driverProfile, router]);
 
   const handleLogin = async () => {
     if (!emailOrPhone.trim()) {
