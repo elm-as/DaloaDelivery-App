@@ -88,7 +88,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "elmas.rt",
+    "owner": "elmas.rt-2",
     "extra": {
       "router": {},
       "eas": {
