@@ -51,6 +51,7 @@ export default function DeliveryTabLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,

@@ -8,7 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { supabase } from '@daloa/api';
 import {
@@ -17,15 +17,25 @@ import {
   spacing,
   typography,
 } from '@daloa/ui';
-import { Clock, CheckCircle2, Navigation, ChevronRight } from 'lucide-react-native';
+import { Clock, CheckCircle2, Navigation, ChevronRight, ArrowLeft } from 'lucide-react-native';
 import { formatDate, formatFCFA, Haptics } from '@daloa/utils';
+import { ActivityIndicator } from 'react-native';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { driverProfile } = useDriverAuth();
+  const { driverProfile, isAuthenticated, isLoading: authLoading } = useDriverAuth();
   const [historyRuns, setHistoryRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleBack = () => {
+    Haptics.lightImpact();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/livreur');
+    }
+  };
 
   const fetchHistory = async () => {
     if (!driverProfile?.id) return;
@@ -54,9 +64,26 @@ export default function HistoryScreen() {
     fetchHistory();
   };
 
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingCenter}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+          <ArrowLeft size={22} color="#111827" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Historique des Livraisons</Text>
       </View>
 
@@ -134,15 +161,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    gap: 10,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '900',
     color: '#111827',
+    flex: 1,
+  },
+  loadingCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     padding: 14,

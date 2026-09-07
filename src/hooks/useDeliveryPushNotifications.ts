@@ -86,7 +86,9 @@ export function useDeliveryPushNotifications() {
     if (Platform.OS === 'web') return;
 
     const handleResponse = (response: Notifications.NotificationResponse) => {
-      const data = response.notification.request.content.data as any;
+      const data = response?.notification?.request?.content?.data as any;
+      if (!data) return;
+
       let assignmentId = data?.assignmentId || data?.assignment_id || data?.runId;
       if (!assignmentId && typeof data?.tag === 'string') {
         if (data.tag.startsWith('delivery-assign-')) {
@@ -98,8 +100,21 @@ export function useDeliveryPushNotifications() {
 
       if (assignmentId) {
         router.push(`/run/${assignmentId}` as any);
-      } else {
+        return;
+      }
+
+      // Course disponible reçue par push (uniquement si utilisateur authentifié)
+      if (
+        (data?.type === 'DRIVER_RUN_AVAILABLE' || data?.tag === 'run-available') &&
+        user?.id
+      ) {
         router.push('/(tabs)/available' as any);
+        return;
+      }
+
+      // URL de redirection spécifique
+      if (typeof data?.url === 'string' && data.url.startsWith('/')) {
+        router.push(data.url as any);
       }
     };
 
@@ -113,5 +128,5 @@ export function useDeliveryPushNotifications() {
     return () => {
       responseSub.current?.remove();
     };
-  }, [router]);
+  }, [router, user?.id]);
 }

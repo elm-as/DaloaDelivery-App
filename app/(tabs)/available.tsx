@@ -6,9 +6,11 @@ import {
   StyleSheet,
   RefreshControl,
   Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
@@ -21,12 +23,12 @@ import {
   Skeleton,
   Button,
 } from '@daloa/ui';
-import { Zap, AlertCircle } from 'lucide-react-native';
+import { Zap, AlertCircle, ArrowLeft } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
 export default function AvailableRunsScreen() {
   const router = useRouter();
-  const { driverProfile, isOnline, driverLocation, toggleOnlineStatus } = useDriverAuth();
+  const { driverProfile, isOnline, driverLocation, toggleOnlineStatus, isAuthenticated, isLoading: authLoading } = useDriverAuth();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const { data: runs, isLoading, refetch, isRefetching } = useAvailableRuns(
@@ -35,6 +37,15 @@ export default function AvailableRunsScreen() {
   );
 
   const runList = runs || [];
+
+  const handleBack = () => {
+    Haptics.lightImpact();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/livreur');
+    }
+  };
 
   const handleAcceptRun = async (assignmentId: string) => {
     if (!driverProfile?.id) {
@@ -55,9 +66,64 @@ export default function AvailableRunsScreen() {
     }
   };
 
+  // 1. Chargement de la session auth
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingCenter}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 2. Visiteur non connecté -> Redirection immédiate vers l'Accueil public
+  if (!isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  // 3. Utilisateur connecté mais sans fiche livreur
+  if (!driverProfile) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+            <ArrowLeft size={22} color="#111827" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Courses Disponibles</Text>
+        </View>
+        <View style={styles.missingProfileBox}>
+          <AlertCircle size={44} color="#FF6B00" />
+          <Text style={styles.missingTitle}>Espace Livreur Partenaire</Text>
+          <Text style={styles.missingSub}>
+            Vous êtes connecté, mais vous devez enregistrer votre fiche coursier pour voir et accepter des livraisons.
+          </Text>
+          <View style={styles.missingActions}>
+            <Button
+              title="Devenir Livreur Partenaire"
+              variant="primary"
+              size="md"
+              onPress={() => router.push('/auth/register' as any)}
+            />
+            <View style={{ height: 10 }} />
+            <Button
+              title="Retour à l'accueil"
+              variant="outline"
+              size="md"
+              onPress={() => router.replace('/(tabs)')}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+          <ArrowLeft size={22} color="#111827" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Courses Disponibles</Text>
         <View style={styles.badgeCount}>
           <Text style={styles.badgeText}>{runList.length} active(s)</Text>
@@ -143,16 +209,58 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
+    gap: 10,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '900',
     color: '#111827',
+    flex: 1,
+  },
+  loadingCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  missingProfileBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing[6],
+    backgroundColor: '#F9FAFB',
+  },
+  missingTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  missingSub: {
+    fontSize: 13,
+    color: colors.grey[600],
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 19,
+    maxWidth: 290,
+  },
+  missingActions: {
+    width: '100%',
+    maxWidth: 280,
+    marginTop: 20,
   },
   badgeCount: {
     backgroundColor: '#FFF4E6',

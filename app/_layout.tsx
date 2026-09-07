@@ -65,6 +65,7 @@ export default function DeliveryRootLayout() {
             <DeliveryPushRegistrar />
             <StatusBar style="dark" backgroundColor={colors.neutrals.surface} />
           <Stack
+            initialRouteName="(tabs)"
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: colors.neutrals.background },
