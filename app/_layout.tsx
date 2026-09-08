@@ -3,7 +3,9 @@ import React, { useEffect } from 'react';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
+import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { supabase } from '@daloa/api';
 import { DriverAuthProvider } from '../src/context/DriverAuthContext';
 import { colors, ThemeProvider } from '@daloa/ui';
 import {
@@ -17,6 +19,22 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useDeliveryPushNotifications } from '../src/hooks/useDeliveryPushNotifications';
+
+function onAppStateChange(status: any) {
+  if (Platform.OS !== 'web') {
+    focusManager.setFocused(status === 'active');
+  }
+  if (status === 'active') {
+    supabase.auth.startAutoRefresh();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.expires_at && session.expires_at * 1000 < Date.now() + 60000) {
+        supabase.auth.refreshSession().catch(() => undefined);
+      }
+    }).catch(() => undefined);
+  } else {
+    supabase.auth.stopAutoRefresh();
+  }
+}
 
 function DeliveryPushRegistrar() {
   useDeliveryPushNotifications();
@@ -43,6 +61,11 @@ export default function DeliveryRootLayout() {
     Inter_800ExtraBold,
     Inter_900Black,
   });
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', onAppStateChange);
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {

@@ -105,24 +105,12 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     fetchSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+    // Écouter les changements d'état d'authentification Supabase de façon synchrone
+    // IMPORTANT : Ne jamais exécuter de requêtes Supabase asynchrones dans ce callback
+    // sous peine de deadlocker la machine d'état Supabase au réveil de l'app.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       if (session?.user) {
         setUser(session.user);
-        const { data: p } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        setProfile(p as any);
-
-        const { data: dp } = await supabase
-          .from('delivery_persons')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        const driverRow = dp as DeliveryPersonRow | null;
-        setDriverProfile(driverRow);
-        setIsOnline(Boolean(driverRow?.is_available));
       } else {
         setUser(null);
         setProfile(null);
@@ -136,6 +124,36 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       subscription.unsubscribe();
     };
   }, []);
+
+  // Synchronisation du profil coursier en arrière-plan dès que l'utilisateur change
+  useEffect(() => {
+    if (!user?.id) return;
+    let isMounted = true;
+
+    async function syncDriverData() {
+      try {
+        const [{ data: p }, { data: dp }] = await Promise.all([
+          supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
+          supabase.from('delivery_persons').select('*').eq('user_id', user.id).maybeSingle(),
+        ]);
+
+        if (isMounted) {
+          if (p) setProfile(p as any);
+          const driverRow = dp as DeliveryPersonRow | null;
+          setDriverProfile(driverRow);
+          setIsOnline(Boolean(driverRow?.is_available));
+        }
+      } catch (err) {
+        console.warn('Erreur synchronisation données livreur:', err);
+      }
+    }
+
+    syncDriverData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const toggleOnlineStatus = async (forcedStatus?: boolean) => {
     const nextStatus = forcedStatus !== undefined ? forcedStatus : !isOnline;
