@@ -22,7 +22,7 @@ import { loginStyles as styles } from '../../src/components/auth/loginStyles';
 export default function DriverLoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { login, isAuthenticated, driverProfile } = useDriverAuth();
+  const { login, isAuthenticated, driverProfile, isAdmin } = useDriverAuth();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -33,13 +33,15 @@ export default function DriverLoginScreen() {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (driverProfile) {
+      if (isAdmin) {
+        router.replace('/admin' as any);
+      } else if (driverProfile) {
         router.replace('/(tabs)/livreur' as any);
       } else {
         router.replace('/auth/register' as any);
       }
     }
-  }, [isAuthenticated, driverProfile, router]);
+  }, [isAuthenticated, driverProfile, isAdmin, router]);
 
   const handleLogin = async () => {
     if (!emailOrPhone.trim()) {
@@ -56,8 +58,22 @@ export default function DriverLoginScreen() {
       setErrorMsg(null);
       await login({ emailOrPhone: emailOrPhone.trim(), password });
       Haptics.success();
-      if (router.canGoBack()) router.back();
-      else router.replace('/(tabs)' as any);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
+          router.replace('/admin' as any);
+          return;
+        }
+        const dp = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
+        if (dp) {
+          router.replace('/(tabs)/livreur' as any);
+        } else {
+          router.replace('/auth/register' as any);
+        }
+      } else {
+        router.replace('/(tabs)' as any);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Identifiants livreur incorrects.');
     } finally {
@@ -73,9 +89,14 @@ export default function DriverLoginScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         Haptics.success();
+        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
+          router.replace('/admin' as any);
+          return;
+        }
         const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
         if (driverProfile) {
-          router.replace('/(tabs)' as any);
+          router.replace('/(tabs)/livreur' as any);
         } else {
           router.replace('/auth/register' as any);
         }

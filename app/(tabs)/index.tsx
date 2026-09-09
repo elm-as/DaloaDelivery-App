@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,10 +14,15 @@ import { useDriverAuth } from '../../src/context/DriverAuthContext';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, driverProfile } = useDriverAuth();
+  const { isAuthenticated, driverProfile, isAdmin } = useDriverAuth();
 
-  if (isAuthenticated && driverProfile) {
-    return <Redirect href="/(tabs)/livreur" />;
+  if (isAuthenticated) {
+    if (isAdmin) {
+      return <Redirect href="/admin" />;
+    }
+    if (driverProfile) {
+      return <Redirect href="/(tabs)/livreur" />;
+    }
   }
 
   const [onlineLivreurs, setOnlineLivreurs] = useState<DeliveryPersonData[]>([]);
@@ -318,16 +321,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FF6B00',
   },
-  loadingBox: {
-    padding: spacing[6],
-    alignItems: 'center',
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
+  loadingBox: { padding: spacing[6], alignItems: 'center', gap: 8 },
+  loadingText: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
   emptyBox: {
     backgroundColor: '#FFFFFF',
     borderRadius: radii['2xl'],
@@ -339,10 +334,5 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderStyle: 'dashed',
   },
-  emptyText: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+  emptyText: { fontSize: 12, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
 });

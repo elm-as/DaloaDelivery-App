@@ -7,27 +7,36 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bike, Zap, Clock, Wallet, UserCheck, Shield, ChevronRight } from 'lucide-react-native';
+import {
+  Bike, Zap, Clock, Wallet, UserCheck, Shield, ChevronRight, Moon, AlertTriangle, ShieldCheck,
+} from 'lucide-react-native';
 import { Button } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
-import { useActiveDriverRun, useDriverDailyStats } from '@daloa/api';
+import { useActiveDriverRun, useDriverDailyStats, useAvailableRuns } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { DeliveryTopBar } from '../../src/components/DeliveryTopBar';
 import { DriverHeroHeader } from '../../src/components/DriverHeroHeader';
 import { DriverStatsRow } from '../../src/components/DriverStatsRow';
 import { styles } from '../../src/components/livreur/livreurStyles';
+import { isCurfewActive } from '../../src/utils/security';
 
 export default function LivreurTabScreen() {
   const router = useRouter();
-  const { driverProfile, isOnline, toggleOnlineStatus, isAuthenticated } = useDriverAuth();
+  const { driverProfile, isOnline, toggleOnlineStatus, isAuthenticated, isAdmin, driverLocation } = useDriverAuth();
+
+  // Si administrateur connecté sans profil livreur, redirection automatique
+  if (isAuthenticated && isAdmin && !driverProfile) {
+    return <Redirect href="/admin" />;
+  }
 
   const { data: activeRun, refetch: refetchActiveRun } = useActiveDriverRun(driverProfile?.id);
   const { data: stats, refetch: refetchStats, isRefetching } = useDriverDailyStats(driverProfile?.id);
+  const { data: availableRuns, refetch: refetchRuns } = useAvailableRuns(driverLocation, isOnline);
 
   const handleRefresh = async () => {
-    await Promise.all([refetchActiveRun(), refetchStats()]);
+    await Promise.all([refetchActiveRun(), refetchStats(), refetchRuns()]);
   };
 
   const handleToggleOnline = async () => {
@@ -136,8 +145,58 @@ export default function LivreurTabScreen() {
           isRefreshing={isRefetching}
         />
 
+        {/* Accès direct Admin si l'utilisateur a le rôle admin */}
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.adminBanner}
+            onPress={() => {
+              Haptics.selection();
+              router.push('/admin' as any);
+            }}
+          >
+            <ShieldCheck size={22} color="#1E40AF" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.adminBannerTitle}>Panneau d'Administration</Text>
+              <Text style={styles.adminBannerSub}>Validation des livreurs & litiges</Text>
+            </View>
+            <ChevronRight size={18} color="#1E40AF" />
+          </TouchableOpacity>
+        )}
+
+        {/* Alerte Sécurité Nocturne Couvre-feu (22h30 - 05h30) */}
+        {isCurfewActive() && (
+          <View style={styles.curfewCard}>
+            <Moon size={22} color="#FBBF24" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.curfewTitle}>Sécurité Nocturne Active</Text>
+              <Text style={styles.curfewSub}>
+                Attribution des courses suspendue entre 22h30 et 05h30 pour votre sécurité.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Alerte Mode de Retrait Wave / MTN manquant */}
+        {driverProfile && (!driverProfile.payout_network || !driverProfile.payout_number) && (
+          <View style={styles.payoutWarningCard}>
+            <AlertTriangle size={22} color="#B45309" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.payoutWarningTitle}>Mode de retrait non configuré</Text>
+              <Text style={styles.payoutWarningSub}>
+                Renseignez votre compte Wave ou MTN pour recevoir automatiquement vos gains.
+              </Text>
+              <TouchableOpacity
+                style={styles.payoutWarningBtn}
+                onPress={() => router.push('/payout-setup' as any)}
+              >
+                <Text style={styles.payoutWarningBtnText}>Configurer mon retrait Wave / MTN</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Alerte si le compte utilisateur est connecté mais sans profil livreur */}
-        {!driverProfile && (
+        {!driverProfile && !isAdmin && (
           <View style={styles.missingProfileCard}>
             <Text style={styles.missingProfileTitle}>Finalisez votre inscription livreur</Text>
             <Text style={styles.missingProfileSub}>
@@ -157,6 +216,7 @@ export default function LivreurTabScreen() {
           earningsToday={stats?.earningsToday || 0}
           completedRunsToday={stats?.completedRunsToday || 0}
           rating={driverProfile?.rating || 5.0}
+          onPressEarnings={() => router.push('/(tabs)/earnings')}
         />
 
         {/* Section Navigation Rapide Console */}
@@ -172,9 +232,19 @@ export default function LivreurTabScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.navTitle}>Courses disponibles</Text>
-              <Text style={styles.navSub}>Consulter et accepter les nouvelles courses</Text>
+              <Text style={styles.navSub}>
+                {availableRuns && availableRuns.length > 0
+                  ? `${availableRuns.length} course(s) en attente`
+                  : 'Consulter et accepter les nouvelles courses'}
+              </Text>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            {availableRuns && availableRuns.length > 0 ? (
+              <View style={styles.badgePill}>
+                <Text style={styles.badgePillText}>{availableRuns.length}</Text>
+              </View>
+            ) : (
+              <ChevronRight size={18} color="#9CA3AF" />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity

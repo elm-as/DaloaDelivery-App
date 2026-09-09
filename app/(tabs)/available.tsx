@@ -1,30 +1,16 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, RefreshControl, Alert, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
-import {
-  colors,
-  radii,
-  spacing,
-  typography,
-  DeliveryOrderCard,
-  Skeleton,
-  Button,
-} from '@daloa/ui';
-import { Zap, AlertCircle, ArrowLeft } from 'lucide-react-native';
+import { colors, radii, spacing, typography, DeliveryOrderCard, Skeleton, Button } from '@daloa/ui';
+import { Zap, AlertCircle, ArrowLeft, Moon } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
+import { isCurfewActive } from '../../src/utils/security';
 
 export default function AvailableRunsScreen() {
   const router = useRouter();
@@ -48,6 +34,13 @@ export default function AvailableRunsScreen() {
   };
 
   const handleAcceptRun = async (assignmentId: string) => {
+    if (isCurfewActive()) {
+      Alert.alert(
+        'Sécurité Nocturne',
+        'Les livraisons sont suspendues entre 22h30 et 05h30 pour votre sécurité.'
+      );
+      return;
+    }
     if (!driverProfile?.id) {
       Alert.alert('Erreur', 'Profil livreur introuvable.');
       return;
@@ -130,7 +123,15 @@ export default function AvailableRunsScreen() {
         </View>
       </View>
 
-      {!isOnline ? (
+      {isCurfewActive() ? (
+        <View style={styles.curfewBox}>
+          <Moon size={44} color="#FBBF24" />
+          <Text style={styles.curfewTitle}>Sécurité Nocturne Active</Text>
+          <Text style={styles.curfewSub}>
+            L'attribution et la prise de courses sont suspendues entre 22h30 et 05h30 pour protéger les livreurs partenaires.
+          </Text>
+        </View>
+      ) : !isOnline ? (
         <View style={styles.offlineBox}>
           <AlertCircle size={38} color="#D97706" />
           <Text style={styles.offlineTitle}>Vous êtes Hors Ligne</Text>
@@ -278,6 +279,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 14,
     backgroundColor: '#F8F9FA',
+  },
+  curfewBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#0F172A',
+    borderRadius: radii.xl,
+    margin: spacing[4],
+  },
+  curfewTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FBBF24',
+    marginTop: 12,
+  },
+  curfewSub: {
+    fontSize: 13,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+    maxWidth: 280,
   },
   offlineBox: {
     flex: 1,
