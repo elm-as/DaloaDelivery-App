@@ -112,7 +112,7 @@ export default function DelivererDetailScreen() {
           {/* Avatar avec bague blanche */}
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarRing}>
-              {deliverer.photo_url ? (
+              {deliverer.photo_url && !deliverer.photo_url.startsWith('blob:') ? (
                 <Image source={{ uri: deliverer.photo_url }} style={styles.avatarImg} />
               ) : (
                 <View style={styles.avatarFallback}>
