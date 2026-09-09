@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, ChevronRight, User, MapPin } from 'lucide-react-native';
 import { colors, radii, spacing, AppText } from '@daloa/ui';
@@ -22,7 +16,12 @@ import { useDriverAuth } from '../../src/context/DriverAuthContext';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isAuthenticated } = useDriverAuth();
+  const { isAuthenticated, driverProfile } = useDriverAuth();
+
+  if (isAuthenticated && driverProfile) {
+    return <Redirect href="/(tabs)/livreur" />;
+  }
+
   const [onlineLivreurs, setOnlineLivreurs] = useState<DeliveryPersonData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

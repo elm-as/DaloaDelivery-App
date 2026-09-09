@@ -37,6 +37,13 @@ export default function AuthCallbackScreen() {
       }
     };
 
+    // 1. Écoute immédiate de tout changement de session Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user?.id && !cancelled) {
+        await navigateUser(session.user.id);
+      }
+    });
+
     const processAuth = async (incomingUrl?: string | null) => {
       try {
         const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && Boolean(window.location);
@@ -90,7 +97,7 @@ export default function AuthCallbackScreen() {
       } catch (e: any) {
         if (cancelled) return;
         setError(e.message || 'Échec de la connexion. Redirection...');
-        setTimeout(() => router.replace('/auth/login' as any), 2000);
+        setTimeout(() => router.replace('/auth/login' as any), 1500);
       }
     };
 
@@ -100,9 +107,22 @@ export default function AuthCallbackScreen() {
       void processAuth(url);
     });
 
+    // Garde-fou anti-blocage : après 3.5s, si la session est active on redirige, sinon repli login
+    const safetyTimer = setTimeout(async () => {
+      if (cancelled) return;
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user?.id) {
+        await navigateUser(data.session.user.id);
+      } else {
+        router.replace('/auth/login' as any);
+      }
+    }, 3500);
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
       urlSub.remove();
+      clearTimeout(safetyTimer);
     };
   }, [params, router]);
 

@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform, View, StyleSheet } from 'react-native';
-import { Home, Search, Truck } from 'lucide-react-native';
+import { Home, Search, Truck, Package, User } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
 import { colors, useAccent } from '@daloa/ui';
+import { useDriverAuth } from '../../src/context/DriverAuthContext';
 
 /* Icône d'onglet avec pill de fond animée (fidèle au BottomNavBar web DaloaDelivery) */
 function DeliveryTabIcon({
@@ -48,10 +49,12 @@ function DeliveryTabIcon({
 
 export default function DeliveryTabLayout() {
   const accent = useAccent();
+  const { isAuthenticated, driverProfile } = useDriverAuth();
+  const isDriver = Boolean(isAuthenticated && driverProfile);
 
   return (
     <Tabs
-      initialRouteName="index"
+      initialRouteName={isDriver ? 'livreur' : 'index'}
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
@@ -77,10 +80,11 @@ export default function DeliveryTabLayout() {
         },
       }}
     >
-      {/* ── 3 ONGLETS PUBLICS & UNIVERSELS (Fidèles au Web DaloaDelivery) ── */}
+      {/* ── ONGLETS PUBLICS (Affichés si non-livreur) ── */}
       <Tabs.Screen
         name="index"
         options={{
+          href: isDriver ? null : undefined,
           title: 'Accueil',
           tabBarIcon: ({ color, focused }) => (
             <DeliveryTabIcon
@@ -96,6 +100,7 @@ export default function DeliveryTabLayout() {
       <Tabs.Screen
         name="annuaire"
         options={{
+          href: isDriver ? null : undefined,
           title: 'Annuaire',
           tabBarIcon: ({ color, focused }) => (
             <DeliveryTabIcon
@@ -108,13 +113,14 @@ export default function DeliveryTabLayout() {
         }}
       />
 
+      {/* ── CONSOLE LIVREUR / DEVENIR LIVREUR ── */}
       <Tabs.Screen
         name="livreur"
         options={{
-          title: 'Livreur',
+          title: isDriver ? 'Accueil' : 'Livreur',
           tabBarIcon: ({ color, focused }) => (
             <DeliveryTabIcon
-              icon={Truck}
+              icon={isDriver ? Home : Truck}
               color={color}
               focused={focused}
               pillColor="#FFF4E6"
@@ -123,14 +129,40 @@ export default function DeliveryTabLayout() {
         }}
       />
 
-      {/* ── ROUTES INTERNES LIVREUR (Masquées de la barre mais navigables) ── */}
+      {/* ── ONGLETS SPÉCIFIQUES LIVREUR CONNECTÉ (Livraisons & Profil) ── */}
       <Tabs.Screen
         name="available"
         options={{
-          href: null,
-          title: 'Courses',
+          href: isDriver ? undefined : null,
+          title: 'Livraisons',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon
+              icon={Package}
+              color={color}
+              focused={focused}
+              pillColor="#FFF4E6"
+            />
+          ),
         }}
       />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: isDriver ? undefined : null,
+          title: 'Profil',
+          tabBarIcon: ({ color, focused }) => (
+            <DeliveryTabIcon
+              icon={User}
+              color={color}
+              focused={focused}
+              pillColor="#FFF4E6"
+            />
+          ),
+        }}
+      />
+
+      {/* ── ROUTES INTERNES LIVREUR (Masquées de la barre) ── */}
       <Tabs.Screen
         name="history"
         options={{
@@ -143,13 +175,6 @@ export default function DeliveryTabLayout() {
         options={{
           href: null,
           title: 'Gains',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null,
-          title: 'Profil',
         }}
       />
     </Tabs>

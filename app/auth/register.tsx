@@ -33,19 +33,17 @@ export default function DriverRegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [payoutNetwork, setPayoutNetwork] = useState('wave');
   const [payoutNumber, setPayoutNumber] = useState('');
-
   const [vehicleType, setVehicleType] = useState('Moto');
   const [vehicleDetails, setVehicleDetails] = useState('');
   const [coverageZones, setCoverageZones] = useState<string[]>([]);
   const [pricingDescription, setPricingDescription] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-
   const [showZonesModal, setShowZonesModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -66,6 +64,8 @@ export default function DriverRegisterScreen() {
           if (session.user.email) {
             setEmail(session.user.email);
           }
+          const googlePic = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+          if (googlePic) setPhotoUri(googlePic);
           setStep(2);
         }
       } catch (err) {
@@ -88,9 +88,11 @@ export default function DriverRegisterScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
+      base64: true,
     });
-    if (!result.canceled && result.assets[0]?.uri) {
+    if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
+      setPhotoBase64(result.assets[0].base64 || null);
     }
   };
 
@@ -104,11 +106,13 @@ export default function DriverRegisterScreen() {
       if (session?.user) {
         const existing = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
         if (existing) {
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/livreur' as any);
           return;
         }
         if (session.user.user_metadata?.full_name) setFullName(session.user.user_metadata.full_name);
         if (session.user.email) setEmail(session.user.email);
+        const googlePic = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+        if (googlePic) setPhotoUri(googlePic);
         setStep(2);
       }
     } catch (err: any) {
@@ -128,25 +132,13 @@ export default function DriverRegisterScreen() {
   const handleNext = () => {
     setErrorMsg(null);
     if (step === 1) {
-      if (!email.includes('@')) {
-        setErrorMsg('Veuillez renseigner un email valide.');
-        return;
-      }
-      if (password.length < 6) {
-        setErrorMsg('Le mot de passe doit comporter au moins 6 caractères.');
-        return;
-      }
-      if (password !== confirmPassword) {
-        setErrorMsg('Les mots de passe ne correspondent pas.');
-        return;
-      }
+      if (!email.includes('@')) { setErrorMsg('Veuillez renseigner un email valide.'); return; }
+      if (password.length < 6) { setErrorMsg('Le mot de passe doit comporter au moins 6 caractères.'); return; }
+      if (password !== confirmPassword) { setErrorMsg('Les mots de passe ne correspondent pas.'); return; }
       Haptics.lightImpact();
       setStep(2);
     } else if (step === 2) {
-      if (!phone.trim()) {
-        setErrorMsg('Veuillez renseigner un numéro de téléphone joignable.');
-        return;
-      }
+      if (!phone.trim()) { setErrorMsg('Veuillez renseigner un numéro de téléphone joignable.'); return; }
       Haptics.lightImpact();
       setStep(3);
     }
@@ -184,12 +176,17 @@ export default function DriverRegisterScreen() {
       }
 
       let uploadedPhotoUrl: string | null = null;
-      if (photoUri) {
+      if (photoBase64) {
         try {
-          uploadedPhotoUrl = await deliveryPersonService.uploadProfilePhoto(photoUri, authUserId);
+          uploadedPhotoUrl = await deliveryPersonService.uploadProfilePhoto(
+            { base64: photoBase64 },
+            authUserId
+          );
         } catch (photoErr) {
           console.warn('Upload photo échoué (non bloquant):', photoErr);
         }
+      } else if (photoUri && photoUri.startsWith('http')) {
+        uploadedPhotoUrl = photoUri;
       }
 
       const cleanPayoutNetwork = normalizePayoutNetwork(payoutNetwork);
@@ -222,7 +219,7 @@ export default function DriverRegisterScreen() {
 
       Haptics.success();
       await refreshDriverProfile();
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/livreur' as any);
     } catch (err: any) {
       console.error('Erreur inscription:', err);
       setErrorMsg(err.message || "Une erreur est survenue lors de l'inscription.");
