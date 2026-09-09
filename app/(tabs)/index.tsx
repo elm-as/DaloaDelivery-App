@@ -34,15 +34,28 @@ export default function HomeScreen() {
       const { data, error } = await supabase
         .from('delivery_persons_directory')
         .select('*')
-        .eq('is_available', true)
-        .order('rating', { ascending: false })
-        .limit(6);
+        .eq('is_available', true);
 
       if (!error && data) {
         const validDrivers = data.filter(
           (d: any) => Boolean(d.name?.trim() && d.phone?.trim())
         );
-        setOnlineLivreurs(validDrivers);
+        // Mélange impartial pour donner une chance égale à chaque livreur
+        const shuffled = [...validDrivers];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = shuffled[i];
+          shuffled[i] = shuffled[j];
+          shuffled[j] = temp;
+        }
+        shuffled.sort((a: any, b: any) => {
+          const aVer = a.is_verified || a.verification_status === 'approved' ? 1 : 0;
+          const bVer = b.is_verified || b.verification_status === 'approved' ? 1 : 0;
+          if (bVer !== aVer) return bVer - aVer;
+          if (a.rating > 0 || b.rating > 0) return b.rating - a.rating;
+          return 0;
+        });
+        setOnlineLivreurs(shuffled);
       }
     } catch (err) {
       console.warn('Erreur chargement livreurs en ligne:', err);
@@ -152,7 +165,7 @@ export default function HomeScreen() {
             <View style={styles.onlinePulseDot} />
           </View>
           <TouchableOpacity onPress={() => router.push('/(tabs)/annuaire')} style={styles.seeAllBtn}>
-            <Text style={styles.seeAllText}>Voir tout ({onlineLivreurs.length}+)</Text>
+            <Text style={styles.seeAllText}>Voir tout ({onlineLivreurs.length})</Text>
             <ChevronRight size={14} color="#FF6B00" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
@@ -169,13 +182,38 @@ export default function HomeScreen() {
             <Text style={styles.emptyText}>Aucun livreur actuellement en ligne à Daloa.</Text>
           </View>
         ) : (
-          onlineLivreurs.slice(0, 4).map((livreur) => (
-            <DeliveryPersonCard
-              key={livreur.id}
-              person={livreur}
-              mode="compact"
-            />
-          ))
+          <>
+            {onlineLivreurs.slice(0, 8).map((livreur) => (
+              <DeliveryPersonCard
+                key={livreur.id}
+                person={livreur}
+                mode="compact"
+              />
+            ))}
+            {onlineLivreurs.length > 8 && (
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/annuaire')}
+                style={{
+                  marginHorizontal: spacing[4],
+                  marginTop: 8,
+                  paddingVertical: 12,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: radii.xl,
+                  borderWidth: 1,
+                  borderColor: '#FFD4B2',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 6,
+                }}
+              >
+                <Text style={{ color: '#FF6B00', fontSize: 12, fontWeight: '700' }}>
+                  Explorer tous les {onlineLivreurs.length} livreurs
+                </Text>
+                <ChevronRight size={14} color="#FF6B00" />
+              </TouchableOpacity>
+            )}
+          </>
         )}
 
         <View style={{ height: 32 }} />
