@@ -106,9 +106,13 @@ export default function DriverProfileScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <AppText variant="title" color={colors.primary.DEFAULT} style={styles.statValue}>
-              {(Number(driverProfile?.rating) || 5).toFixed(1)}
+              {driverProfile?.total_reviews && driverProfile.total_reviews > 0 && driverProfile?.rating != null
+                ? Number(driverProfile.rating).toFixed(1)
+                : '-'}
             </AppText>
-            <AppText variant="caption" style={styles.statLabel}>Note globale</AppText>
+            <AppText variant="caption" style={styles.statLabel}>
+              {driverProfile?.total_reviews && driverProfile.total_reviews > 0 ? 'Note globale' : 'Nouveau'}
+            </AppText>
           </View>
           <View style={styles.statCard}>
             <AppText variant="title" color={colors.text.DEFAULT} style={styles.statValue}>

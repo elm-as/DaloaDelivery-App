@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Redirect } from 'expo-router';
+import { useRouter, Redirect, useFocusEffect } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
@@ -39,6 +39,12 @@ export default function AvailableRunsScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
   const handleAcceptRun = async (assignmentId: string) => {
     if (isCurfewActive()) {
       showAlert(
@@ -56,6 +62,7 @@ export default function AvailableRunsScreen() {
       setAcceptingId(assignmentId);
       await deliveryService.acceptRun(assignmentId, driverProfile.id);
       Haptics.success();
+      await refetch();
       router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
       showAlert('Course déjà prise', 'Un autre coursier vient d’accepter cette course.');

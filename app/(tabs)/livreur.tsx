@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Redirect } from 'expo-router';
+import { useRouter, Redirect, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import {
@@ -134,11 +134,19 @@ export default function LivreurTabScreen() {
     try {
       await deliveryService.acceptRun(assignmentId, driverProfile.id);
       Haptics.success();
+      await refetchRuns();
       router.push(`/run/${assignmentId}` as any);
     } catch (err) {
       refetchRuns();
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchRuns();
+      refetchStats();
+    }, [refetchRuns, refetchStats])
+  );
 
   // Un administrateur sans fiche livreur n'a rien à faire sur cette console.
   // Placé après les hooks : un retour anticipé plus haut changerait le nombre de
@@ -339,8 +347,16 @@ export default function LivreurTabScreen() {
               <View style={[styles.statIconWrap, { backgroundColor: '#FEF3C7' }]}>
                 <Star size={16} color="#F59E0B" fill="#F59E0B" />
               </View>
-              <Text style={styles.statValue}>{(Number(driverProfile?.rating) || 5).toFixed(1)}</Text>
-              <Text style={styles.statCaption}>{driverProfile?.total_reviews || 0} avis</Text>
+              <Text style={styles.statValue}>
+                {driverProfile?.total_reviews && driverProfile.total_reviews > 0 && driverProfile?.rating != null
+                  ? Number(driverProfile.rating).toFixed(1)
+                  : '-'}
+              </Text>
+              <Text style={styles.statCaption}>
+                {driverProfile?.total_reviews && driverProfile.total_reviews > 0
+                  ? `${driverProfile.total_reviews} avis`
+                  : 'Nouveau'}
+              </Text>
             </View>
 
             <View style={styles.statCard}>

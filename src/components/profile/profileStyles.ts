@@ -93,7 +93,7 @@ export const profileStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[2],
     paddingHorizontal: spacing[4],
-    marginTop: -22,
+    marginTop: spacing[3],
     marginBottom: spacing[2],
   },
   statCard: {

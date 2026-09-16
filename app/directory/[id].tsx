@@ -152,8 +152,16 @@ export default function DelivererDetailScreen() {
           <View style={styles.statsCard}>
             <View style={styles.statCol}>
               <View style={styles.statRatingRow}>
-                <Text style={styles.statValue}>{(deliverer.rating || 5.0).toFixed(1)}</Text>
-                <Star size={14} color={colors.status.warning} fill={colors.status.warning} />
+                <Text style={styles.statValue}>
+                  {deliverer.total_reviews && deliverer.total_reviews > 0 && deliverer.rating != null
+                    ? Number(deliverer.rating).toFixed(1)
+                    : '-'}
+                </Text>
+                <Star
+                  size={14}
+                  color={deliverer.total_reviews && deliverer.total_reviews > 0 ? colors.status.warning : colors.grey[300]}
+                  fill={deliverer.total_reviews && deliverer.total_reviews > 0 ? colors.status.warning : 'transparent'}
+                />
               </View>
               <Text style={styles.statLabel}>NOTE</Text>
             </View>

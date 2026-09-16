@@ -7,16 +7,20 @@ import { formatFCFA } from '@daloa/utils';
 interface DriverStatsRowProps {
   earningsToday: number;
   completedRunsToday: number;
-  rating?: number;
+  rating?: number | null;
+  totalReviews?: number;
   onPressEarnings?: () => void;
 }
 
 export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
   earningsToday,
   completedRunsToday,
-  rating = 5.0,
+  rating,
+  totalReviews,
   onPressEarnings,
 }) => {
+  const hasValidRating = typeof rating === 'number' && rating > 0 && (totalReviews === undefined || totalReviews > 0);
+
   return (
     <View style={styles.container}>
       <AppPressable
@@ -53,10 +57,10 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
           <Star size={16} color={colors.categories.home.text} />
         </View>
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
-          Note
+          {hasValidRating ? 'Note' : 'Statut'}
         </AppText>
         <AppText variant="title" color={colors.categories.home.text} style={styles.tabularNumbers}>
-          {rating.toFixed(1)}
+          {hasValidRating ? rating.toFixed(1) : 'Nouveau'}
         </AppText>
       </View>
     </View>

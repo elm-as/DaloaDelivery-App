@@ -194,7 +194,8 @@ export default function DeliveryRunExecutionScreen() {
   const isPickupStage = assignment.status === 'assigned' || assignment.status === 'accepted';
   const isDeliveryStage = assignment.status === 'picked_up';
   const isCompleted = assignment.status === 'delivered';
-  const netGain = Number(assignment.delivery_fee || 1000) * 0.9;
+  const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
+  const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
   const curfew = isCurfewActive();
 
   return (
