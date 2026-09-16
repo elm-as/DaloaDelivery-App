@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { User, Phone, Camera, Wallet } from 'lucide-react-native';
-import { colors, radii, spacing, Input } from '@daloa/ui';
+import { colors, radii, spacing, Input, typography } from '@daloa/ui';
 
 const PAYOUT_NETWORKS = [
   { id: 'wave', label: 'Wave', color: '#1BA8E0' },
@@ -53,11 +53,11 @@ export const PersonalInfoStep: React.FC<Props> = ({
             <Image source={{ uri: photoUri }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <User size={36} color="#9CA3AF" />
+              <User size={36} color={colors.text.subtle} />
             </View>
           )}
           <View style={styles.cameraBadge}>
-            <Camera size={14} color="#FFFFFF" />
+            <Camera size={14} color={colors.text.inverse} />
           </View>
         </TouchableOpacity>
 
@@ -88,7 +88,7 @@ export const PersonalInfoStep: React.FC<Props> = ({
       {/* Réseau de paiement pour les reversements */}
       <View style={styles.payoutSection}>
         <View style={styles.payoutHeader}>
-          <Wallet size={16} color="#FF6B00" />
+          <Wallet size={16} color={colors.primary.DEFAULT} />
           <Text style={styles.payoutTitle}>Moyen de retrait des gains *</Text>
         </View>
 
@@ -134,8 +134,8 @@ export const PersonalInfoStep: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: { gap: spacing[3] },
-  stepTitle: { fontSize: 16, fontWeight: '900', color: '#111827' },
-  stepSubtitle: { fontSize: 12, color: '#6B7280', marginTop: -4, marginBottom: 8 },
+  stepTitle: { fontSize: 16, fontFamily: typography.families.black, color: colors.text.DEFAULT },
+  stepSubtitle: { fontSize: 12, color: colors.text.muted, marginTop: -4, marginBottom: 8 },
   photoContainer: {
     alignItems: 'center',
     marginBottom: spacing[2],
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#FF6B00',
+    borderColor: colors.primary.DEFAULT,
     overflow: 'visible',
   },
   avatarImage: {
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -170,24 +170,24 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#FF6B00',
+    backgroundColor: colors.primary.DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
   },
   changePhotoText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#FF6B00',
+    fontFamily: typography.families.bold,
+    color: colors.primary.DEFAULT,
   },
   payoutSection: {
     marginTop: spacing[2],
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     padding: spacing[3],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     gap: 10,
   },
   payoutHeader: {
@@ -197,8 +197,8 @@ const styles = StyleSheet.create({
   },
   payoutTitle: {
     fontSize: 12.5,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
   },
   networksRow: {
     flexDirection: 'row',
@@ -209,16 +209,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     borderRadius: radii.full,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
   networkPillActive: {
-    backgroundColor: '#FFF4E6',
-    borderColor: '#FF6B00',
+    backgroundColor: colors.primary[50],
+    borderColor: colors.primary.DEFAULT,
   },
   networkDot: {
     width: 8,
@@ -227,11 +227,11 @@ const styles = StyleSheet.create({
   },
   networkPillText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontFamily: typography.families.semibold,
+    color: colors.grey[600],
   },
   networkPillTextActive: {
-    color: '#E65100',
-    fontWeight: '800',
+    color: colors.primary[700],
+    fontFamily: typography.families.extrabold,
   },
 });

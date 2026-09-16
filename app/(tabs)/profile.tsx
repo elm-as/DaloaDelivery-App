@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,10 +13,15 @@ import {
   LogOut,
   ChevronRight,
   Shield,
+  UserPen,
+  Wallet,
+  Mail,
+  Trash2,
 } from 'lucide-react-native';
 import { colors, spacing, AppText, AppPressable, ConfirmDialog } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 import { getSupportWhatsAppUrl } from '@daloa/config';
+import { supabase } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { UnauthenticatedProfileView } from '../../src/components/profile/UnauthenticatedProfileView';
 import { ProfileHeroHeader } from '../../src/components/profile/ProfileHeroHeader';
@@ -29,8 +34,38 @@ export default function DriverProfileScreen() {
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [deliveredCount, setDeliveredCount] = useState(0);
 
   const isVerified = Boolean(driverProfile?.is_verified);
+  const zonesCount = driverProfile?.coverage_zones?.length || 0;
+
+  /* Cumul des courses livrees, comme le compteur « Livraisons » du profil web. */
+  useEffect(() => {
+    if (!driverProfile?.id) return;
+    let cancelled = false;
+
+    supabase
+      .from('delivery_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('delivery_person_id', driverProfile.id)
+      .eq('status', 'delivered')
+      .then(({ count }) => {
+        if (!cancelled) setDeliveredCount(count || 0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [driverProfile?.id]);
+
+  /* Meme libelle de statut que la ligne « Verification » du web. */
+  const verificationSubtitle = isVerified
+    ? 'Profil vérifié'
+    : driverProfile?.verification_status === 'rejected'
+      ? `Refusé : ${driverProfile?.verification_rejection_reason || 'voir détails'}`
+      : driverProfile?.verification_status === 'pending' || driverProfile?.cni_url
+        ? "Document en cours d'examen"
+        : 'Soumettre un document';
 
   const handleConfirmLogout = async () => {
     try {
@@ -67,6 +102,28 @@ export default function DriverProfileScreen() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* 1 bis. Note · Livraisons · Quartiers — les trois compteurs du profil web */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <AppText variant="title" color={colors.primary.DEFAULT} style={styles.statValue}>
+              {(Number(driverProfile?.rating) || 5).toFixed(1)}
+            </AppText>
+            <AppText variant="caption" style={styles.statLabel}>Note globale</AppText>
+          </View>
+          <View style={styles.statCard}>
+            <AppText variant="title" color={colors.text.DEFAULT} style={styles.statValue}>
+              {deliveredCount}
+            </AppText>
+            <AppText variant="caption" style={styles.statLabel}>Livraisons</AppText>
+          </View>
+          <View style={styles.statCard}>
+            <AppText variant="title" color="#059669" style={styles.statValue}>
+              {zonesCount}
+            </AppText>
+            <AppText variant="caption" style={styles.statLabel}>Quartiers</AppText>
+          </View>
+        </View>
+
         {/* 2. Invitation à la vérification KYC si non certifié */}
         {!isVerified && (
           <AppPressable
@@ -76,19 +133,65 @@ export default function DriverProfileScreen() {
             accessibilityLabel="Faites vérifier votre profil"
           >
             <View style={styles.kycIconWrap}>
-              <ShieldCheck size={22} color="#E65100" />
+              <ShieldCheck size={22} color={colors.primary[700]} />
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
                 Faites vérifier votre profil
               </AppText>
               <AppText variant="caption" color={colors.text.muted}>
-                Téléversez votre CNI ou permis pour débloquer toutes les courses à Daloa.
+                Téléversez votre pièce d'identité — et votre permis si vous roulez en moto, voiture ou triporteur.
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
         )}
+
+        {/* 2 bis. Modifier mon profil — miroir du web (nom, téléphone, zones…) */}
+        <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
+          MON PROFIL LIVREUR
+        </AppText>
+        <View style={styles.cardGroup}>
+          <AppPressable
+            haptic="light"
+            onPress={() => router.push('/profile/edit' as any)}
+            style={styles.menuRow}
+            accessibilityLabel="Modifier mon profil"
+          >
+            <View style={styles.menuIconWrap}>
+              <UserPen size={18} color={colors.primary[700]} />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+                Modifier mon profil
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                Nom, téléphone, véhicule, zones couvertes et tarifs
+              </AppText>
+            </View>
+            <ChevronRight size={18} color={colors.text.subtle} />
+          </AppPressable>
+
+          <AppPressable
+            haptic="light"
+            onPress={() => router.push('/verification' as any)}
+            style={[styles.menuRow, styles.borderBottom]}
+            accessibilityLabel="Vérification de mon profil"
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.infoLight }]}>
+              <ShieldCheck size={18} color={colors.status.info} />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+                Vérification
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                {verificationSubtitle}
+              </AppText>
+            </View>
+            <ChevronRight size={18} color={colors.text.subtle} />
+          </AppPressable>
+        </View>
 
         {/* 3. Section Opérations & Règlements */}
         <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
@@ -97,12 +200,32 @@ export default function DriverProfileScreen() {
         <View style={styles.cardGroup}>
           <AppPressable
             haptic="light"
+            onPress={() => router.push('/(tabs)/earnings' as any)}
+            style={styles.menuRow}
+            accessibilityLabel="Mes gains et retraits"
+          >
+            <View style={styles.menuIconWrap}>
+              <Wallet size={18} color={colors.status.successDark} />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+                Mes gains
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                Solde disponible, retraits et historique des versements
+              </AppText>
+            </View>
+            <ChevronRight size={18} color={colors.text.subtle} />
+          </AppPressable>
+
+          <AppPressable
+            haptic="light"
             onPress={() => router.push('/payout-setup' as any)}
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Paramètres de retrait"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#FFF4E6' }]}>
-              <CreditCard size={18} color="#E65100" />
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.primary[50] }]}>
+              <CreditCard size={18} color={colors.primary[700]} />
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
@@ -112,7 +235,7 @@ export default function DriverProfileScreen() {
                 Wave, Orange Money, MTN MoMo, Moov
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
 
           <AppPressable
@@ -121,8 +244,8 @@ export default function DriverProfileScreen() {
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Annuaire des livreurs"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#EFF6FF' }]}>
-              <Users size={18} color="#2563EB" />
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.infoLight }]}>
+              <Users size={18} color={colors.categories.electronics.text} />
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
@@ -132,7 +255,7 @@ export default function DriverProfileScreen() {
                 Voir les coursiers partenaires enregistrés
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
 
           <AppPressable
@@ -141,7 +264,7 @@ export default function DriverProfileScreen() {
             style={styles.menuRow}
             accessibilityLabel="Mes boutiques affiliées"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#ECFDF5' }]}>
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.successLight }]}>
               <Store size={18} color="#059669" />
             </View>
             <View style={styles.flex1}>
@@ -152,7 +275,7 @@ export default function DriverProfileScreen() {
                 Marchands partenaires dont vous êtes le coursier attitré
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
         </View>
 
@@ -169,7 +292,7 @@ export default function DriverProfileScreen() {
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Assistance livreurs WhatsApp"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#ECFDF5' }]}>
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.successLight }]}>
               <HelpCircle size={18} color="#059669" />
             </View>
             <View style={styles.flex1}>
@@ -180,7 +303,7 @@ export default function DriverProfileScreen() {
                 Support direct en cas d'urgence ou litige client
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
 
           <AppPressable
@@ -189,8 +312,8 @@ export default function DriverProfileScreen() {
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Conditions générales"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#F3F4F6' }]}>
-              <FileText size={18} color="#6B7280" />
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.bg.subtle }]}>
+              <FileText size={18} color={colors.text.muted} />
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
@@ -200,7 +323,7 @@ export default function DriverProfileScreen() {
                 Charte officielle, sécurité et reversement des gains
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
 
           <AppPressable
@@ -209,8 +332,8 @@ export default function DriverProfileScreen() {
             style={[styles.menuRow, styles.borderBottom]}
             accessibilityLabel="Politique de confidentialité"
           >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#EFF6FF' }]}>
-              <Shield size={18} color="#3B82F6" />
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.infoLight }]}>
+              <Shield size={18} color={colors.status.info} />
             </View>
             <View style={styles.flex1}>
               <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
@@ -220,7 +343,7 @@ export default function DriverProfileScreen() {
                 Données GPS, pièces d'identité et sécurité
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
 
           <AppPressable
@@ -240,7 +363,7 @@ export default function DriverProfileScreen() {
                 Identité juridique, hébergeur et infrastructure
               </AppText>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color={colors.text.subtle} />
           </AppPressable>
         </View>
 
@@ -261,6 +384,48 @@ export default function DriverProfileScreen() {
             </AppPressable>
           </View>
         )}
+
+        {/* 5 bis. Compte Email — repris du profil web */}
+        <View style={styles.emailCard}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.bg.subtle }]}>
+            <Mail size={18} color={colors.text.muted} />
+          </View>
+          <View style={styles.flex1}>
+            <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+              Compte Email
+            </AppText>
+            <AppText variant="caption" color={colors.text.muted} numberOfLines={1}>
+              {user?.email || '—'}
+            </AppText>
+          </View>
+        </View>
+
+        {/* 5 ter. Suppression du compte — exigence Google Play et Apple :
+            l'utilisateur doit pouvoir supprimer son compte depuis l'app. */}
+        <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
+          ZONE DE DANGER
+        </AppText>
+        <View style={styles.cardGroup}>
+          <AppPressable
+            haptic="medium"
+            onPress={() => router.push('/settings/delete-account' as any)}
+            style={styles.menuRow}
+            accessibilityLabel="Supprimer mon compte livreur"
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.errorLight }]}>
+              <Trash2 size={18} color={colors.status.error} />
+            </View>
+            <View style={styles.flex1}>
+              <AppText variant="bodyStrong" color={colors.status.error}>
+                Supprimer mon compte
+              </AppText>
+              <AppText variant="caption" color={colors.text.muted}>
+                Efface définitivement votre fiche livreur et vos données
+              </AppText>
+            </View>
+            <ChevronRight size={18} color={colors.text.subtle} />
+          </AppPressable>
+        </View>
 
         {/* 6. Bouton Déconnexion avec ConfirmDialog */}
         <AppPressable

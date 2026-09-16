@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const registrationStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   centerContainer: {
     flex: 1,
@@ -24,20 +24,20 @@ export const registrationStyles = StyleSheet.create({
     borderRadius: radii.md,
     marginBottom: spacing[4],
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.status.errorBorder,
   },
   errorText: {
     flex: 1,
     color: '#991B1B',
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[5],
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -57,14 +57,14 @@ export const registrationStyles = StyleSheet.create({
     gap: 6,
     paddingVertical: 14,
     borderRadius: radii.lg,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   backBtnText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontFamily: typography.families.semibold,
+    color: colors.text.body,
   },
   nextBtn: {
     flex: 2,
@@ -78,8 +78,8 @@ export const registrationStyles = StyleSheet.create({
   },
   nextBtnText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: typography.families.bold,
+    color: colors.text.inverse,
   },
   submitBtn: {
     flex: 2,
@@ -88,12 +88,12 @@ export const registrationStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: radii.lg,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.success,
   },
   submitBtnText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: typography.families.bold,
+    color: colors.text.inverse,
   },
   btnDisabled: {
     opacity: 0.45,
@@ -105,11 +105,11 @@ export const registrationStyles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.text.muted,
   },
   loginLink: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     color: colors.primary.DEFAULT,
   },
 });

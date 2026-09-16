@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, RefreshControl, Alert, TouchableOpacity, ActivityIndicator,
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
-import { colors, radii, spacing, typography, DeliveryOrderCard, Skeleton, Button } from '@daloa/ui';
+import { colors, radii, spacing, typography, DeliveryOrderCard, Skeleton, Button, showAlert } from '@daloa/ui';
 import { Zap, AlertCircle, ArrowLeft, Moon } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 import { isCurfewActive } from '../../src/utils/security';
@@ -35,14 +41,14 @@ export default function AvailableRunsScreen() {
 
   const handleAcceptRun = async (assignmentId: string) => {
     if (isCurfewActive()) {
-      Alert.alert(
+      showAlert(
         'Sécurité Nocturne',
         'Les livraisons sont suspendues entre 22h30 et 05h30 pour votre sécurité.'
       );
       return;
     }
     if (!driverProfile?.id) {
-      Alert.alert('Erreur', 'Profil livreur introuvable.');
+      showAlert('Erreur', 'Profil livreur introuvable.');
       return;
     }
 
@@ -52,7 +58,7 @@ export default function AvailableRunsScreen() {
       Haptics.success();
       router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
-      Alert.alert('Course déjà prise', 'Un autre coursier vient d’accepter cette course.');
+      showAlert('Course déjà prise', 'Un autre coursier vient d’accepter cette course.');
       refetch();
     } finally {
       setAcceptingId(null);
@@ -64,7 +70,7 @@ export default function AvailableRunsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color="#FF6B00" />
+          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         </View>
       </SafeAreaView>
     );
@@ -81,12 +87,12 @@ export default function AvailableRunsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <ArrowLeft size={22} color="#111827" />
+            <ArrowLeft size={22} color={colors.text.DEFAULT} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Courses Disponibles</Text>
         </View>
         <View style={styles.missingProfileBox}>
-          <AlertCircle size={44} color="#FF6B00" />
+          <AlertCircle size={44} color={colors.primary.DEFAULT} />
           <Text style={styles.missingTitle}>Espace Livreur Partenaire</Text>
           <Text style={styles.missingSub}>
             Vous êtes connecté, mais vous devez enregistrer votre fiche coursier pour voir et accepter des livraisons.
@@ -115,7 +121,7 @@ export default function AvailableRunsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-          <ArrowLeft size={22} color="#111827" />
+          <ArrowLeft size={22} color={colors.text.DEFAULT} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Courses Disponibles</Text>
         <View style={styles.badgeCount}>
@@ -133,7 +139,7 @@ export default function AvailableRunsScreen() {
         </View>
       ) : !isOnline ? (
         <View style={styles.offlineBox}>
-          <AlertCircle size={38} color="#D97706" />
+          <AlertCircle size={38} color={colors.categories.home.text} />
           <Text style={styles.offlineTitle}>Vous êtes Hors Ligne</Text>
           <Text style={styles.offlineSub}>
             Basculez En Ligne pour voir et accepter les livraisons en direct à Daloa.
@@ -205,7 +211,7 @@ export default function AvailableRunsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   header: {
     flexDirection: 'row',
@@ -213,7 +219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
     gap: 10,
   },
   backBtn: {
@@ -222,31 +228,31 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#111827',
+    fontFamily: typography.families.black,
+    color: colors.text.DEFAULT,
     flex: 1,
   },
   loadingCenter: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   missingProfileBox: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing[6],
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   missingTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
     marginTop: 14,
     textAlign: 'center',
   },
@@ -264,21 +270,21 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   badgeCount: {
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: colors.primary[100],
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radii.full,
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     color: colors.primary[700],
   },
   scrollContent: {
     padding: 14,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   curfewBox: {
     alignItems: 'center',
@@ -290,7 +296,7 @@ const styles = StyleSheet.create({
   },
   curfewTitle: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     color: '#FBBF24',
     marginTop: 12,
   },
@@ -307,12 +313,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   offlineTitle: {
     fontSize: 17,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
     marginTop: 12,
   },
   offlineSub: {
@@ -331,8 +337,8 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
     marginTop: 12,
   },
   emptySub: {

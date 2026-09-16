@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, spacing, Header, radii, AppText } from '@daloa/ui';
+import { colors, spacing, Header, radii, AppText, typography } from '@daloa/ui';
 import { Building2 } from 'lucide-react-native';
 import { DRIVER_LEGAL_NOTICE_DATA } from '../../src/legal/legal-notice-data';
 
@@ -57,21 +57,21 @@ export default function DriverLegalNoticeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
     paddingBottom: spacing[8],
   },
   bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     marginBottom: spacing[3],
   },
   bannerIcon: {
@@ -90,16 +90,16 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   groupCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[4],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   groupTitle: {
     marginBottom: spacing[2],
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   itemsWrap: {
     gap: spacing[2],
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
   },
   itemValue: {
     fontSize: 13,
-    color: '#1F2937',
-    fontWeight: '500',
+    color: colors.grey[800],
+    fontFamily: typography.families.medium,
     marginTop: 1,
   },
 });

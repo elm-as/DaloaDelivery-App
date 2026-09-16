@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { Zap, RefreshCw, Bike, User } from 'lucide-react-native';
-import { colors, radii, spacing, AppText, AppPressable } from '@daloa/ui';
+import { colors, radii, spacing, AppText, AppPressable, typography } from '@daloa/ui';
 
 interface DriverHeroHeaderProps {
   driverProfile: any;
@@ -29,7 +29,7 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
 
   return (
     <LinearGradient
-      colors={['#FFA726', '#FF9800', '#E65100']}
+      colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.header, { paddingTop: insets.top + spacing[3] }]}
@@ -46,13 +46,13 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
               />
             ) : (
               <View style={styles.fallbackAvatar}>
-                <User size={24} color="#FFFFFF" />
+                <User size={24} color={colors.text.inverse} />
               </View>
             )}
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: isOnline ? '#10B981' : '#9CA3AF' },
+                { backgroundColor: isOnline ? colors.status.success : colors.text.subtle },
               ]}
             />
           </View>
@@ -62,12 +62,12 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
               {greeting}
             </AppText>
             <View style={styles.nameRow}>
-              <AppText variant="h2" color="#FFFFFF" numberOfLines={1} style={styles.driverName}>
+              <AppText variant="h2" color={colors.text.inverse} numberOfLines={1} style={styles.driverName}>
                 {firstName} 👋
               </AppText>
               <View style={styles.vehicleBadge}>
-                <Bike size={11} color="#FFFFFF" />
-                <AppText variant="caption" color="#FFFFFF" style={styles.vehicleText}>
+                <Bike size={11} color={colors.text.inverse} />
+                <AppText variant="caption" color={colors.text.inverse} style={styles.vehicleText}>
                   {vehicle}
                 </AppText>
               </View>
@@ -83,9 +83,9 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
           accessibilityLabel="Actualiser les courses"
         >
           {isRefreshing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.text.inverse} />
           ) : (
-            <RefreshCw size={17} color="#FFFFFF" />
+            <RefreshCw size={17} color={colors.text.inverse} />
           )}
         </AppPressable>
       </View>
@@ -107,15 +107,15 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
           <View
             style={[
               styles.zapIconWrap,
-              { backgroundColor: isOnline ? '#10B981' : 'rgba(255, 255, 255, 0.18)' },
+              { backgroundColor: isOnline ? colors.status.success : 'rgba(255, 255, 255, 0.18)' },
             ]}
           >
-            <Zap size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <Zap size={20} color={colors.text.inverse} strokeWidth={2.5} />
           </View>
 
           <View>
             <View style={styles.statusTitleRow}>
-              <AppText variant="bodyStrong" color="#FFFFFF" style={styles.statusTitle}>
+              <AppText variant="bodyStrong" color={colors.text.inverse} style={styles.statusTitle}>
                 {isOnline ? 'En ligne' : 'Hors ligne'}
               </AppText>
               <View
@@ -126,7 +126,7 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
               >
                 <AppText
                   variant="caption"
-                  color={isOnline ? '#047857' : '#FFFFFF'}
+                  color={isOnline ? colors.status.successDark : colors.text.inverse}
                   style={styles.statusPillText}
                 >
                   {isOnline ? 'ACTIF' : 'PAUSE'}
@@ -147,7 +147,7 @@ export const DriverHeroHeader: React.FC<DriverHeroHeaderProps> = ({
             style={[
               styles.switchKnob,
               {
-                backgroundColor: isOnline ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+                backgroundColor: isOnline ? colors.bg.surface : 'rgba(255, 255, 255, 0.6)',
                 transform: [{ translateX: isOnline ? 18 : 0 }],
               },
             ]}
@@ -206,11 +206,11 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
   },
   greetingText: {
     textTransform: 'uppercase',
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     fontSize: 10,
     letterSpacing: 0.5,
   },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   driverName: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
   },
   vehicleBadge: {
     flexDirection: 'row',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   vehicleText: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     fontSize: 10,
   },
   refreshBtn: {
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   statusPillText: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     fontSize: 9,
     letterSpacing: 0.5,
   },

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, ChevronRight, User, MapPin } from 'lucide-react-native';
-import { colors, radii, spacing, AppText } from '@daloa/ui';
+import { colors, radii, spacing, AppText, typography } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 import { supabase } from '@daloa/api';
 import { DeliveryTopBar } from '../../src/components/DeliveryTopBar';
@@ -15,15 +15,6 @@ import { useDriverAuth } from '../../src/context/DriverAuthContext';
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, driverProfile, isAdmin } = useDriverAuth();
-
-  if (isAuthenticated) {
-    if (isAdmin) {
-      return <Redirect href="/admin" />;
-    }
-    if (driverProfile) {
-      return <Redirect href="/(tabs)/livreur" />;
-    }
-  }
 
   const [onlineLivreurs, setOnlineLivreurs] = useState<DeliveryPersonData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +87,17 @@ export default function HomeScreen() {
     }
   };
 
+  // Un livreur (ou un admin) connecte n'a pas d'accueil public : il est renvoye
+  // vers sa console, qui tient lieu d'« Accueil » comme sur le web.
+  // Place apres les hooks — un retour anticipe en tete de composant changeait le
+  // nombre de hooks rendus des que la session se resolvait, et faisait planter React.
+  if (isAuthenticated && isAdmin) {
+    return <Redirect href={'/admin' as any} />;
+  }
+  if (isAuthenticated && driverProfile) {
+    return <Redirect href="/(tabs)/livreur" />;
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Top Bar avec Logo, 3-points et Cloche */}
@@ -108,14 +110,14 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#FF6B00']}
-            tintColor="#FF6B00"
+            colors={[colors.primary.DEFAULT]}
+            tintColor={colors.primary.DEFAULT}
           />
         }
       >
         {/* Hero Section Gradient Orange Incurvé */}
         <LinearGradient
-          colors={['#FFA726', '#FF9800', '#E65100']}
+          colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={styles.heroGradient}
@@ -133,7 +135,7 @@ export default function HomeScreen() {
               style={styles.profileBtn}
               accessibilityLabel="Espace compte"
             >
-              <User size={20} color="#FFFFFF" />
+              <User size={20} color={colors.text.inverse} />
             </TouchableOpacity>
           </View>
 
@@ -150,7 +152,7 @@ export default function HomeScreen() {
         <View style={styles.searchWrapper}>
           <TouchableOpacity activeOpacity={0.9} onPress={handleSearchPress} style={styles.floatingSearch}>
             <View style={styles.searchIconWrap}>
-              <Search size={18} color="#FF6B00" strokeWidth={2.4} />
+              <Search size={18} color={colors.primary.DEFAULT} strokeWidth={2.4} />
             </View>
             <Text style={styles.searchPlaceholder}>Rechercher un livreur, un quartier à Daloa...</Text>
           </TouchableOpacity>
@@ -166,19 +168,19 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity onPress={() => router.push('/(tabs)/annuaire')} style={styles.seeAllBtn}>
             <Text style={styles.seeAllText}>Voir tout ({onlineLivreurs.length})</Text>
-            <ChevronRight size={14} color="#FF6B00" strokeWidth={2.2} />
+            <ChevronRight size={14} color={colors.primary.DEFAULT} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
         {/* Liste des livreurs en ligne */}
         {loading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="small" color="#FF6B00" />
+            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
             <Text style={styles.loadingText}>Recherche des coursiers disponibles...</Text>
           </View>
         ) : onlineLivreurs.length === 0 ? (
           <View style={styles.emptyBox}>
-            <MapPin size={24} color="#9CA3AF" />
+            <MapPin size={24} color={colors.text.subtle} />
             <Text style={styles.emptyText}>Aucun livreur actuellement en ligne à Daloa.</Text>
           </View>
         ) : (
@@ -197,24 +199,54 @@ export default function HomeScreen() {
                   marginHorizontal: spacing[4],
                   marginTop: 8,
                   paddingVertical: 12,
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: colors.bg.surface,
                   borderRadius: radii.xl,
                   borderWidth: 1,
-                  borderColor: '#FFD4B2',
+                  borderColor: colors.primary[200],
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexDirection: 'row',
                   gap: 6,
                 }}
               >
-                <Text style={{ color: '#FF6B00', fontSize: 12, fontWeight: '700' }}>
+                <Text style={{ color: colors.primary.DEFAULT, fontSize: 12, fontFamily: typography.families.bold }}>
                   Explorer tous les {onlineLivreurs.length} livreurs
                 </Text>
-                <ChevronRight size={14} color="#FF6B00" />
+                <ChevronRight size={14} color={colors.primary.DEFAULT} />
               </TouchableOpacity>
             )}
           </>
         )}
+
+        {/* Bloc de conversion coursier — miroir du bandeau de bas d'accueil du web.
+            Absent du mobile jusqu'ici : rien n'invitait un motocycliste à
+            rejoindre le réseau depuis l'écran public. */}
+        <View style={styles.recruitCard}>
+          <View style={styles.recruitBadge}>
+            <Text style={styles.recruitBadgeText}>OPPORTUNITÉ</Text>
+          </View>
+          <Text style={styles.recruitTitle}>Vous êtes coursier à Daloa ?</Text>
+          <Text style={styles.recruitBody}>
+            Rejoignez le réseau DaloaDelivery, recevez des courses directement sur votre
+            téléphone et touchez 90 % des frais de livraison.
+          </Text>
+          <View style={styles.recruitActions}>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => router.push('/devenir-livreur' as any)}
+              style={styles.recruitPrimaryBtn}
+            >
+              <Text style={styles.recruitPrimaryText}>Devenir livreur</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => router.push('/auth/login' as any)}
+              style={styles.recruitSecondaryBtn}
+            >
+              <Text style={styles.recruitSecondaryText}>Espace livreur</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -223,9 +255,75 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  recruitCard: {
+    marginHorizontal: spacing[4],
+    marginTop: spacing[5],
+    padding: spacing[4],
+    borderRadius: radii['2xl'],
+    backgroundColor: colors.bg.inverse,
+    overflow: 'hidden',
+  },
+  recruitBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+    backgroundColor: colors.primary[900],
+    borderWidth: 1,
+    borderColor: colors.primary[700],
+    marginBottom: spacing[2],
+  },
+  recruitBadgeText: {
+    fontSize: 9.5,
+    fontFamily: typography.families.black,
+    letterSpacing: 1,
+    color: colors.primary[200],
+  },
+  recruitTitle: {
+    fontSize: 17,
+    fontFamily: typography.families.black,
+    color: colors.text.inverse,
+    marginBottom: 4,
+  },
+  recruitBody: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.grey[300],
+    marginBottom: spacing[3],
+  },
+  recruitActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  recruitPrimaryBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: radii.xl,
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: 'center',
+  },
+  recruitPrimaryText: {
+    fontSize: 12.5,
+    fontFamily: typography.families.extrabold,
+    color: colors.text.inverse,
+  },
+  recruitSecondaryBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: radii.xl,
+    backgroundColor: colors.grey[800],
+    borderWidth: 1,
+    borderColor: colors.grey[700],
+    alignItems: 'center',
+  },
+  recruitSecondaryText: {
+    fontSize: 12.5,
+    fontFamily: typography.families.extrabold,
+    color: colors.text.inverse,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   scrollContent: {
     paddingBottom: 24,
@@ -257,12 +355,12 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.success,
   },
   expressText: {
     fontSize: 10,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontFamily: typography.families.black,
+    color: colors.text.inverse,
     letterSpacing: 0.6,
   },
   profileBtn: {
@@ -277,14 +375,14 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 26,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontFamily: typography.families.black,
+    color: colors.text.inverse,
     lineHeight: 32,
     letterSpacing: -0.5,
   },
   heroSubtitle: {
     fontSize: 12.5,
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 6,
     lineHeight: 18,
@@ -297,7 +395,7 @@ const styles = StyleSheet.create({
   floatingSearch: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -307,21 +405,21 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     gap: 10,
   },
   searchIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchPlaceholder: {
     fontSize: 12.5,
-    fontWeight: '500',
-    color: '#9CA3AF',
+    fontFamily: typography.families.medium,
+    color: colors.text.subtle,
     flex: 1,
   },
   sectionHeader: {
@@ -339,15 +437,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '900',
-    color: '#111827',
+    fontFamily: typography.families.black,
+    color: colors.text.DEFAULT,
     letterSpacing: 0.6,
   },
   onlinePulseDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.success,
   },
   seeAllBtn: {
     flexDirection: 'row',
@@ -356,21 +454,21 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#FF6B00',
+    fontFamily: typography.families.extrabold,
+    color: colors.primary.DEFAULT,
   },
   loadingBox: { padding: spacing[6], alignItems: 'center', gap: 8 },
-  loadingText: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+  loadingText: { fontSize: 12, color: colors.text.muted, fontFamily: typography.families.medium },
   emptyBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[6],
     marginHorizontal: spacing[4],
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     borderStyle: 'dashed',
   },
-  emptyText: { fontSize: 12, color: '#6B7280', fontWeight: '500', textAlign: 'center' },
+  emptyText: { fontSize: 12, color: colors.text.muted, fontFamily: typography.families.medium, textAlign: 'center' },
 });

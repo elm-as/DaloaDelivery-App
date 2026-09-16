@@ -55,9 +55,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [

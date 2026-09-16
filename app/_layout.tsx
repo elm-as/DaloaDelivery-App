@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import '../src/lib/location-polyfill';
 import React, { useEffect } from 'react';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,7 +8,7 @@ import { AppState, Platform } from 'react-native';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@daloa/api';
 import { DriverAuthProvider } from '../src/context/DriverAuthContext';
-import { colors, ThemeProvider } from '@daloa/ui';
+import { colors, ThemeProvider, AlertHost } from '@daloa/ui';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -19,6 +20,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useDeliveryPushNotifications } from '../src/hooks/useDeliveryPushNotifications';
+import { AppGate } from '../src/components/system/AppGate';
 
 function onAppStateChange(status: any) {
   if (Platform.OS !== 'web') {
@@ -87,31 +89,36 @@ export default function DeliveryRootLayout() {
           <DriverAuthProvider>
             <DeliveryPushRegistrar />
             <StatusBar style="dark" backgroundColor={colors.neutrals.surface} />
-          <Stack
-            initialRouteName="(tabs)"
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.neutrals.background },
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="run/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="directory/index" options={{ headerShown: false }} />
-            <Stack.Screen name="directory/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="verification/index" options={{ headerShown: false }} />
-            <Stack.Screen name="admin/index" options={{ headerShown: false }} />
-            <Stack.Screen name="affiliations/index" options={{ headerShown: false }} />
-            <Stack.Screen name="payout-setup/index" options={{ headerShown: false }} />
-            <Stack.Screen name="auth/login" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="auth/register" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="auth/reset-password" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="banned" options={{ headerShown: false }} />
-            <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
-            <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
-            <Stack.Screen name="legal/help" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-          </Stack>
+            {/* Hote des messages sur le web : sans lui, showAlert y est muet. */}
+            <AlertHost />
+            <AppGate>
+              <Stack
+                initialRouteName="(tabs)"
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.neutrals.background },
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="run/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="directory/index" options={{ headerShown: false }} />
+                <Stack.Screen name="directory/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="verification/index" options={{ headerShown: false }} />
+                <Stack.Screen name="admin/index" options={{ headerShown: false }} />
+                <Stack.Screen name="affiliations/index" options={{ headerShown: false }} />
+                <Stack.Screen name="payout-setup/index" options={{ headerShown: false }} />
+                <Stack.Screen name="settings/delete-account" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/login" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="auth/register" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="auth/reset-password" options={{ presentation: 'modal', headerShown: false }} />
+                <Stack.Screen name="banned" options={{ headerShown: false }} />
+                <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
+                <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
+                <Stack.Screen name="legal/help" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+              </Stack>
+            </AppGate>
           </DriverAuthProvider>
         </QueryClientProvider>
       </ThemeProvider>

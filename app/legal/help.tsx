@@ -9,8 +9,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, radii, spacing, typography, Header, Card, Button } from '@daloa/ui';
-import { MessageCircle, Phone } from 'lucide-react-native';
-import { ENV_CONFIG, getSupportWhatsAppUrl, getSupportCallUrl } from '@daloa/config';
+import { MessageCircle } from 'lucide-react-native';
+import { ENV_CONFIG, getSupportWhatsAppUrl, getSupportWhatsAppDisplay } from '@daloa/config';
 import { Haptics } from '@daloa/utils';
 
 export default function DriverHelpScreen() {
@@ -19,11 +19,6 @@ export default function DriverHelpScreen() {
   const handleWhatsApp = () => {
     Haptics.success();
     Linking.openURL(getSupportWhatsAppUrl('Bonjour Support Livreur DaloaDelivery'));
-  };
-
-  const handleCall = () => {
-    Haptics.lightImpact();
-    Linking.openURL(getSupportCallUrl());
   };
 
   const faqs = [
@@ -49,7 +44,7 @@ export default function DriverHelpScreen() {
         <View style={styles.supportCard}>
           <Text style={styles.supportTitle}>Ligne Directe Logistique Daloa</Text>
           <Text style={styles.supportSub}>
-            L’équipe de régulation des courses est à votre disposition en direct pour tout blocage sur le terrain.
+            L’équipe de régulation des courses est joignable sur WhatsApp pour tout blocage sur le terrain. Nous ne prenons pas d’appels téléphoniques.
           </Text>
 
           <View style={styles.btnRow}>
@@ -57,16 +52,9 @@ export default function DriverHelpScreen() {
               title="WhatsApp Livreur"
               variant="whatsapp"
               size="md"
-              leftIcon={<MessageCircle size={18} color="#FFFFFF" />}
+              leftIcon={<MessageCircle size={18} color={colors.text.inverse} />}
               onPress={handleWhatsApp}
               style={{ flex: 1 }}
-            />
-            <Button
-              title="Appeler"
-              variant="outline"
-              size="md"
-              leftIcon={<Phone size={18} color="#111827" />}
-              onPress={handleCall}
             />
           </View>
         </View>
@@ -86,25 +74,25 @@ export default function DriverHelpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   supportCard: {
     padding: spacing[4],
     gap: spacing[2],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   supportTitle: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   supportSub: {
     color: colors.grey[600],
@@ -117,23 +105,23 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   sectionTitle: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     marginTop: spacing[2],
   },
   faqCard: {
     padding: spacing[4],
     gap: spacing[2],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   faqQ: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   faqA: {
     color: colors.grey[600],

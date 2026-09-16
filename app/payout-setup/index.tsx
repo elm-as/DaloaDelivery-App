@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,6 +19,7 @@ import {
   Header,
   Input,
   Button,
+  showAlert,
 } from '@daloa/ui';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
@@ -45,11 +45,11 @@ export default function PayoutSetupScreen() {
   const handleSave = async () => {
     if (!user?.id) return;
     if (!phone.trim() || phone.length < 8) {
-      Alert.alert('Erreur', 'Numéro de téléphone invalide.');
+      showAlert('Erreur', 'Numéro de téléphone invalide.');
       return;
     }
     if (!accountName.trim()) {
-      Alert.alert('Erreur', 'Le nom du titulaire est obligatoire.');
+      showAlert('Erreur', 'Le nom du titulaire est obligatoire.');
       return;
     }
 
@@ -64,11 +64,11 @@ export default function PayoutSetupScreen() {
 
       Haptics.success();
       refetch();
-      Alert.alert('Compte enregistré', 'Vos gains seront versés sur ce compte Mobile Money.', [
+      showAlert('Compte enregistré', 'Vos gains seront versés sur ce compte Mobile Money.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Impossible d’enregistrer le compte');
+      showAlert('Erreur', err.message || 'Impossible d’enregistrer le compte');
     } finally {
       setIsSaving(false);
     }
@@ -147,27 +147,27 @@ export default function PayoutSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   securityCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[4],
     gap: spacing[3],
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: colors.primary[100],
   },
   securityTitle: {
     color: colors.primary[800],
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   securityDesc: {
     color: colors.primary[900],
@@ -176,9 +176,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sectionTitle: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   networksGrid: {
     gap: spacing[2],
@@ -187,16 +187,16 @@ const styles = StyleSheet.create({
   networkCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     gap: spacing[3],
   },
   networkCardActive: {
     borderColor: colors.primary.DEFAULT,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
   },
   networkDot: {
     width: 12,
@@ -204,13 +204,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   networkName: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontFamily: typography.families.medium,
     flex: 1,
   },
   networkNameActive: {
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     color: colors.primary[700],
   },
 });

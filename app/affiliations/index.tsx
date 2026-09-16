@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,8 +20,9 @@ import {
   Card,
   Avatar,
   EmptyState,
+  showAlert,
 } from '@daloa/ui';
-import { Store, CheckCircle2, Clock, Check, X } from 'lucide-react-native';
+import { Store, CheckCircle2, Clock, Check, X, Phone, MapPin } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
 export default function DriverAffiliationsScreen() {
@@ -81,7 +81,7 @@ export default function DriverAffiliationsScreen() {
       Haptics.success();
       fetchAffiliations();
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Impossible de mettre à jour l’affiliation');
+      showAlert('Erreur', err.message || 'Impossible de mettre à jour l’affiliation');
     }
   };
 
@@ -98,7 +98,7 @@ export default function DriverAffiliationsScreen() {
               setRefreshing(true);
               fetchAffiliations();
             }}
-            colors={['#FF6B00']}
+            colors={[colors.primary.DEFAULT]}
           />
         }
       >
@@ -127,8 +127,14 @@ export default function DriverAffiliationsScreen() {
                 <Avatar uri={seller?.shop_logo_url || seller?.avatar_url} name={seller?.shop_name || 'Boutique'} size={48} />
                 <View style={styles.shopInfo}>
                   <Text style={styles.shopName}>{seller?.shop_name || seller?.full_name || 'Commerçant'}</Text>
-                  <Text style={styles.shopPhone}>📞 {seller?.phone || 'Téléphone non précisé'}</Text>
-                  <Text style={styles.shopDistrict}>📍 {seller?.district || 'Daloa'}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                    <Phone size={11} color={colors.grey[500]} />
+                    <Text style={styles.shopPhone}>{seller?.phone || 'Téléphone non précisé'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                    <MapPin size={11} color={colors.grey[500]} />
+                    <Text style={styles.shopDistrict}>{seller?.district || 'Daloa'}</Text>
+                  </View>
                 </View>
 
                 {isActive && <CheckCircle2 size={22} color="#059669" />}
@@ -139,13 +145,13 @@ export default function DriverAffiliationsScreen() {
                       onPress={() => handleRespond(aff.id, 'active')}
                       style={[styles.actionBtn, styles.acceptBtn]}
                     >
-                      <Check size={16} color="#FFFFFF" />
+                      <Check size={16} color={colors.text.inverse} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleRespond(aff.id, 'rejected')}
                       style={[styles.actionBtn, styles.rejectBtn]}
                     >
-                      <X size={16} color="#EF4444" />
+                      <X size={16} color={colors.status.error} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -159,31 +165,31 @@ export default function DriverAffiliationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  scrollContent: { padding: spacing[4], gap: spacing[3], backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: colors.bg.surface },
+  scrollContent: { padding: spacing[4], gap: spacing[3], backgroundColor: colors.bg.DEFAULT },
   infoBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     padding: spacing[4],
     alignItems: 'center',
     gap: spacing[1],
   },
-  infoTitle: { color: '#111827', fontSize: typography.sizes.base, fontWeight: typography.weights.bold },
+  infoTitle: { color: colors.text.DEFAULT, fontSize: typography.sizes.base, fontFamily: typography.families.bold },
   infoSub: { color: colors.grey[600], fontSize: typography.sizes.xs, textAlign: 'center', lineHeight: 16 },
   shopCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
     gap: spacing[3],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   shopInfo: { flex: 1, gap: 2 },
-  shopName: { color: '#111827', fontSize: typography.sizes.sm, fontWeight: typography.weights.bold },
+  shopName: { color: colors.text.DEFAULT, fontSize: typography.sizes.sm, fontFamily: typography.families.bold },
   shopPhone: { color: colors.grey[500], fontSize: typography.sizes.xs },
   shopDistrict: { color: colors.grey[400], fontSize: 11 },
   actionsRow: { flexDirection: 'row', gap: 6 },

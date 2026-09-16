@@ -1,3 +1,4 @@
+import { colors, showAlert } from '@daloa/ui';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -5,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
@@ -75,7 +75,7 @@ export default function DeliveryRunExecutionScreen() {
       setOrder(orderData);
     } catch (err: any) {
       console.error('Erreur chargement course:', err);
-      Alert.alert('Erreur', err.message || 'Impossible de charger les détails de la course.');
+      showAlert('Erreur', err.message || 'Impossible de charger les détails de la course.');
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function DeliveryRunExecutionScreen() {
 
   const handleCall = (phone?: string) => {
     if (!phone) {
-      Alert.alert('Numéro indisponible', 'Aucun contact téléphonique renseigné.');
+      showAlert('Numéro indisponible', 'Aucun contact téléphonique renseigné.');
       return;
     }
     Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`);
@@ -141,7 +141,7 @@ export default function DeliveryRunExecutionScreen() {
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        Alert.alert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez l’acheteur.');
+        showAlert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez l’acheteur.');
       } else {
         const dropoffCoords =
           order?.delivery_lat != null && order?.delivery_lng != null
@@ -158,7 +158,7 @@ export default function DeliveryRunExecutionScreen() {
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        Alert.alert('Livraison réussie ! 🚀', `Félicitations ! Vos gains ont été crédités.`);
+        showAlert('Livraison réussie ! 🚀', `Félicitations ! Vos gains ont été crédités.`);
       }
     } catch (err: any) {
       throw err;
@@ -174,9 +174,9 @@ export default function DeliveryRunExecutionScreen() {
       Haptics.warning();
       setIsIncidentModalOpen(false);
       await fetchRunData();
-      Alert.alert('Incident signalé', 'Le support logistique DaloaDelivery a été alerté.');
+      showAlert('Incident signalé', 'Le support logistique DaloaDelivery a été alerté.');
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Impossible de signaler l’incident.');
+      showAlert('Erreur', err.message || 'Impossible de signaler l’incident.');
     } finally {
       setIsSubmittingIncident(false);
     }
@@ -185,7 +185,7 @@ export default function DeliveryRunExecutionScreen() {
   if (loading || !assignment || !order) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF9800" />
+        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>Chargement des données de course…</Text>
       </SafeAreaView>
     );
@@ -201,7 +201,7 @@ export default function DeliveryRunExecutionScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.8}>
-          <ChevronLeft size={22} color="#111827" />
+          <ChevronLeft size={22} color={colors.text.DEFAULT} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Course #{assignment.id.slice(0, 8).toUpperCase()}</Text>
         <View style={{ width: 36 }} />
@@ -211,7 +211,7 @@ export default function DeliveryRunExecutionScreen() {
         {/* Alerte couvre-feu */}
         {curfew && (
           <View style={styles.curfewBanner}>
-            <AlertTriangle size={18} color="#D97706" />
+            <AlertTriangle size={18} color={colors.categories.home.text} />
             <Text style={styles.curfewText}>
               Couvre-feu logistique en vigueur (22h30 - 05h30). Soyez vigilant lors de vos déplacements.
             </Text>
@@ -291,7 +291,7 @@ export default function DeliveryRunExecutionScreen() {
             style={styles.incidentBtn}
             activeOpacity={0.8}
           >
-            <AlertTriangle size={16} color="#DC2626" />
+            <AlertTriangle size={16} color={colors.status.errorDark} />
             <Text style={styles.incidentBtnText}>Signaler un incident ou litige</Text>
           </TouchableOpacity>
         )}

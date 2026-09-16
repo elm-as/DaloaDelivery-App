@@ -100,18 +100,18 @@ export default function AnnuaireScreen() {
       <View style={styles.headerControls}>
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
-            <Search size={16} color="#9CA3AF" />
+            <Search size={16} color={colors.text.subtle} />
             <TextInput
               value={search}
               onChangeText={setSearch}
               placeholder="Chercher un livreur, quartier..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.subtle}
               style={styles.searchInput}
               returnKeyType="search"
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')} hitSlop={6}>
-                <X size={16} color="#9CA3AF" />
+                <X size={16} color={colors.text.subtle} />
               </TouchableOpacity>
             )}
           </View>
@@ -121,7 +121,7 @@ export default function AnnuaireScreen() {
             onPress={() => Haptics.lightImpact()}
             accessibilityLabel="Filtres avancés"
           >
-            <SlidersHorizontal size={16} color="#374151" />
+            <SlidersHorizontal size={16} color={colors.text.body} />
           </TouchableOpacity>
 
           {/* Sélecteur Vue Liste / Carte */}
@@ -139,7 +139,7 @@ export default function AnnuaireScreen() {
             >
               <List
                 size={16}
-                color={viewMode === 'list' ? '#FF6B00' : '#6B7280'}
+                color={viewMode === 'list' ? colors.primary.DEFAULT : colors.text.muted}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -155,7 +155,7 @@ export default function AnnuaireScreen() {
             >
               <MapIcon
                 size={16}
-                color={viewMode === 'map' ? '#FF6B00' : '#6B7280'}
+                color={viewMode === 'map' ? colors.primary.DEFAULT : colors.text.muted}
               />
             </TouchableOpacity>
           </View>
@@ -208,19 +208,19 @@ export default function AnnuaireScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#FF6B00']}
-            tintColor="#FF6B00"
+            colors={[colors.primary.DEFAULT]}
+            tintColor={colors.primary.DEFAULT}
           />
         }
       >
         {loading ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="small" color="#FF6B00" />
+            <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
             <Text style={styles.loadingText}>Chargement de l'annuaire...</Text>
           </View>
         ) : filteredLivreurs.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Bike size={28} color="#9CA3AF" />
+            <Bike size={28} color={colors.text.subtle} />
             <Text style={styles.emptyTitle}>Aucun coursier trouvé</Text>
             <Text style={styles.emptyDesc}>
               Essayez un autre mot-clé ou modifiez le filtre de transport.

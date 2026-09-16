@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,9 +19,11 @@ import {
   typography,
   Header,
   Button,
+  showAlert,
 } from '@daloa/ui';
 import { ShieldCheck, Camera, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
+import { requiresDrivingLicence } from '@daloa/config';
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -31,9 +32,14 @@ export default function VerificationScreen() {
   const [cniFront, setCniFront] = useState<string | null>(null);
   const [cniBack, setCniBack] = useState<string | null>(null);
   const [selfie, setSelfie] = useState<string | null>(null);
+  const [licence, setLicence] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handlePickDocument = async (target: 'front' | 'back' | 'selfie') => {
+  /* Le permis n'est demandé que pour un véhicule motorisé. L'exiger d'un
+     coursier à vélo l'écarterait sans raison. */
+  const needsLicence = requiresDrivingLicence(driverProfile?.vehicle_type);
+
+  const handlePickDocument = async (target: 'front' | 'back' | 'selfie' | 'licence') => {
     Haptics.lightImpact();
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.8,
@@ -44,17 +50,26 @@ export default function VerificationScreen() {
       if (target === 'front') setCniFront(result.assets[0].uri);
       if (target === 'back') setCniBack(result.assets[0].uri);
       if (target === 'selfie') setSelfie(result.assets[0].uri);
+      if (target === 'licence') setLicence(result.assets[0].uri);
     }
   };
 
   const handleSubmit = async () => {
     if (!driverProfile?.id) {
-      Alert.alert('Session requise', 'Veuillez vous reconnecter pour soumettre votre dossier de vérification.');
+      showAlert('Session requise', 'Veuillez vous reconnecter pour soumettre votre dossier de vérification.');
       return;
     }
 
     if (!cniFront || !cniBack || !selfie) {
-      Alert.alert('Documents requis', 'Veuillez photographier le recto, le verso de votre CNI et votre selfie.');
+      showAlert('Documents requis', 'Veuillez photographier le recto, le verso de votre CNI et votre selfie.');
+      return;
+    }
+
+    if (needsLicence && !licence) {
+      showAlert(
+        'Permis requis',
+        `Votre véhicule (${driverProfile?.vehicle_type}) nécessite un permis de conduire valide. Photographiez-le pour continuer.`
+      );
       return;
     }
 
@@ -63,23 +78,27 @@ export default function VerificationScreen() {
       const frontPath = await deliveryService.uploadKycDocument(cniFront, driverProfile.id, 'cni_front');
       const backPath = await deliveryService.uploadKycDocument(cniBack, driverProfile.id, 'cni_back');
       const selfiePath = await deliveryService.uploadKycDocument(selfie, driverProfile.id, 'selfie');
+      const licencePath = licence
+        ? await deliveryService.uploadKycDocument(licence, driverProfile.id, 'licence')
+        : null;
 
       await deliveryService.submitKycVerification(driverProfile.id, {
         cniUrl: frontPath,
         selfieCniUrl: selfiePath,
         portraitLiveUrl: backPath,
+        licenceUrl: licencePath,
       });
 
       await refreshDriverProfile?.();
 
       Haptics.success();
-      Alert.alert(
+      showAlert(
         'Documents reçus ! 🎉',
         'Votre dossier de vérification a été transmis à l’équipe DaloaDelivery. Validation sous 24h.',
         [{ text: 'Super', onPress: () => router.back() }]
       );
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Échec de l’envoi du dossier');
+      showAlert('Erreur', err.message || 'Échec de l’envoi du dossier');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +118,7 @@ export default function VerificationScreen() {
         </View>
 
         {/* 1. CNI Recto */}
-        <Text style={styles.sectionTitle}>1. Recto de la CNI ou Permis de conduire *</Text>
+        <Text style={styles.sectionTitle}>1. Recto de votre pièce d'identité *</Text>
         {cniFront ? (
           <Image source={{ uri: cniFront }} style={styles.previewImage} />
         ) : (
@@ -131,13 +150,34 @@ export default function VerificationScreen() {
           </TouchableOpacity>
         )}
 
+        {/* 4. Permis — uniquement pour un véhicule motorisé */}
+        {needsLicence && (
+          <>
+            <Text style={styles.sectionTitle}>
+              4. Permis de conduire ({driverProfile?.vehicle_type}) *
+            </Text>
+            <Text style={styles.sectionHint}>
+              Votre pièce d'identité dit qui vous êtes ; le permis atteste que vous
+              pouvez conduire votre véhicule. Les deux sont demandés.
+            </Text>
+            {licence ? (
+              <Image source={{ uri: licence }} style={styles.previewImage} />
+            ) : (
+              <TouchableOpacity onPress={() => handlePickDocument('licence')} style={styles.uploadBox}>
+                <Camera size={24} color={colors.primary.DEFAULT} />
+                <Text style={styles.uploadText}>Prendre en photo le permis</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
         <View style={{ marginTop: 16 }}>
           <Button
             title="Envoyer mes documents pour validation"
             variant="primary"
             size="lg"
             loading={isSubmitting}
-            disabled={!cniFront || !cniBack || !selfie || isSubmitting}
+            disabled={!cniFront || !cniBack || !selfie || (needsLicence && !licence) || isSubmitting}
             onPress={handleSubmit}
             fullWidth
           />
@@ -152,26 +192,26 @@ export default function VerificationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[3],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   heroBox: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     padding: spacing[4],
     gap: spacing[2],
   },
   heroTitle: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     textAlign: 'center',
   },
   heroSub: {
@@ -181,17 +221,25 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   sectionTitle: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     marginTop: spacing[2],
+  },
+  sectionHint: {
+    color: colors.text.muted,
+    fontSize: typography.sizes.xs,
+    fontFamily: typography.families.normal,
+    lineHeight: 17,
+    marginTop: 4,
+    marginBottom: 2,
   },
   uploadBox: {
     borderWidth: 1.5,
     borderColor: colors.primary[200],
     borderStyle: 'dashed',
     borderRadius: radii.xl,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     padding: spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
@@ -200,12 +248,12 @@ const styles = StyleSheet.create({
   uploadText: {
     color: colors.primary[700],
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.families.semibold,
   },
   previewImage: {
     width: '100%',
     height: 140,
     borderRadius: radii.xl,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
 });

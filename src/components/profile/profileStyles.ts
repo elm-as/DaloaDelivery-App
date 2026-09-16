@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const profileStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   scrollContent: {
     paddingBottom: 40,
@@ -15,20 +15,20 @@ export const profileStyles = StyleSheet.create({
   kycCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     marginHorizontal: spacing[4],
     marginTop: spacing[4],
     padding: spacing[4],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: colors.primary[100],
     gap: spacing[3],
   },
   kycIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -39,11 +39,11 @@ export const profileStyles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   cardGroup: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     marginHorizontal: spacing[4],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     overflow: 'hidden',
   },
   menuRow: {
@@ -54,7 +54,7 @@ export const profileStyles = StyleSheet.create({
   },
   borderBottom: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   menuIconWrap: {
     width: 38,
@@ -78,7 +78,7 @@ export const profileStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     marginHorizontal: spacing[4],
     marginTop: spacing[6],
     marginBottom: spacing[4],
@@ -87,5 +87,51 @@ export const profileStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FEE2E2',
     gap: spacing[2],
+  },
+  /* ── Cartes de synthèse, comme le profil web (Note / Livraisons / Quartiers) ── */
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    paddingHorizontal: spacing[4],
+    marginTop: -22,
+    marginBottom: spacing[2],
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.bg.surface,
+    borderRadius: radii['2xl'],
+    paddingVertical: spacing[3],
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  statValue: {
+    fontSize: 21,
+    fontFamily: typography.families.black,
+    lineHeight: 23,
+  },
+  statLabel: {
+    fontSize: 9.5,
+    fontFamily: typography.families.extrabold,
+    color: colors.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: 5,
+  },
+  emailCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    backgroundColor: colors.bg.surface,
+    borderRadius: radii['2xl'],
+    padding: spacing[4],
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    marginTop: spacing[3],
   },
 });

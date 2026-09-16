@@ -7,10 +7,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, useAccent } from '@daloa/ui';
+import { colors, useAccent, typography } from '@daloa/ui';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 
-/* Icône d'onglet avec pill de fond animée (fidèle au BottomNavBar web DaloaDelivery) */
+/* Icône d'onglet avec pill de fond animée (miroir du BottomNavBar web DaloaDelivery).
+   Les couleurs viennent des tokens : l'accent est celui du web (#FF9800). */
 function DeliveryTabIcon({
   icon: Icon,
   color,
@@ -58,16 +59,16 @@ export default function DeliveryTabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: '#FF6B00',
+        tabBarActiveTintColor: accent.DEFAULT,
         tabBarInactiveTintColor: colors.grey[400],
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#F3F4F6',
+          backgroundColor: colors.bg.surface,
+          borderTopColor: colors.border.subtle,
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 84 : 58,
           paddingBottom: Platform.OS === 'ios' ? 24 : 4,
           paddingTop: 4,
-          shadowColor: '#000',
+          shadowColor: colors.text.DEFAULT,
           shadowOffset: { width: 0, height: -3 },
           shadowOpacity: 0.05,
           shadowRadius: 10,
@@ -75,7 +76,7 @@ export default function DeliveryTabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '700',
+          fontFamily: typography.families.bold,
           marginTop: 0,
         },
       }}
@@ -91,7 +92,7 @@ export default function DeliveryTabLayout() {
               icon={Home}
               color={color}
               focused={focused}
-              pillColor="#FFF4E6"
+              pillColor={accent[50]}
             />
           ),
         }}
@@ -107,7 +108,7 @@ export default function DeliveryTabLayout() {
               icon={Search}
               color={color}
               focused={focused}
-              pillColor="#FFF4E6"
+              pillColor={accent[50]}
             />
           ),
         }}
@@ -123,15 +124,19 @@ export default function DeliveryTabLayout() {
               icon={isDriver ? Home : Truck}
               color={color}
               focused={focused}
-              pillColor="#FFF4E6"
+              pillColor={accent[50]}
             />
           ),
         }}
       />
 
       {/* ── ONGLETS SPÉCIFIQUES LIVREUR CONNECTÉ (Livraisons & Profil) ── */}
+      {/* « Mes livraisons » : les courses DU livreur (en cours + terminées),
+          exactement comme /livraisons sur le web. L'onglet montrait auparavant
+          les courses disponibles à accepter — un libellé qui ne correspondait
+          pas à son contenu. */}
       <Tabs.Screen
-        name="available"
+        name="history"
         options={{
           href: isDriver ? undefined : null,
           title: 'Livraisons',
@@ -140,7 +145,7 @@ export default function DeliveryTabLayout() {
               icon={Package}
               color={color}
               focused={focused}
-              pillColor="#FFF4E6"
+              pillColor={accent[50]}
             />
           ),
         }}
@@ -156,18 +161,19 @@ export default function DeliveryTabLayout() {
               icon={User}
               color={color}
               focused={focused}
-              pillColor="#FFF4E6"
+              pillColor={accent[50]}
             />
           ),
         }}
       />
 
       {/* ── ROUTES INTERNES LIVREUR (Masquées de la barre) ── */}
+      {/* File des offres à accepter : atteinte depuis l'accueil livreur. */}
       <Tabs.Screen
-        name="history"
+        name="available"
         options={{
           href: null,
-          title: 'Historique',
+          title: 'Courses disponibles',
         }}
       />
       <Tabs.Screen

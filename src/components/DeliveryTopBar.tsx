@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, MoreVertical, Bell, X, Shield, FileText, HelpCircle } from 'lucide-react-native';
-import { colors, radii, spacing, AppText } from '@daloa/ui';
+import { colors, radii, spacing, AppText, typography } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 
 interface DeliveryTopBarProps {
@@ -47,7 +47,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
             style={styles.iconCircle}
             accessibilityLabel="Retour"
           >
-            <ArrowLeft size={18} color="#374151" strokeWidth={2.2} />
+            <ArrowLeft size={18} color={colors.text.body} strokeWidth={2.2} />
           </TouchableOpacity>
         )}
 
@@ -80,7 +80,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
           style={styles.iconCircle}
           accessibilityLabel="Menu d'options"
         >
-          <MoreVertical size={18} color="#4B5563" />
+          <MoreVertical size={18} color={colors.grey[600]} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -91,7 +91,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
           style={styles.iconCircle}
           accessibilityLabel="Notifications"
         >
-          <Bell size={18} color="#4B5563" />
+          <Bell size={18} color={colors.grey[600]} />
           <View style={styles.unreadBadge} />
         </TouchableOpacity>
       </View>
@@ -120,7 +120,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
                 router.push('/legal/terms' as any);
               }}
             >
-              <FileText size={16} color="#6B7280" />
+              <FileText size={16} color={colors.text.muted} />
               <AppText variant="body" color={colors.text.DEFAULT}>
                 Conditions Générales (CGU)
               </AppText>
@@ -133,7 +133,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
                 router.push('/legal/privacy' as any);
               }}
             >
-              <Shield size={16} color="#6B7280" />
+              <Shield size={16} color={colors.text.muted} />
               <AppText variant="body" color={colors.text.DEFAULT}>
                 Politique de confidentialité
               </AppText>
@@ -146,7 +146,7 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
                 router.push('/legal/help' as any);
               }}
             >
-              <HelpCircle size={16} color="#6B7280" />
+              <HelpCircle size={16} color={colors.text.muted} />
               <AppText variant="body" color={colors.text.DEFAULT}>
                 Aide & Support
               </AppText>
@@ -173,9 +173,9 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
             </View>
 
             <View style={styles.notifItem}>
-              <View style={[styles.notifDot, { backgroundColor: '#FF6B00' }]} />
+              <View style={[styles.notifDot, { backgroundColor: colors.primary.DEFAULT }]} />
               <View style={{ flex: 1 }}>
-                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontWeight: '700' }}>
+                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
                   Besoin d'une livraison rapide ?
                 </AppText>
                 <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
@@ -185,9 +185,9 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
             </View>
 
             <View style={styles.notifItem}>
-              <View style={[styles.notifDot, { backgroundColor: '#10B981' }]} />
+              <View style={[styles.notifDot, { backgroundColor: colors.status.success }]} />
               <View style={{ flex: 1 }}>
-                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontWeight: '700' }}>
+                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
                   Service Express Daloa
                 </AppText>
                 <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
@@ -205,9 +205,9 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     height: 52,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -231,14 +231,14 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#FF6B00',
+    fontFamily: typography.families.extrabold,
+    color: colors.primary.DEFAULT,
     letterSpacing: -0.3,
   },
   screenTitle: {
     fontSize: 17,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
     letterSpacing: -0.2,
   },
   rightGroup: {
@@ -250,11 +250,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     position: 'relative',
   },
   unreadBadge: {
@@ -264,9 +264,9 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.status.error,
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
   },
   modalBackdrop: {
     flex: 1,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   menuCard: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[4],
     shadowColor: '#000',
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   notifsCard: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[4],
     shadowColor: '#000',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
     paddingBottom: spacing[2],
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   menuItem: {
     flexDirection: 'row',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
+    borderBottomColor: colors.grey[50],
   },
   notifItem: {
     flexDirection: 'row',

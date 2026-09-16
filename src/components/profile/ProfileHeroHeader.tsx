@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ExpoImage } from 'expo-image';
-import { User, Camera } from 'lucide-react-native';
+import { User, Camera, Phone, Bike, Car, Truck } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { AppText, RatingStars, radii, spacing } from '@daloa/ui';
+import { colors, AppText, RatingStars, ProBadge, radii, spacing, typography, showAlert } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 import { deliveryPersonService, supabase } from '@daloa/api';
 import { useDriverAuth } from '../../context/DriverAuthContext';
@@ -19,6 +19,12 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
   const { refreshDriverProfile } = useDriverAuth();
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const isVerified = Boolean(driverProfile?.is_verified);
+  const vehicleType = (driverProfile?.vehicle_type || '').toLowerCase();
+  const VehicleIcon = vehicleType.includes('voiture') || vehicleType.includes('car')
+    ? Car
+    : vehicleType.includes('triporteur')
+    ? Truck
+    : Bike;
 
   const handlePickPhoto = async () => {
     if (!user?.id || isUploadingPhoto) return;
@@ -26,7 +32,7 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission requise', 'Veuillez autoriser l’accès à vos photos pour changer votre photo de profil.');
+        showAlert('Permission requise', 'Veuillez autoriser l’accès à vos photos pour changer votre photo de profil.');
         return;
       }
 
@@ -62,10 +68,10 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
 
       await refreshDriverProfile();
       Haptics.success();
-      Alert.alert('Succès', 'Votre photo de profil a été mise à jour.');
+      showAlert('Succès', 'Votre photo de profil a été mise à jour.');
     } catch (err: any) {
       console.warn('Erreur téléversement photo profil:', err);
-      Alert.alert('Erreur', 'Impossible de mettre à jour la photo de profil.');
+      showAlert('Erreur', 'Impossible de mettre à jour la photo de profil.');
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -73,7 +79,7 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
 
   return (
     <LinearGradient
-      colors={['#FFA726', '#FF9800', '#E65100']}
+      colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.heroHeader, { paddingTop: topInset + spacing[3] }]}
@@ -94,53 +100,64 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
             />
           ) : (
             <View style={styles.fallbackAvatar}>
-              <User size={28} color="#FFFFFF" />
+              <User size={28} color={colors.text.inverse} />
             </View>
           )}
 
           {isUploadingPhoto ? (
             <View style={styles.uploadingOverlay}>
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.text.inverse} />
             </View>
           ) : (
             <View style={styles.cameraBadge}>
-              <Camera size={13} color="#FFFFFF" strokeWidth={2.2} />
+              <Camera size={13} color={colors.text.inverse} strokeWidth={2.2} />
             </View>
           )}
         </TouchableOpacity>
 
         <View style={styles.profileDetails}>
           <View style={styles.nameBadgeRow}>
-            <AppText variant="h2" color="#FFFFFF" numberOfLines={1} style={styles.driverName}>
+            <AppText variant="h2" color={colors.text.inverse} numberOfLines={1} style={styles.driverName}>
               {driverProfile?.name || 'Livreur Daloa'}
             </AppText>
-            <View
-              style={[
-                styles.verifiedPill,
-                { backgroundColor: isVerified ? '#ECFDF5' : '#FFFBEB' },
-              ]}
-            >
-              <AppText
-                variant="caption"
-                color={isVerified ? '#059669' : '#D97706'}
-                style={styles.verifiedText}
+            {isVerified ? (
+              <ProBadge variant="deliverer" size="sm" />
+            ) : (
+              <View
+                style={[
+                  styles.verifiedPill,
+                  { backgroundColor: colors.status.warningLight },
+                ]}
               >
-                {isVerified ? 'VÉRIFIÉ' : 'EN ATTENTE'}
-              </AppText>
-            </View>
+                <AppText
+                  variant="caption"
+                  color={colors.categories.home.text}
+                  style={styles.verifiedText}
+                >
+                  EN ATTENTE
+                </AppText>
+              </View>
+            )}
           </View>
 
-          <AppText variant="caption" color="rgba(255, 255, 255, 0.85)">
-            📞 {driverProfile?.phone || user?.email || 'Non renseigné'}
-          </AppText>
-          <AppText variant="caption" color="rgba(255, 255, 255, 0.85)">
-            🛵 {driverProfile?.vehicle_type?.toUpperCase() || 'MOTO'} · Daloa
-          </AppText>
+          <View style={styles.heroMetaRow}>
+            <Phone size={11} color="rgba(255, 255, 255, 0.85)" strokeWidth={2.2} />
+            <AppText variant="caption" color="rgba(255, 255, 255, 0.85)">
+              {driverProfile?.phone || user?.email || 'Non renseigné'}
+            </AppText>
+          </View>
+
+          <View style={styles.heroMetaRow}>
+            <VehicleIcon size={11} color="rgba(255, 255, 255, 0.85)" strokeWidth={2.2} />
+            <AppText variant="caption" color="rgba(255, 255, 255, 0.85)">
+              {driverProfile?.vehicle_type?.toUpperCase() || 'MOTO'} · Daloa
+            </AppText>
+          </View>
 
           <View style={{ marginTop: 4 }}>
             <RatingStars
-              rating={driverProfile?.rating || 5.0}
-              totalReviews={driverProfile?.total_reviews || 0}
+              rating={driverProfile?.rating ?? 0}
+              totalReviews={driverProfile?.total_reviews ?? 0}
               size={12}
             />
           </View>
@@ -190,9 +207,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#FF6B00',
+    backgroundColor: colors.primary.DEFAULT,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -219,7 +236,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   driverName: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
   },
   verifiedPill: {
     paddingHorizontal: 7,
@@ -227,8 +244,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   verifiedText: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     fontSize: 9,
     letterSpacing: 0.5,
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
   },
 });

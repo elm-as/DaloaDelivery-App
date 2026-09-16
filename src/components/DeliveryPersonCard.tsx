@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { Star, ChevronRight, Bike, Car, Truck } from 'lucide-react-native';
-import { colors, radii, spacing, AppText } from '@daloa/ui';
+import { colors, radii, spacing, AppText, ProBadge, typography } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 
 export interface DeliveryPersonData {
@@ -63,15 +63,15 @@ export const DeliveryPersonCard: React.FC<DeliveryPersonCardProps> = ({
   const renderVehicleIcon = () => {
     const v = vehicle.toLowerCase();
     if (v.includes('vélo') || v.includes('velo')) {
-      return <Bike size={12} color="#4B5563" strokeWidth={2.2} />;
+      return <Bike size={12} color={colors.grey[600]} strokeWidth={2.2} />;
     }
     if (v.includes('voiture') || v.includes('car')) {
-      return <Car size={12} color="#4B5563" strokeWidth={2.2} />;
+      return <Car size={12} color={colors.grey[600]} strokeWidth={2.2} />;
     }
     if (v.includes('triporteur')) {
-      return <Truck size={12} color="#4B5563" strokeWidth={2.2} />;
+      return <Truck size={12} color={colors.grey[600]} strokeWidth={2.2} />;
     }
-    return <Bike size={12} color="#4B5563" strokeWidth={2.2} />;
+    return <Bike size={12} color={colors.grey[600]} strokeWidth={2.2} />;
   };
 
   const firstZone = person.district || (person.coverage_zones && person.coverage_zones[0]);
@@ -96,7 +96,7 @@ export const DeliveryPersonCard: React.FC<DeliveryPersonCardProps> = ({
         <View
           style={[
             styles.statusDot,
-            { backgroundColor: isOnline ? '#10B981' : '#9CA3AF' },
+            { backgroundColor: isOnline ? colors.status.success : colors.text.subtle },
           ]}
         />
       </View>
@@ -107,21 +107,24 @@ export const DeliveryPersonCard: React.FC<DeliveryPersonCardProps> = ({
           <Text style={styles.name} numberOfLines={1}>
             {person.name || 'Coursier Daloa'}
           </Text>
-          {isVerified && (
-            <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedCheck}>✓</Text>
-            </View>
-          )}
+          {isVerified && <ProBadge variant="deliverer" iconOnly size="xs" ring={false} />}
         </View>
 
         <View style={styles.metaRow}>
-          <View style={styles.ratingBox}>
-            <Star size={11} color="#F59E0B" fill="#F59E0B" />
-            <Text style={styles.ratingText}>{ratingVal}</Text>
-            {mode === 'full' && (
-              <Text style={styles.reviewCount}>({totalRev})</Text>
-            )}
-          </View>
+          {totalRev > 0 ? (
+            <View style={styles.ratingBox}>
+              <Star size={11} color={colors.status.warning} fill={colors.status.warning} />
+              <Text style={styles.ratingText}>{ratingVal}</Text>
+              {mode === 'full' && (
+                <Text style={styles.reviewCount}>({totalRev})</Text>
+              )}
+            </View>
+          ) : (
+            <View style={styles.ratingBox}>
+              <Star size={11} color={colors.grey[400]} />
+              <Text style={[styles.ratingText, { color: colors.grey[400], fontFamily: typography.families.semibold }]}>Nouveau</Text>
+            </View>
+          )}
 
           <Text style={styles.bullet}>·</Text>
 
@@ -151,7 +154,7 @@ export const DeliveryPersonCard: React.FC<DeliveryPersonCardProps> = ({
               style={styles.whatsappBtn}
               accessibilityLabel="Contacter sur WhatsApp"
             >
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="#10B981">
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill={colors.status.success}>
                 <Path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
               </Svg>
             </TouchableOpacity>
@@ -163,13 +166,13 @@ export const DeliveryPersonCard: React.FC<DeliveryPersonCardProps> = ({
             style={styles.chevronBtn}
             accessibilityLabel="Voir le profil"
           >
-            <ChevronRight size={18} color="#4B5563" />
+            <ChevronRight size={18} color={colors.grey[600]} />
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.compactVoirBtn}>
           <Text style={styles.compactVoirText}>Voir</Text>
-          <ChevronRight size={14} color="#374151" />
+          <ChevronRight size={14} color={colors.text.body} />
         </View>
       )}
     </TouchableOpacity>
@@ -180,13 +183,13 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[3],
     marginHorizontal: spacing[4],
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -203,20 +206,20 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
   avatarFallback: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#E65100',
+    fontFamily: typography.families.extrabold,
+    color: colors.primary[700],
   },
   statusDot: {
     position: 'absolute',
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
   },
   info: {
     flex: 1,
@@ -239,22 +242,9 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
     flexShrink: 1,
-  },
-  verifiedBadge: {
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifiedCheck: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#FFFFFF',
   },
   metaRow: {
     flexDirection: 'row',
@@ -270,18 +260,18 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#D97706',
+    fontFamily: typography.families.extrabold,
+    color: colors.categories.home.text,
     fontVariant: ['tabular-nums'],
   },
   reviewCount: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.text.subtle,
     fontVariant: ['tabular-nums'],
   },
   bullet: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.text.subtle,
   },
   vehicleBox: {
     flexDirection: 'row',
@@ -290,12 +280,12 @@ const styles = StyleSheet.create({
   },
   vehicleText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#4B5563',
+    fontFamily: typography.families.medium,
+    color: colors.grey[600],
   },
   zoneText: {
     fontSize: 11,
-    color: '#6B7280',
+    color: colors.text.muted,
     maxWidth: 80,
   },
   actionButtons: {
@@ -307,9 +297,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: colors.status.successLight,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: colors.status.successBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -317,9 +307,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -330,11 +320,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: radii.full,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
   compactVoirText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#374151',
+    fontFamily: typography.families.bold,
+    color: colors.text.body,
   },
 });

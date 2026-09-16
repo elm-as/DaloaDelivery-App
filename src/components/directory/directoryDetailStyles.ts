@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const directoryDetailStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   centerLoading: {
     flex: 1,
@@ -14,8 +14,8 @@ export const directoryDetailStyles = StyleSheet.create({
   },
   notFoundText: {
     fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
+    color: colors.text.muted,
+    fontFamily: typography.families.medium,
   },
   scrollContent: {
     paddingBottom: 32,
@@ -35,7 +35,7 @@ export const directoryDetailStyles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     padding: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -52,14 +52,14 @@ export const directoryDetailStyles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 40,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarFallbackText: {
     fontSize: 32,
-    fontWeight: '900',
-    color: '#E65100',
+    fontFamily: typography.families.black,
+    color: colors.primary[700],
   },
   statusDotLarge: {
     position: 'absolute',
@@ -69,7 +69,7 @@ export const directoryDetailStyles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: colors.bg.surface,
   },
   nameRow: {
     flexDirection: 'row',
@@ -78,21 +78,8 @@ export const directoryDetailStyles = StyleSheet.create({
   },
   heroName: {
     fontSize: 20,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  verifiedBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifiedCheck: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontFamily: typography.families.black,
+    color: colors.text.inverse,
   },
   statusPill: {
     flexDirection: 'row',
@@ -111,8 +98,8 @@ export const directoryDetailStyles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: typography.families.bold,
+    color: colors.text.inverse,
   },
   vehiclePill: {
     flexDirection: 'row',
@@ -126,8 +113,8 @@ export const directoryDetailStyles = StyleSheet.create({
   },
   vehiclePillText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.inverse,
     letterSpacing: 0.5,
   },
   statsOverlap: {
@@ -138,7 +125,7 @@ export const directoryDetailStyles = StyleSheet.create({
   statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     paddingVertical: 14,
     paddingHorizontal: spacing[4],
@@ -148,7 +135,7 @@ export const directoryDetailStyles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
   },
   statCol: {
     flex: 1,
@@ -162,77 +149,40 @@ export const directoryDetailStyles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#111827',
+    fontFamily: typography.families.black,
+    color: colors.text.DEFAULT,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: '800',
-    color: '#9CA3AF',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.subtle,
     letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
     height: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
+  // Bloc de contact : une colonne, pas une rangée. Les boutons occupent toute
+  // la largeur l'un sous l'autre — en rangée, ils se recroquevillaient à gauche.
+  contactBlock: {
     paddingHorizontal: spacing[4],
     marginTop: spacing[4],
   },
-  whatsappActionBtn: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#25D366',
-    borderRadius: radii.xl,
-    paddingVertical: 13,
-    gap: 8,
-    shadowColor: '#25D366',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  whatsappActionText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  callActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.xl,
-    paddingVertical: 13,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  callActionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#374151',
-  },
   infoCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     marginHorizontal: spacing[4],
     marginTop: spacing[4],
     padding: spacing[4],
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
   },
   infoTitle: {
     fontSize: 13,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.DEFAULT,
     letterSpacing: 0.3,
     marginBottom: spacing[2],
   },
@@ -248,11 +198,42 @@ export const directoryDetailStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radii.lg,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
   },
   zoneChipText: {
     fontSize: 11.5,
-    fontWeight: '700',
-    color: '#E65100',
+    fontFamily: typography.families.bold,
+    color: colors.primary[700],
+  },
+  infoBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.text.body,
+  },
+  reviewRow: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+  },
+  reviewHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  reviewAuthor: {
+    fontSize: 13,
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 1,
+  },
+  reviewComment: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.text.muted,
+    marginTop: 4,
   },
 });

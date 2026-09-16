@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, TextInput, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Linking } from 'react-native';
 import { Bike, CheckCircle2, FileText, XCircle } from 'lucide-react-native';
-import { colors, Button } from '@daloa/ui';
+import { colors, Button, showAlert } from '@daloa/ui';
 import { REJECTION_REASONS, styles } from './adminStyles';
 
 export interface DriverRow {
@@ -10,6 +10,7 @@ export interface DriverRow {
   phone: string | null;
   photo_url: string | null;
   cni_url: string | null;
+  licence_url?: string | null;
   vehicle_type: string | null;
   verification_status: string | null;
   is_verified: boolean | null;
@@ -62,6 +63,22 @@ export const DriverVerificationCard: React.FC<Props> = ({
         <Text style={styles.warnText}>Aucun document transmis.</Text>
       )}
 
+      {d.licence_url ? (
+        <TouchableOpacity
+          style={styles.docLink}
+          onPress={() => Linking.openURL(d.licence_url as string)}
+        >
+          <FileText size={14} color={colors.status.infoDark} />
+          <Text style={styles.docLinkText}>Ouvrir le permis de conduire</Text>
+        </TouchableOpacity>
+      ) : (
+        ['Moto', 'Voiture', 'Triporteur'].includes(d.vehicle_type || '') && (
+          <Text style={styles.warnText}>
+            Aucun permis transmis, alors que le véhicule déclaré ({d.vehicle_type}) en exige un.
+          </Text>
+        )
+      )}
+
       {rejectingId === d.id ? (
         <View style={styles.rejectBox}>
           <Text style={styles.rejectLabel}>Motif du refus</Text>
@@ -105,7 +122,7 @@ export const DriverVerificationCard: React.FC<Props> = ({
               loading={acting === d.id}
               onPress={() => {
                 if (!rejectReason.trim()) {
-                  Alert.alert('Motif requis', 'Indiquez la raison du refus.');
+                  showAlert('Motif requis', 'Indiquez la raison du refus.');
                   return;
                 }
                 onVerify(d, false, rejectReason.trim());

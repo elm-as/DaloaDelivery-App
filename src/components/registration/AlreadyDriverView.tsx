@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle } from 'lucide-react-native';
-import { colors, radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 interface Props {
   onGoToDashboard: () => void;
@@ -12,7 +12,7 @@ export const AlreadyDriverView: React.FC<Props> = ({ onGoToDashboard }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.iconWrapper}>
-        <CheckCircle size={48} color="#10B981" />
+        <CheckCircle size={48} color={colors.status.success} />
       </View>
       <Text style={styles.title}>Vous êtes déjà livreur</Text>
       <Text style={styles.subtitle}>
@@ -32,7 +32,7 @@ export const AlreadyDriverView: React.FC<Props> = ({ onGoToDashboard }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing[6],
@@ -48,13 +48,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.text.muted,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing[6],
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dashboardBtnText: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
 });

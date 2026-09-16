@@ -15,6 +15,7 @@ export interface CreateDeliveryPersonPayload {
   payout_network?: string | null;
   payout_number?: string | null;
   cni_url?: string | null;
+  licence_url?: string | null;
   selfie_cni_url?: string | null;
   portrait_live_url?: string | null;
 }
@@ -35,6 +36,7 @@ export interface DeliveryPersonProfile {
   payout_network: string | null;
   payout_number: string | null;
   cni_url: string | null;
+  licence_url: string | null;
   selfie_cni_url: string | null;
   portrait_live_url: string | null;
   created_at: string;

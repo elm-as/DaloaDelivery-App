@@ -3,9 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -19,12 +17,12 @@ import {
   Card,
   Avatar,
   RatingStars,
-  Badge,
+  ProBadge,
   SearchInput,
   EmptyState,
+  RevealablePhone,
 } from '@daloa/ui';
-import { PhoneCall, Bike } from 'lucide-react-native';
-import { Haptics } from '@daloa/utils';
+import { Bike } from 'lucide-react-native';
 
 export default function DeliverersDirectoryScreen() {
   const router = useRouter();
@@ -51,11 +49,6 @@ export default function DeliverersDirectoryScreen() {
     d.name?.toLowerCase().includes(search.toLowerCase()) ||
     d.vehicle_type?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleCall = (phone: string) => {
-    Haptics.lightImpact();
-    Linking.openURL(`tel:${phone}`);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,19 +81,17 @@ export default function DeliverersDirectoryScreen() {
               <View style={styles.info}>
                 <View style={styles.nameRow}>
                   <Text style={styles.name} numberOfLines={1}>{d.name}</Text>
-                  {d.is_verified && <Badge label="VÉRIFIÉ" variant="verified" size="sm" />}
+                  {d.is_verified && <ProBadge variant="deliverer" size="xs" />}
                 </View>
 
-                <Text style={styles.vehicle}>🛵 {d.vehicle_type?.toUpperCase() || 'MOTO'}</Text>
-                <RatingStars rating={d.rating || 5.0} totalReviews={d.total_reviews || 0} size={11} />
+                <View style={styles.vehicleRow}>
+                  <Bike size={12} color={colors.primary[700]} strokeWidth={2.2} />
+                  <Text style={styles.vehicle}>{d.vehicle_type?.toUpperCase() || 'MOTO'}</Text>
+                </View>
+                <RatingStars rating={d.rating ?? 0} totalReviews={d.total_reviews ?? 0} size={11} />
               </View>
 
-              <TouchableOpacity
-                onPress={() => handleCall(d.phone)}
-                style={styles.callBtn}
-              >
-                <PhoneCall size={16} color={colors.primary.DEFAULT} />
-              </TouchableOpacity>
+              <RevealablePhone phone={d.phone} compact />
             </Card>
           ))
         )}
@@ -112,28 +103,28 @@ export default function DeliverersDirectoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   searchBar: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[2],
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   scrollContent: {
     padding: spacing[4],
     gap: spacing[2],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
     gap: spacing[3],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   info: {
     flex: 1,
@@ -145,23 +136,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   name: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   vehicle: {
     color: colors.primary[700],
     fontSize: 11,
-    fontWeight: typography.weights.medium,
-  },
-  callBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.lg,
-    backgroundColor: '#FFF4E6',
-    borderWidth: 1,
-    borderColor: '#FFE0B2',
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontFamily: typography.families.medium,
   },
 });

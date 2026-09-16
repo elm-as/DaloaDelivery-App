@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Bike } from 'lucide-react-native';
-import { radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 interface Props {
   step: number;
@@ -21,7 +21,7 @@ export const RegistrationStepHeader: React.FC<Props> = ({
 }) => {
   return (
     <LinearGradient
-      colors={['#FFA726', '#FF9800', '#E65100']}
+      colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0.9, y: 1 }}
       style={styles.heroGradient}
@@ -33,7 +33,7 @@ export const RegistrationStepHeader: React.FC<Props> = ({
           accessibilityLabel="Retour"
           activeOpacity={0.8}
         >
-          <ArrowLeft size={18} color="#FFFFFF" />
+          <ArrowLeft size={18} color={colors.text.inverse} />
         </TouchableOpacity>
 
         <View style={styles.stepBadge}>
@@ -46,7 +46,7 @@ export const RegistrationStepHeader: React.FC<Props> = ({
 
       <View style={styles.titleArea}>
         <View style={styles.iconCircle}>
-          <Bike size={24} color="#E65100" />
+          <Bike size={24} color={colors.primary[700]} />
         </View>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.success,
   },
   stepBadgeText: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
     fontSize: 11,
-    fontWeight: '900',
+    fontFamily: typography.families.black,
     letterSpacing: 0.5,
   },
   titleArea: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontFamily: typography.families.black,
+    color: colors.text.inverse,
     textAlign: 'center',
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 12,
-    color: '#FFE0B2',
+    color: colors.primary[100],
     textAlign: 'center',
     marginTop: 3,
   },

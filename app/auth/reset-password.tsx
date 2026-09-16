@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { authService } from '@daloa/api';
-import { colors, radii, spacing, Header, Input, Button } from '@daloa/ui';
+import { colors, radii, spacing, Header, Input, Button, typography } from '@daloa/ui';
 import { KeyRound, Mail, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
@@ -47,7 +47,7 @@ export default function DriverResetPasswordScreen() {
         {isSuccess ? (
           <View style={styles.successCard}>
             <View style={styles.successIconBox}>
-              <CheckCircle2 size={48} color="#10B981" />
+              <CheckCircle2 size={48} color={colors.status.success} />
             </View>
             <Text style={styles.title}>Email envoyé !</Text>
             <Text style={styles.sub}>
@@ -60,7 +60,7 @@ export default function DriverResetPasswordScreen() {
               style={styles.backButton}
               activeOpacity={0.85}
             >
-              <ArrowLeft size={18} color="#FFFFFF" />
+              <ArrowLeft size={18} color={colors.text.inverse} />
               <Text style={styles.backButtonText}>Retour à la connexion</Text>
             </TouchableOpacity>
           </View>
@@ -77,7 +77,7 @@ export default function DriverResetPasswordScreen() {
 
             {errorMsg && (
               <View style={styles.errorBox}>
-                <AlertCircle size={18} color="#DC2626" />
+                <AlertCircle size={18} color={colors.status.errorDark} />
                 <Text style={styles.errorText}>{errorMsg}</Text>
               </View>
             )}
@@ -89,7 +89,7 @@ export default function DriverResetPasswordScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<Mail size={18} color="#9CA3AF" />}
+              leftIcon={<Mail size={18} color={colors.text.subtle} />}
               containerStyle={{ width: '100%', marginTop: spacing[2] }}
             />
 
@@ -113,7 +113,7 @@ export default function DriverResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   content: {
     padding: spacing[4],
@@ -122,12 +122,12 @@ const styles = StyleSheet.create({
   },
   formCard: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[5],
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -136,12 +136,12 @@ const styles = StyleSheet.create({
   },
   successCard: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[6],
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   iconBox: {
     width: 64,
@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing[5],
   },
   title: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     marginBottom: 6,
     textAlign: 'center',
   },
   sub: {
-    color: '#6B7280',
+    color: colors.text.muted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -179,14 +179,14 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   emailHighlight: {
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.errorLight,
     borderWidth: 1,
     borderColor: '#FEE2E2',
     borderRadius: radii.md,
@@ -196,9 +196,9 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    color: '#DC2626',
+    color: colors.status.errorDark,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   backButton: {
     flexDirection: 'row',
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
     marginTop: spacing[4],
   },
   backButtonText: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
 });

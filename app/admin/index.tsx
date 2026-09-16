@@ -4,14 +4,13 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '@daloa/api';
-import { colors, Header, Button } from '@daloa/ui';
+import { colors, Header, Button, showAlert } from '@daloa/ui';
 import { ShieldCheck, ShieldAlert, Lock, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -43,7 +42,7 @@ export default function AdminScreen() {
     const [d, a] = await Promise.all([
       supabase
         .from('delivery_persons')
-        .select('id, name, phone, photo_url, cni_url, vehicle_type, verification_status, is_verified, created_at')
+        .select('id, name, phone, photo_url, cni_url, licence_url, vehicle_type, verification_status, is_verified, created_at')
         .order('created_at', { ascending: false })
         .limit(100),
       supabase
@@ -102,14 +101,14 @@ export default function AdminScreen() {
       setRejectingId(null);
       setRejectReason('');
       await load();
-      Alert.alert(
+      showAlert(
         approved ? 'Livreur vérifié' : 'Document refusé',
         approved
           ? `${driver.name || 'Le livreur'} peut désormais prendre des courses.`
           : `${driver.name || 'Le livreur'} a été notifié du motif.`
       );
     } catch (err: any) {
-      Alert.alert('Échec', err?.message || 'Action impossible.');
+      showAlert('Échec', err?.message || 'Action impossible.');
     } finally {
       setActing(null);
     }
@@ -135,16 +134,16 @@ export default function AdminScreen() {
 
       Haptics.success();
       await load();
-      Alert.alert('Litige résolu', DISPUTE_LABELS[action]);
+      showAlert('Litige résolu', DISPUTE_LABELS[action]);
     } catch (err: any) {
-      Alert.alert('Échec', err?.message || 'Résolution impossible.');
+      showAlert('Échec', err?.message || 'Résolution impossible.');
     } finally {
       setActing(null);
     }
   };
 
   const confirmDispute = (dispute: DisputeRow, action: DisputeAction) => {
-    Alert.alert('Confirmer la décision', DISPUTE_CONFIRM[action], [
+    showAlert('Confirmer la décision', DISPUTE_CONFIRM[action], [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Confirmer', style: 'destructive', onPress: () => resolveDispute(dispute, action) },
     ]);

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile, DeliveryPersonRow, LoginInput, RegisterInput, Coordinates } from '@daloa/types';
 import { authService, deliveryService, supabase, notificationsService } from '@daloa/api';
 import * as Location from 'expo-location';
+import '../lib/location-polyfill';
 
 interface DriverAuthContextType {
   user: any | null;
@@ -55,13 +56,16 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Suivi de la position GPS si En Ligne
   useEffect(() => {
     let locationSubscription: Location.LocationSubscription | null = null;
+    let isCancelled = false;
 
     async function startLocationTracking() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return;
+        if (status !== 'granted' || isCancelled) return;
 
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (isCancelled) return;
+
         const coords: Coordinates = {
           lat: loc.coords.latitude,
           lng: loc.coords.longitude,
@@ -72,12 +76,15 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           await deliveryService.updateDriverLocation(driverProfile.id, coords);
         }
 
-        locationSubscription = await Location.watchPositionAsync(
+        if (isCancelled) return;
+
+        const sub = await Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.Balanced,
             distanceInterval: 50, // chaque 50 mètres
           },
           (newLoc) => {
+            if (isCancelled) return;
             const newCoords: Coordinates = {
               lat: newLoc.coords.latitude,
               lng: newLoc.coords.longitude,
@@ -88,6 +95,16 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
           }
         );
+
+        if (isCancelled) {
+          try {
+            sub.remove();
+          } catch {
+            // Ignorer si déjà nettoyé
+          }
+        } else {
+          locationSubscription = sub;
+        }
       } catch (err) {
         console.warn('Erreur GPS livreur:', err);
       }
@@ -98,7 +115,15 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     return () => {
-      locationSubscription?.remove();
+      isCancelled = true;
+      if (locationSubscription) {
+        try {
+          locationSubscription.remove();
+        } catch {
+          // Sécurisation contre le bug d'EventEmitter sur Web lors de la déconnexion
+        }
+        locationSubscription = null;
+      }
     };
   }, [isOnline, driverProfile?.id]);
 

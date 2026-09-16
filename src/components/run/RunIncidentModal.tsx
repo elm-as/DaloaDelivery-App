@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, Button, BottomSheet } from '@daloa/ui';
+import { colors, radii, spacing, Button, BottomSheet, typography } from '@daloa/ui';
 
 const QUICK_REASONS = [
   'Client absent / injoignable',
@@ -66,7 +66,7 @@ export const RunIncidentModal: React.FC<Props> = ({
           multiline
           numberOfLines={3}
           placeholder="Précisez les détails de l'incident (optionnel)..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.subtle}
           value={reason}
           onChangeText={setReason}
         />
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   instructions: {
     fontSize: 13,
-    color: '#4B5563',
+    color: colors.grey[600],
     lineHeight: 18,
     marginBottom: spacing[2],
   },
@@ -104,26 +104,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   tag: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderRadius: radii.md,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   tagText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
+    fontFamily: typography.families.semibold,
+    color: colors.text.body,
   },
   input: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderRadius: radii.lg,
     padding: 12,
     fontSize: 14,
-    color: '#111827',
+    color: colors.text.DEFAULT,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     minHeight: 75,
     textAlignVertical: 'top',
   },

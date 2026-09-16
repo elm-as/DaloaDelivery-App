@@ -58,14 +58,33 @@ export default function DriverRegisterScreen() {
             setHasExistingProfile(true);
             return;
           }
-          if (session.user.user_metadata?.full_name) {
+
+          const { data: uRow } = await supabase
+            .from('users')
+            .select('full_name, phone, avatar_url')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (uRow?.full_name) {
+            setFullName(uRow.full_name);
+          } else if (session.user.user_metadata?.full_name) {
             setFullName(session.user.user_metadata.full_name);
           }
+
+          if (uRow?.phone) {
+            setPhone(uRow.phone);
+          } else if (session.user.user_metadata?.phone) {
+            setPhone(session.user.user_metadata.phone);
+          }
+
           if (session.user.email) {
             setEmail(session.user.email);
           }
-          const googlePic = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
-          if (googlePic) setPhotoUri(googlePic);
+          const avatar =
+            uRow?.avatar_url ||
+            session.user.user_metadata?.avatar_url ||
+            session.user.user_metadata?.picture;
+          if (avatar) setPhotoUri(avatar);
           setStep(2);
         }
       } catch (err) {
@@ -167,12 +186,61 @@ export default function DriverRegisterScreen() {
             },
           },
         });
-        if (signUpErr) throw signUpErr;
-        authUserId = signUpData.user?.id;
+
+        if (signUpErr) {
+          const isAlreadyRegistered =
+            signUpErr.message?.toLowerCase().includes('already registered') ||
+            signUpErr.message?.toLowerCase().includes('already exists') ||
+            (signUpErr as any).status === 422;
+
+          if (isAlreadyRegistered) {
+            // Vérifier d'abord si ce compte a été créé via Google (aucun mot de passe configuré)
+            try {
+              const { data: provInfo } = await supabase.rpc('get_auth_provider_for_email', {
+                p_email: email.trim(),
+              });
+              if (provInfo?.exists && !provInfo?.has_password && provInfo?.provider === 'google') {
+                throw new Error(
+                  "Ce compte a été créé avec Google sur DaloaMarket. Aucun mot de passe n'a été défini pour cette adresse. Veuillez cliquer sur « Continuer avec Google » en haut pour activer votre profil livreur en 1 clic !"
+                );
+              }
+            } catch (rpcErr: any) {
+              if (rpcErr.message && rpcErr.message.includes('Continuer avec Google')) {
+                throw rpcErr;
+              }
+            }
+
+            // Le compte existe déjà sur DaloaMarket : tentative de connexion avec le mot de passe saisi
+            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+              email: email.trim(),
+              password,
+            });
+
+            if (signInErr) {
+              throw new Error(
+                "Un compte DaloaMarket existe déjà avec cette adresse email. Le mot de passe entré ne correspond pas à ce compte."
+              );
+            }
+            authUserId = signInData.user?.id;
+          } else {
+            throw signUpErr;
+          }
+        } else {
+          authUserId = signUpData.user?.id;
+        }
       }
 
       if (!authUserId) {
         throw new Error('Impossible de valider votre compte utilisateur.');
+      }
+
+      // Vérifier si ce compte possède déjà un profil livreur
+      const existingDriver = await deliveryPersonService.getDeliveryPersonByUserId(authUserId);
+      if (existingDriver) {
+        Haptics.success();
+        await refreshDriverProfile();
+        router.replace('/(tabs)/livreur' as any);
+        return;
       }
 
       let uploadedPhotoUrl: string | null = null;
@@ -191,13 +259,27 @@ export default function DriverRegisterScreen() {
 
       const cleanPayoutNetwork = normalizePayoutNetwork(payoutNetwork);
 
+      // Conserver le rôle existant (admin ou vendeur) si l'utilisateur en possède déjà un sur DaloaMarket
+      const { data: currentUserRow } = await supabase
+        .from('users')
+        .select('role, avatar_url')
+        .eq('id', authUserId)
+        .maybeSingle();
+
+      const preservedRole =
+        currentUserRow?.role === 'admin' ||
+        currentUserRow?.role === 'superadmin' ||
+        currentUserRow?.role === 'vendeur'
+          ? currentUserRow.role
+          : 'livreur';
+
       await supabase
         .from('users')
         .update({
           full_name: fullName.trim(),
           phone: phone.trim(),
-          avatar_url: uploadedPhotoUrl || null,
-          role: 'livreur',
+          avatar_url: uploadedPhotoUrl || currentUserRow?.avatar_url || null,
+          role: preservedRole,
           payout_network: cleanPayoutNetwork,
           payout_number: payoutNumber || phone.trim(),
         } as any)
@@ -255,7 +337,7 @@ export default function DriverRegisterScreen() {
       >
         {errorMsg && (
           <View style={styles.errorBanner}>
-            <AlertCircle size={18} color="#DC2626" />
+            <AlertCircle size={18} color={colors.status.errorDark} />
             <Text style={styles.errorText}>{errorMsg}</Text>
           </View>
         )}
@@ -273,6 +355,7 @@ export default function DriverRegisterScreen() {
               setShowPassword={setShowPassword}
               onGoogleAuth={handleGoogleAuth}
               isGoogleLoading={isGoogleLoading}
+              onGoToLogin={() => router.push('/auth/login' as any)}
             />
           )}
 

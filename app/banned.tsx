@@ -4,11 +4,10 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, radii, spacing, typography, Header, Input, Button } from '@daloa/ui';
+import { colors, radii, spacing, typography, Header, Input, Button, showAlert } from '@daloa/ui';
 import { ShieldAlert, Send } from 'lucide-react-native';
 import { useDriverAuth } from '../src/context/DriverAuthContext';
 import { supabase } from '@daloa/api';
@@ -21,7 +20,7 @@ export default function DriverBannedScreen() {
 
   const handleAppeal = async () => {
     if (!appealReason.trim()) {
-      Alert.alert('Erreur', 'Veuillez expliciter les faits pour votre recours.');
+      showAlert('Erreur', 'Veuillez expliciter les faits pour votre recours.');
       return;
     }
 
@@ -35,10 +34,10 @@ export default function DriverBannedScreen() {
         status: 'pending',
       });
 
-      Alert.alert('Recours envoyé', 'L’équipe de modération logistique étudiera votre dossier.');
+      showAlert('Recours envoyé', 'L’équipe de modération logistique étudiera votre dossier.');
       setAppealReason('');
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Impossible d’envoyer le recours');
+      showAlert('Erreur', err.message || 'Impossible d’envoyer le recours');
     } finally {
       setIsSubmitting(false);
     }
@@ -74,7 +73,7 @@ export default function DriverBannedScreen() {
           size="lg"
           loading={isSubmitting}
           onPress={handleAppeal}
-          leftIcon={<Send size={16} color="#FFFFFF" />}
+          leftIcon={<Send size={16} color={colors.text.inverse} />}
           style={{ marginTop: spacing[2], width: '100%' }}
         />
 
@@ -93,26 +92,26 @@ export default function DriverBannedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
   },
   iconBox: {
     width: 80,
     height: 80,
     borderRadius: radii.full,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: spacing[4],
   },
   title: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     textAlign: 'center',
     marginBottom: spacing[2],
   },

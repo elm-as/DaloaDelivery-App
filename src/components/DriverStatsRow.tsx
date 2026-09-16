@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TrendingUp, CheckCircle2, Star } from 'lucide-react-native';
-import { colors, radii, spacing, AppText, AppPressable } from '@daloa/ui';
+import { colors, radii, spacing, AppText, AppPressable, typography } from '@daloa/ui';
 import { formatFCFA } from '@daloa/utils';
 
 interface DriverStatsRowProps {
@@ -25,19 +25,19 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
         style={[styles.kpiCard, styles.earningsCard]}
         accessibilityLabel="Détails des gains du jour"
       >
-        <View style={[styles.iconWrap, { backgroundColor: '#FFF4E6' }]}>
-          <TrendingUp size={16} color="#E65100" />
+        <View style={[styles.iconWrap, { backgroundColor: colors.primary[50] }]}>
+          <TrendingUp size={16} color={colors.primary[700]} />
         </View>
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
           Gains du jour
         </AppText>
-        <AppText variant="title" color="#E65100" style={styles.tabularNumbers}>
+        <AppText variant="title" color={colors.primary[700]} style={styles.tabularNumbers}>
           {formatFCFA(earningsToday)}
         </AppText>
       </AppPressable>
 
       <View style={styles.kpiCard}>
-        <View style={[styles.iconWrap, { backgroundColor: '#ECFDF5' }]}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.status.successLight }]}>
           <CheckCircle2 size={16} color="#059669" />
         </View>
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
@@ -50,12 +50,12 @@ export const DriverStatsRow: React.FC<DriverStatsRowProps> = ({
 
       <View style={styles.kpiCard}>
         <View style={[styles.iconWrap, { backgroundColor: '#FEF3C7' }]}>
-          <Star size={16} color="#D97706" />
+          <Star size={16} color={colors.categories.home.text} />
         </View>
         <AppText variant="caption" color={colors.text.muted} style={styles.kpiLabel}>
           Note
         </AppText>
-        <AppText variant="title" color="#D97706" style={styles.tabularNumbers}>
+        <AppText variant="title" color={colors.categories.home.text} style={styles.tabularNumbers}>
           {rating.toFixed(1)}
         </AppText>
       </View>
@@ -73,11 +73,11 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   earningsCard: {
-    borderColor: '#FFE0B2',
+    borderColor: colors.primary[100],
   },
   iconWrap: {
     width: 32,
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
   },
   kpiLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: typography.families.semibold,
     marginBottom: 2,
   },
   tabularNumbers: {
     fontVariant: ['tabular-nums'],
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     fontSize: 15,
   },
 });

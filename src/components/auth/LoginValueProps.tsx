@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Shield, Wallet, Zap } from 'lucide-react-native';
-import { radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const LoginValueProps: React.FC = () => {
   return (
     <View style={styles.valueSection}>
       <View style={styles.valueCard}>
-        <View style={[styles.valueIconWrap, { backgroundColor: '#FFF4E6' }]}>
-          <Wallet size={18} color="#E65100" />
+        <View style={[styles.valueIconWrap, { backgroundColor: colors.primary[50] }]}>
+          <Wallet size={18} color={colors.primary[700]} />
         </View>
         <View style={styles.valueContent}>
           <Text style={styles.valueTitle}>Rémunération Transparente</Text>
@@ -20,7 +20,7 @@ export const LoginValueProps: React.FC = () => {
 
       <View style={styles.valueCard}>
         <View style={[styles.valueIconWrap, { backgroundColor: '#FEF3C7' }]}>
-          <Shield size={18} color="#D97706" />
+          <Shield size={18} color={colors.categories.home.text} />
         </View>
         <View style={styles.valueContent}>
           <Text style={styles.valueTitle}>Sécurité Couvre-Feu (22h30)</Text>
@@ -31,7 +31,7 @@ export const LoginValueProps: React.FC = () => {
       </View>
 
       <View style={styles.valueCard}>
-        <View style={[styles.valueIconWrap, { backgroundColor: '#ECFDF5' }]}>
+        <View style={[styles.valueIconWrap, { backgroundColor: colors.status.successLight }]}>
           <Zap size={18} color="#059669" />
         </View>
         <View style={styles.valueContent}>
@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   valueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     gap: spacing[3],
   },
   valueIconWrap: {
@@ -73,12 +73,12 @@ const styles = StyleSheet.create({
   },
   valueTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
   },
   valueDesc: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.text.muted,
     marginTop: 2,
     lineHeight: 16,
   },

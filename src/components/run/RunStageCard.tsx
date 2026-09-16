@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { PhoneCall, Navigation, ScanLine, CheckCircle2 } from 'lucide-react-native';
-import { colors, radii, spacing, Button } from '@daloa/ui';
+import { PhoneCall, Navigation, ScanLine, CheckCircle2, MapPin, Phone } from 'lucide-react-native';
+import { colors, radii, spacing, Button, typography } from '@daloa/ui';
 
 interface Props {
   stepNumber: number;
@@ -46,16 +46,22 @@ export const RunStageCard: React.FC<Props> = ({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.stageTitle}>{title}</Text>
-          <Text style={styles.stageDistrict} numberOfLines={1}>
-            📍 {location}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+            <MapPin size={11} color={colors.grey[500]} />
+            <Text style={styles.stageDistrict} numberOfLines={1}>
+              {location}
+            </Text>
+          </View>
         </View>
         {isDone && <CheckCircle2 size={22} color="#059669" />}
       </View>
 
       <View style={styles.partnerInfo}>
         <Text style={styles.partnerName}>{partnerName}</Text>
-        <Text style={styles.partnerPhone}>📞 {partnerPhone}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+          <Phone size={11} color={colors.grey[600]} />
+          <Text style={styles.partnerPhone}>{partnerPhone}</Text>
+        </View>
       </View>
 
       {isActive && (
@@ -78,7 +84,7 @@ export const RunStageCard: React.FC<Props> = ({
             variant="primary"
             size="lg"
             onPress={onScan}
-            leftIcon={<ScanLine size={18} color="#FFFFFF" />}
+            leftIcon={<ScanLine size={18} color={colors.text.inverse} />}
             fullWidth
           />
         </View>
@@ -89,12 +95,12 @@ export const RunStageCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   stageCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[4],
     marginBottom: spacing[4],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   stageCardActive: {
     borderColor: colors.primary.DEFAULT,
@@ -108,7 +114,7 @@ const styles = StyleSheet.create({
   },
   stageCardDone: {
     opacity: 0.85,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   stageHeader: {
     flexDirection: 'row',
@@ -120,7 +126,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border.DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -128,36 +134,36 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary.DEFAULT,
   },
   stageBadgeText: {
-    color: '#4B5563',
-    fontWeight: '700',
+    color: colors.grey[600],
+    fontFamily: typography.families.bold,
     fontSize: 14,
   },
   stageBadgeTextActive: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
   },
   stageTitle: {
-    color: '#111827',
-    fontWeight: '700',
+    color: colors.text.DEFAULT,
+    fontFamily: typography.families.bold,
     fontSize: 15,
   },
   stageDistrict: {
-    color: '#6B7280',
+    color: colors.text.muted,
     fontSize: 13,
     marginTop: 2,
   },
   partnerInfo: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderRadius: radii.lg,
     padding: spacing[3],
     marginBottom: spacing[2],
   },
   partnerName: {
-    color: '#111827',
-    fontWeight: '600',
+    color: colors.text.DEFAULT,
+    fontFamily: typography.families.semibold,
     fontSize: 14,
   },
   partnerPhone: {
-    color: '#4B5563',
+    color: colors.grey[600],
     fontSize: 13,
     marginTop: 2,
   },
@@ -174,12 +180,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: radii.lg,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   actionBtnOutlineText: {
-    fontWeight: '600',
+    fontFamily: typography.families.semibold,
     fontSize: 13,
   },
 });

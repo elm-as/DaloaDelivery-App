@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { usePayoutSettings, usePayoutHistory, useDriverDailyStats, paymentServic
 import {
   colors,
   Button,
+  showAlert,
 } from '@daloa/ui';
 import { Wallet, ArrowDownRight, Clock, ShieldCheck, CheckCircle2, Smartphone, ChevronRight, ArrowLeft } from 'lucide-react-native';
 import { formatDate, formatFCFA, Haptics } from '@daloa/utils';
@@ -43,7 +43,7 @@ export default function EarningsScreen() {
 
   const handleRequestPayout = async () => {
     if (!payoutSettings) {
-      Alert.alert(
+      showAlert(
         'Numéro Mobile Money requis',
         'Veuillez d’abord enregistrer votre numéro Mobile Money pour recevoir vos gains de livraison.',
         [{ text: 'Configurer', onPress: () => router.push('/payout-setup' as any) }]
@@ -52,7 +52,7 @@ export default function EarningsScreen() {
     }
 
     if (availableBalance <= 0) {
-      Alert.alert('Solde insuffisant', 'Vous n’avez aucun gain disponible à retirer actuellement.');
+      showAlert('Solde insuffisant', 'Vous n’avez aucun gain disponible à retirer actuellement.');
       return;
     }
 
@@ -69,12 +69,12 @@ export default function EarningsScreen() {
       });
 
       refetch();
-      Alert.alert(
+      showAlert(
         'Demande de retrait enregistrée ! 🎉',
         `Votre demande de retrait de ${formatFCFA(availableBalance)} a été transmise avec succès.`
       );
     } catch (err: any) {
-      Alert.alert('Erreur', err.message || 'Impossible d’effectuer le retrait.');
+      showAlert('Erreur', err.message || 'Impossible d’effectuer le retrait.');
     } finally {
       setIsRequesting(false);
     }
@@ -84,7 +84,7 @@ export default function EarningsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color="#FF6B00" />
+          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         </View>
       </SafeAreaView>
     );
@@ -98,7 +98,7 @@ export default function EarningsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-          <ArrowLeft size={22} color="#111827" />
+          <ArrowLeft size={22} color={colors.text.DEFAULT} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Portefeuille & Gains</Text>
       </View>
@@ -115,11 +115,11 @@ export default function EarningsScreen() {
           </View>
 
           <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#EFF6FF' }]}>
-              <Clock size={16} color="#2563EB" />
+            <View style={[styles.kpiIconWrapper, { backgroundColor: colors.status.infoLight }]}>
+              <Clock size={16} color={colors.categories.electronics.text} />
             </View>
             <Text style={styles.kpiLabel}>Courses en cours</Text>
-            <Text style={[styles.kpiValue, { color: '#2563EB' }]}>{formatFCFA(pendingEscrow)}</Text>
+            <Text style={[styles.kpiValue, { color: colors.categories.electronics.text }]}>{formatFCFA(pendingEscrow)}</Text>
           </View>
         </View>
 
@@ -129,7 +129,7 @@ export default function EarningsScreen() {
           {payoutSettings ? (
             <View style={styles.payoutAccountRow}>
               <View style={styles.payoutAccountIcon}>
-                <Smartphone size={18} color="#FF6B00" />
+                <Smartphone size={18} color={colors.primary.DEFAULT} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.networkName}>{payoutSettings.network.toUpperCase()}</Text>

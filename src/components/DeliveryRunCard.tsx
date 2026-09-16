@@ -31,7 +31,7 @@ export const DeliveryRunCard: React.FC<DeliveryRunCardProps> = ({
         </View>
 
         <View style={styles.distanceBadge}>
-          <Navigation size={13} color="#FFFFFF" />
+          <Navigation size={13} color={colors.text.inverse} />
           <Text style={styles.distanceText}>{formatDistance(run.distanceKm)}</Text>
         </View>
       </View>
@@ -96,10 +96,10 @@ export const DeliveryRunCard: React.FC<DeliveryRunCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     padding: spacing[4],
     marginBottom: spacing[3],
     gap: spacing[3],
@@ -109,19 +109,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
     paddingBottom: spacing[3],
   },
   gainLabel: {
     color: colors.grey[500],
     fontSize: typography.sizes.xs,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     marginBottom: 2,
     textTransform: 'uppercase',
   },
   gainAmount: {
     fontSize: 18,
-    fontWeight: '900',
+    fontFamily: typography.families.black,
     color: colors.primary[600],
   },
   distanceBadge: {
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   distanceText: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   routeContainer: {
     gap: 4,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   routeLine: {
     width: 2,
     height: 18,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border.DEFAULT,
     marginLeft: 5,
     marginVertical: -2,
   },
@@ -175,28 +175,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   stepDistrict: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   stepLocation: {
     color: colors.grey[600],
     fontSize: typography.sizes.xs,
   },
   productRow: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderRadius: radii.md,
     padding: spacing[2],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   productText: {
     color: colors.grey[700],
     fontSize: typography.sizes.xs,
-    fontWeight: '600',
+    fontFamily: typography.families.semibold,
   },
   acceptBtn: {
     marginTop: spacing[1],

@@ -5,11 +5,9 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { BottomSheet, Button, OtpInput } from '@daloa/ui';
-import { colors, radii, spacing, typography } from '@daloa/ui';
+import { BottomSheet, Button, OtpInput, colors, radii, spacing, typography, showAlert } from '@daloa/ui';
 import { Camera, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
@@ -51,7 +49,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     Haptics.lightImpact();
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission requise', 'L’accès à la caméra est nécessaire pour photographier le colis.');
+      showAlert('Permission requise', 'L’accès à la caméra est nécessaire pour photographier le colis.');
       return;
     }
 
@@ -161,9 +159,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   inputLabel: {
-    color: '#111827',
+    color: colors.text.DEFAULT,
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
     marginBottom: spacing[2],
   },
   cameraBox: {
@@ -171,7 +169,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[200],
     borderStyle: 'dashed',
     borderRadius: radii.xl,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     padding: spacing[4],
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,7 +179,7 @@ const styles = StyleSheet.create({
   cameraText: {
     color: colors.primary[700],
     fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontFamily: typography.families.bold,
   },
   cameraSub: {
     color: colors.grey[500],
@@ -195,14 +193,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     borderRadius: radii.xl,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
   retakeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: radii.md,
@@ -212,7 +210,7 @@ const styles = StyleSheet.create({
   retakeText: {
     color: colors.grey[800],
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontFamily: typography.families.semibold,
   },
   errorText: {
     color: colors.status.error,

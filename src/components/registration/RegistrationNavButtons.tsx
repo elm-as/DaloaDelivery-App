@@ -1,3 +1,4 @@
+import { colors } from '@daloa/ui';
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -29,7 +30,7 @@ export const RegistrationNavButtons: React.FC<Props> = ({
           style={styles.backBtn}
           activeOpacity={0.8}
         >
-          <ChevronLeft size={20} color="#374151" />
+          <ChevronLeft size={20} color={colors.text.body} />
           <Text style={styles.backBtnText}>Retour</Text>
         </TouchableOpacity>
       )}
@@ -42,7 +43,7 @@ export const RegistrationNavButtons: React.FC<Props> = ({
           activeOpacity={0.85}
         >
           <Text style={styles.nextBtnText}>Continuer</Text>
-          <ChevronRight size={20} color="#FFFFFF" />
+          <ChevronRight size={20} color={colors.text.inverse} />
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -52,7 +53,7 @@ export const RegistrationNavButtons: React.FC<Props> = ({
           activeOpacity={0.85}
         >
           {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.text.inverse} />
           ) : (
             <Text style={styles.submitBtnText}>Terminer mon inscription</Text>
           )}

@@ -75,6 +75,17 @@ export default function DriverLoginScreen() {
         router.replace('/(tabs)' as any);
       }
     } catch (err: any) {
+      try {
+        const { data: provInfo } = await supabase.rpc('get_auth_provider_for_email', {
+          p_email: emailOrPhone.trim(),
+        });
+        if (provInfo?.exists && !provInfo?.has_password && provInfo?.provider === 'google') {
+          setErrorMsg(
+            "Ce compte a été créé avec Google sur DaloaMarket. Aucun mot de passe n'est configuré : veuillez cliquer sur « Continuer avec Google » ci-dessous."
+          );
+          return;
+        }
+      } catch {}
       setErrorMsg(err.message || 'Identifiants livreur incorrects.');
     } finally {
       setIsLoading(false);
@@ -122,7 +133,7 @@ export default function DriverLoginScreen() {
       >
         {/* En-tête avec dégradé DaloaDelivery */}
         <LinearGradient
-          colors={['#FFA726', '#FF9800', '#E65100']}
+          colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.curvedHeader}
@@ -133,11 +144,11 @@ export default function DriverLoginScreen() {
             accessibilityLabel="Retour"
             activeOpacity={0.8}
           >
-            <ArrowLeft size={18} color="#FFFFFF" />
+            <ArrowLeft size={18} color={colors.text.inverse} />
           </TouchableOpacity>
 
           <View style={styles.logoBadge}>
-            <Bike size={32} color="#E65100" />
+            <Bike size={32} color={colors.primary[700]} />
           </View>
 
           <Text style={styles.headerTitle}>Bon retour !</Text>
@@ -148,7 +159,7 @@ export default function DriverLoginScreen() {
         <View style={styles.formCard}>
           {errorMsg && (
             <View style={styles.errorBox}>
-              <AlertCircle size={18} color="#DC2626" />
+              <AlertCircle size={18} color={colors.status.errorDark} />
               <Text style={styles.errorText}>{errorMsg}</Text>
             </View>
           )}
@@ -161,7 +172,7 @@ export default function DriverLoginScreen() {
             activeOpacity={0.85}
           >
             {isGoogleLoading ? (
-              <ActivityIndicator size="small" color="#4B5563" />
+              <ActivityIndicator size="small" color={colors.grey[600]} />
             ) : (
               <GoogleIcon size={20} />
             )}

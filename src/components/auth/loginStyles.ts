@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const loginStyles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     paddingBottom: spacing[8],
   },
   curvedHeader: {
@@ -32,7 +32,7 @@ export const loginStyles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
@@ -44,17 +44,17 @@ export const loginStyles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.inverse,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#FFE0B2',
-    fontWeight: '500',
+    color: colors.primary[100],
+    fontFamily: typography.families.medium,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     marginHorizontal: spacing[4],
     marginTop: -spacing[6],
     borderRadius: radii['2xl'],
@@ -65,13 +65,13 @@ export const loginStyles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 5,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.errorLight,
     borderWidth: 1,
     borderColor: '#FEE2E2',
     borderRadius: radii.lg,
@@ -80,9 +80,9 @@ export const loginStyles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    color: '#DC2626',
+    color: colors.status.errorDark,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: typography.families.medium,
   },
   googleBtn: {
     flexDirection: 'row',
@@ -91,9 +91,9 @@ export const loginStyles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderRadius: radii.xl,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -102,8 +102,8 @@ export const loginStyles = StyleSheet.create({
   },
   googleBtnText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontFamily: typography.families.semibold,
+    color: colors.text.body,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -114,12 +114,12 @@ export const loginStyles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border.DEFAULT,
   },
   dividerText: {
     fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '500',
+    color: colors.text.subtle,
+    fontFamily: typography.families.medium,
   },
   forgotBtn: {
     alignSelf: 'flex-end',
@@ -129,8 +129,8 @@ export const loginStyles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#E65100',
+    fontFamily: typography.families.semibold,
+    color: colors.primary[700],
   },
   registerRow: {
     flexDirection: 'row',
@@ -141,11 +141,11 @@ export const loginStyles = StyleSheet.create({
   },
   registerText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.text.muted,
   },
   registerLink: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#E65100',
+    fontFamily: typography.families.bold,
+    color: colors.primary[700],
   },
 });

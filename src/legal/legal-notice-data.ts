@@ -15,10 +15,12 @@ export const DRIVER_LEGAL_NOTICE_DATA: DriverLegalNoticeGroup[] = [
     title: 'Éditeur du Service DaloaDelivery',
     items: [
       { label: 'Plateforme', value: 'DaloaDelivery (delivery.daloamarket.com)' },
-      { label: 'Fondateur & Direction', value: 'OULOBO Elmas Tresor' },
-      { label: 'Implantation', value: 'Daloa / Abidjan, Côte d’Ivoire' },
+      { label: 'Directeur de la publication', value: 'OULOBO Elmas Tresor' },
+      { label: 'Forme juridique', value: 'Entreprise individuelle — non immatriculée au RCCM à ce jour' },
+      { label: 'Adresse de l’éditeur', value: 'RueO21,68 — Yopougon, Abidjan, Côte d’Ivoire' },
+      { label: 'Zone d’activité', value: 'Daloa et sa région, Côte d’Ivoire' },
       { label: 'Emails officiels', value: 'support@daloamarket.com / contact@daloamarket.com' },
-      { label: 'Téléphone / WhatsApp', value: '+225 07 88 00 08 31' },
+      { label: 'WhatsApp (pas d’appels)', value: '+225 01 73 80 15 59' },
     ],
   },
   {

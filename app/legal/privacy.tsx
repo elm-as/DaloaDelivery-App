@@ -82,21 +82,21 @@ export default function DriverPrivacyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
     paddingBottom: spacing[8],
   },
   bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     marginBottom: spacing[3],
   },
   bannerIcon: {
@@ -112,18 +112,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   sectionWrap: {
     paddingVertical: spacing[3],
   },
   sectionDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     lineHeight: 18,
-    color: '#374151',
+    color: colors.text.body,
   },
   bulletsWrap: {
     marginTop: spacing[1],
@@ -165,6 +165,6 @@ const styles = StyleSheet.create({
   bulletText: {
     flex: 1,
     lineHeight: 17,
-    color: '#4B5563',
+    color: colors.grey[600],
   },
 });

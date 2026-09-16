@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
-import { colors, radii, spacing, Input } from '@daloa/ui';
+import { colors, radii, spacing, Input, typography } from '@daloa/ui';
 import { GoogleIcon } from '../GoogleIcon';
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
   setShowPassword: (val: boolean) => void;
   onGoogleAuth: () => void;
   isGoogleLoading: boolean;
+  onGoToLogin?: () => void;
 }
 
 export const AuthStep: React.FC<Props> = ({
@@ -28,6 +29,7 @@ export const AuthStep: React.FC<Props> = ({
   setShowPassword,
   onGoogleAuth,
   isGoogleLoading,
+  onGoToLogin,
 }) => {
   return (
     <View style={styles.container}>
@@ -44,7 +46,7 @@ export const AuthStep: React.FC<Props> = ({
         activeOpacity={0.85}
       >
         {isGoogleLoading ? (
-          <ActivityIndicator size="small" color="#4B5563" />
+          <ActivityIndicator size="small" color={colors.grey[600]} />
         ) : (
           <GoogleIcon size={20} />
         )}
@@ -83,7 +85,7 @@ export const AuthStep: React.FC<Props> = ({
           style={styles.eyeBtn}
           accessibilityLabel="Afficher/Masquer le mot de passe"
         >
-          {showPassword ? <EyeOff size={18} color="#9CA3AF" /> : <Eye size={18} color="#9CA3AF" />}
+          {showPassword ? <EyeOff size={18} color={colors.text.subtle} /> : <Eye size={18} color={colors.text.subtle} />}
         </TouchableOpacity>
       </View>
 
@@ -97,22 +99,35 @@ export const AuthStep: React.FC<Props> = ({
           leftIcon={<Lock size={16} color={colors.text.subtle} />}
         />
       </View>
+
+      {onGoToLogin && (
+        <TouchableOpacity
+          onPress={onGoToLogin}
+          style={styles.loginHintBtn}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.loginHintText}>
+            Vous avez déjà un compte DaloaMarket ?{' '}
+            <Text style={styles.loginHintLink}>Connectez-vous ici</Text>
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { gap: spacing[3] },
-  stepTitle: { fontSize: 16, fontWeight: '900', color: '#111827' },
-  stepSubtitle: { fontSize: 12, color: '#6B7280', marginTop: -4, marginBottom: 6 },
+  stepTitle: { fontSize: 16, fontFamily: typography.families.black, color: colors.text.DEFAULT },
+  stepSubtitle: { fontSize: 12, color: colors.text.muted, marginTop: -4, marginBottom: 6 },
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     borderRadius: radii.xl,
     paddingVertical: 13,
     paddingHorizontal: 16,
@@ -122,20 +137,34 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  googleBtnText: { fontSize: 13, fontWeight: '700', color: '#374151' },
+  googleBtnText: { fontSize: 13, fontFamily: typography.families.bold, color: colors.text.body },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 4,
     gap: 10,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
-  dividerText: { fontSize: 11, fontWeight: '600', color: '#9CA3AF' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border.DEFAULT },
+  dividerText: { fontSize: 11, fontFamily: typography.families.semibold, color: colors.text.subtle },
   passwordWrapper: { position: 'relative' },
   eyeBtn: {
     position: 'absolute',
     right: 12,
     top: 36,
     padding: 4,
+  },
+  loginHintBtn: {
+    marginTop: 8,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  loginHintText: {
+    fontSize: 12,
+    color: colors.text.muted,
+    textAlign: 'center',
+  },
+  loginHintLink: {
+    color: colors.primary.DEFAULT,
+    fontFamily: typography.families.bold,
   },
 });

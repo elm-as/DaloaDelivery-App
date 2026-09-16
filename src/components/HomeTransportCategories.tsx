@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Bike, Car, Truck } from 'lucide-react-native';
-import { colors, radii, spacing, AppText, AppPressable } from '@daloa/ui';
+import { colors, radii, spacing, AppText, AppPressable, typography } from '@daloa/ui';
 
 interface HomeTransportCategoriesProps {
   onSelectCategory: (category: string) => void;
@@ -9,10 +9,10 @@ interface HomeTransportCategoriesProps {
 }
 
 const CATEGORIES = [
-  { id: 'Moto', label: 'Moto', icon: Bike, color: '#E65100', bg: '#FFF4E6' },
+  { id: 'Moto', label: 'Moto', icon: Bike, color: colors.primary[700], bg: colors.primary[50] },
   { id: 'Vélo', label: 'Vélo', icon: Bike, color: '#0066CC', bg: '#E5F0FF' },
-  { id: 'Voiture', label: 'Voiture', icon: Car, color: '#059669', bg: '#ECFDF5' },
-  { id: 'Triporteur', label: 'Triporteur', icon: Truck, color: '#D97706', bg: '#FFFBEB' },
+  { id: 'Voiture', label: 'Voiture', icon: Car, color: '#059669', bg: colors.status.successLight },
+  { id: 'Triporteur', label: 'Triporteur', icon: Truck, color: colors.categories.home.text, bg: colors.status.warningLight },
 ];
 
 export const HomeTransportCategories: React.FC<HomeTransportCategoriesProps> = ({
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[2],
   },
   sectionTitle: {
-    fontWeight: '800',
+    fontFamily: typography.families.extrabold,
     fontSize: 11,
     letterSpacing: 0.6,
     marginBottom: spacing[3],
@@ -79,13 +79,13 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[2],
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: colors.bg.subtle,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     borderColor: colors.primary.DEFAULT,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
   },
   iconWrap: {
     width: 44,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     fontSize: 12,
   },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bike } from 'lucide-react-native';
-import { AppText, Button, radii, spacing } from '@daloa/ui';
+import { colors, AppText, Button, radii, spacing } from '@daloa/ui';
 
 interface Props {
   onLogin: () => void;
@@ -13,18 +13,18 @@ export const UnauthenticatedProfileView: React.FC<Props> = ({ onLogin, onRegiste
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FFA726', '#FF9800', '#E65100']}
+        colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.unauthHeader}
       >
         <View style={styles.unauthIconCircle}>
-          <Bike size={36} color="#E65100" />
+          <Bike size={36} color={colors.primary[700]} />
         </View>
-        <AppText variant="h1" color="#FFFFFF" center>
+        <AppText variant="h1" color={colors.text.inverse} center>
           Profil Livreur
         </AppText>
-        <AppText variant="body" color="#FFE0B2" center style={{ marginTop: 4 }}>
+        <AppText variant="body" color={colors.primary[100]} center style={{ marginTop: 4 }}>
           Connectez-vous pour gérer votre compte coursier.
         </AppText>
       </LinearGradient>
@@ -53,7 +53,7 @@ export const UnauthenticatedProfileView: React.FC<Props> = ({ onLogin, onRegiste
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   unauthHeader: {
     paddingHorizontal: spacing[5],
@@ -67,13 +67,13 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
   },
   unauthCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     marginHorizontal: spacing[4],
     marginTop: -spacing[4],
     borderRadius: radii['2xl'],

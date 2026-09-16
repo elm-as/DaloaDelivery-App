@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { colors } from '@daloa/ui';
+import { colors, typography } from '@daloa/ui';
 import { X, ScanLine, Keyboard, Zap } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 
@@ -76,14 +76,14 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
     if (!permission) {
       return (
         <View style={styles.center}>
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.text.inverse} />
         </View>
       );
     }
     if (!permission.granted) {
       return (
         <View style={styles.center}>
-          <ScanLine size={40} color="#FFFFFF" />
+          <ScanLine size={40} color={colors.text.inverse} />
           <Text style={styles.permTitle}>Accès caméra requis</Text>
           <Text style={styles.permText}>
             Autorisez la caméra pour scanner le QR code du {isPickup ? 'vendeur' : 'client'}.
@@ -144,14 +144,14 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <X size={22} color="#FFFFFF" />
+            <X size={22} color={colors.text.inverse} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.subtitle}>Validation instantanée par QR code</Text>
           </View>
           <View style={[styles.typeBadge, { backgroundColor: accent }]}>
-            <Zap size={13} color="#FFFFFF" />
+            <Zap size={13} color={colors.text.inverse} />
             <Text style={styles.typeBadgeText}>{isPickup ? 'Ramassage' : 'Livraison'}</Text>
           </View>
         </View>
@@ -162,7 +162,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
         {/* Fallback saisie manuelle */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={handleManual} style={styles.manualBtn} activeOpacity={0.85}>
-            <Keyboard size={16} color="#FFFFFF" />
+            <Keyboard size={16} color={colors.text.inverse} />
             <Text style={styles.manualBtnText}>Saisir le code à la main</Text>
           </TouchableOpacity>
         </View>
@@ -189,8 +189,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { color: '#FFFFFF', fontSize: 17, fontWeight: '900', letterSpacing: -0.3 },
-  subtitle: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '600', marginTop: 1 },
+  title: { color: colors.text.inverse, fontSize: 17, fontFamily: typography.families.black, letterSpacing: -0.3 },
+  subtitle: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: typography.families.semibold, marginTop: 1 },
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  typeBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
+  typeBadgeText: { color: colors.text.inverse, fontSize: 11, fontFamily: typography.families.black },
   body: { flex: 1 },
   cameraContainer: { flex: 1, overflow: 'hidden' },
   overlay: { ...StyleSheet.absoluteFillObject },
@@ -226,17 +226,17 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   hintText: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     textAlign: 'center',
     paddingHorizontal: 30,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 32 },
-  permTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
-  permText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 19 },
+  permTitle: { color: colors.text.inverse, fontSize: 18, fontFamily: typography.families.black },
+  permText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: typography.families.medium, textAlign: 'center', lineHeight: 19 },
   permBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
-  permBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  permBtnText: { color: colors.text.inverse, fontSize: 14, fontFamily: typography.families.extrabold },
   footer: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 12 },
   manualBtn: {
     flexDirection: 'row',
@@ -249,6 +249,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
   },
-  manualBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  manualBtnText: { color: colors.text.inverse, fontSize: 14, fontFamily: typography.families.extrabold },
 });
 

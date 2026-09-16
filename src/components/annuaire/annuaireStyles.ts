@@ -1,18 +1,18 @@
 import { StyleSheet } from 'react-native';
-import { radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 export const annuaireStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
   },
   headerControls: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     paddingHorizontal: spacing[4],
     paddingTop: spacing[2],
     paddingBottom: spacing[3],
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
     gap: 10,
   },
   searchRow: {
@@ -24,7 +24,7 @@ export const annuaireStyles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderRadius: radii.xl,
     paddingHorizontal: 12,
     height: 42,
@@ -33,20 +33,20 @@ export const annuaireStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#111827',
-    fontWeight: '500',
+    color: colors.text.DEFAULT,
+    fontFamily: typography.families.medium,
   },
   filterBtn: {
     width: 42,
     height: 42,
     borderRadius: radii.xl,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   viewToggleGroup: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderRadius: radii.xl,
     padding: 3,
     gap: 2,
@@ -59,7 +59,7 @@ export const annuaireStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleBtnActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -76,18 +76,18 @@ export const annuaireStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: radii.full,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
   },
   filterChipActive: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: colors.primary.DEFAULT,
   },
   filterChipText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
+    fontFamily: typography.families.bold,
+    color: colors.grey[600],
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: colors.text.inverse,
   },
   counterRow: {
     paddingHorizontal: spacing[4],
@@ -96,8 +96,8 @@ export const annuaireStyles = StyleSheet.create({
   },
   counterText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#6B7280',
+    fontFamily: typography.families.extrabold,
+    color: colors.text.muted,
     letterSpacing: 0.5,
     fontVariant: ['tabular-nums'],
   },
@@ -112,10 +112,10 @@ export const annuaireStyles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.text.muted,
   },
   emptyBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii['2xl'],
     padding: spacing[8],
     marginHorizontal: spacing[4],
@@ -123,18 +123,18 @@ export const annuaireStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     borderStyle: 'dashed',
   },
   emptyTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
+    fontFamily: typography.families.bold,
+    color: colors.text.body,
     marginTop: 4,
   },
   emptyDesc: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.text.muted,
     textAlign: 'center',
   },
 });

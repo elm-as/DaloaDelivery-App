@@ -89,7 +89,7 @@ export default function DriverTermsScreen() {
                     </AppText>
                   </View>
                   <View style={[styles.chevronWrap, isExpanded && styles.chevronRotated]}>
-                    <ChevronDown size={18} color="#9CA3AF" />
+                    <ChevronDown size={18} color={colors.text.subtle} />
                   </View>
                 </AppPressable>
 
@@ -127,21 +127,21 @@ export default function DriverTermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
   },
   scrollContent: {
     padding: spacing[4],
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.bg.DEFAULT,
     paddingBottom: spacing[8],
   },
   bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[3],
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     marginBottom: spacing[3],
   },
   bannerIcon: {
@@ -164,21 +164,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[1],
   },
   expandText: {
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[3],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   articleWrap: {
     paddingVertical: spacing[2],
   },
   articleDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   articleHeader: {
     flexDirection: 'row',
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     lineHeight: 19,
-    color: '#374151',
+    color: colors.text.body,
   },
   bulletsWrap: {
     marginTop: spacing[2],
@@ -228,6 +228,6 @@ const styles = StyleSheet.create({
   bulletText: {
     flex: 1,
     lineHeight: 18,
-    color: '#4B5563',
+    color: colors.grey[600],
   },
 });

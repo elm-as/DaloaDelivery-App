@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, X, Check, MapPin } from 'lucide-react-native';
-import { radii, spacing, colors, Button } from '@daloa/ui';
+import { radii, spacing, colors, Button, typography } from '@daloa/ui';
 import { DALOA_ZONES } from '../../constants/zones';
 
 interface Props {
@@ -37,27 +37,27 @@ export const ZonesSelectionModal: React.FC<Props> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
-            <MapPin size={20} color="#FF6B00" />
+            <MapPin size={20} color={colors.primary.DEFAULT} />
             <Text style={styles.headerTitle}>Zones de livraison à Daloa</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <X size={20} color="#6B7280" />
+            <X size={20} color={colors.text.muted} />
           </TouchableOpacity>
         </View>
 
         {/* Barre de recherche des quartiers */}
         <View style={styles.searchWrapper}>
-          <Search size={16} color="#9CA3AF" />
+          <Search size={16} color={colors.text.subtle} />
           <TextInput
             style={styles.searchInput}
             placeholder="Rechercher un quartier (Lobia, Tazibouo...)"
             value={search}
             onChangeText={setSearch}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.subtle}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <X size={16} color="#9CA3AF" />
+              <X size={16} color={colors.text.subtle} />
             </TouchableOpacity>
           )}
         </View>
@@ -81,7 +81,7 @@ export const ZonesSelectionModal: React.FC<Props> = ({
                   <Text style={[styles.zonePillText, isSelected && styles.zonePillTextSelected]}>
                     {zone}
                   </Text>
-                  {isSelected && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                  {isSelected && <Check size={14} color={colors.text.inverse} strokeWidth={3} />}
                 </TouchableOpacity>
               );
             })}
@@ -104,7 +104,7 @@ export const ZonesSelectionModal: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: colors.bg.surface },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -112,15 +112,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.bg.subtle,
   },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 16, fontWeight: '900', color: '#111827' },
+  headerTitle: { fontSize: 16, fontFamily: typography.families.black, color: colors.text.DEFAULT },
   closeBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -128,20 +128,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderRadius: radii.xl,
     paddingHorizontal: 12,
     marginHorizontal: spacing[4],
     marginTop: spacing[3],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
     height: 44,
   },
-  searchInput: { flex: 1, fontSize: 13, color: '#111827' },
+  searchInput: { flex: 1, fontSize: 13, color: colors.text.DEFAULT },
   counterText: {
     fontSize: 11.5,
-    fontWeight: '700',
-    color: '#6B7280',
+    fontFamily: typography.families.bold,
+    color: colors.text.muted,
     marginHorizontal: spacing[4],
     marginTop: 8,
     marginBottom: 4,
@@ -159,20 +159,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: radii.full,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   zonePillSelected: {
-    backgroundColor: '#FF6B00',
-    borderColor: '#FF6B00',
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
   },
-  zonePillText: { fontSize: 12, fontWeight: '600', color: '#374151' },
-  zonePillTextSelected: { color: '#FFFFFF', fontWeight: '800' },
+  zonePillText: { fontSize: 12, fontFamily: typography.families.semibold, color: colors.text.body },
+  zonePillTextSelected: { color: colors.text.inverse, fontFamily: typography.families.extrabold },
   footer: {
     padding: spacing[4],
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: colors.bg.subtle,
+    backgroundColor: colors.bg.surface,
   },
 });

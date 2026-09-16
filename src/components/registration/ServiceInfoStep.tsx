@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bike, Car, Truck, MapPin, ChevronRight, Check } from 'lucide-react-native';
-import { colors, radii, spacing } from '@daloa/ui';
+import { colors, radii, spacing, typography } from '@daloa/ui';
 
 const VEHICLE_TYPES = [
   { id: 'Moto', label: 'Moto', icon: Bike },
@@ -59,7 +59,7 @@ export const ServiceInfoStep: React.FC<Props> = ({
                 activeOpacity={0.8}
                 style={[styles.vehicleCard, isSelected && styles.vehicleCardActive]}
               >
-                <Icon size={24} color={isSelected ? colors.primary.DEFAULT : '#6B7280'} />
+                <Icon size={24} color={isSelected ? colors.primary.DEFAULT : colors.text.muted} />
                 <Text style={[styles.vehicleText, isSelected && styles.vehicleTextActive]}>
                   {v.label}
                 </Text>
@@ -90,7 +90,7 @@ export const ServiceInfoStep: React.FC<Props> = ({
                 : 'Sélectionner mes quartiers'}
             </Text>
           </View>
-          <ChevronRight size={18} color="#9CA3AF" />
+          <ChevronRight size={18} color={colors.text.subtle} />
         </TouchableOpacity>
 
         {coverageZones.length > 0 && (
@@ -118,14 +118,14 @@ export const ServiceInfoStep: React.FC<Props> = ({
           value={vehicleDetails}
           onChangeText={setVehicleDetails}
           placeholder="Ex: Moto Yamaha Rouge, immat. CI-1234"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.subtle}
           style={styles.input}
         />
         <TextInput
           value={pricingDescription}
           onChangeText={setPricingDescription}
           placeholder="Ex: 500 FCFA dans le quartier, 1000 FCFA hors-zone..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.subtle}
           multiline
           numberOfLines={2}
           style={[styles.input, styles.multilineInput]}
@@ -139,12 +139,12 @@ export const ServiceInfoStep: React.FC<Props> = ({
         style={styles.termsRow}
       >
         <View style={[styles.checkbox, termsAccepted && styles.checkboxActive]}>
-          {termsAccepted && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+          {termsAccepted && <Check size={14} color={colors.text.inverse} strokeWidth={3} />}
         </View>
         <Text style={styles.termsText}>
           J'accepte les{' '}
           <Text
-            style={[styles.termsBold, { textDecorationLine: 'underline', color: '#FF6B00' }]}
+            style={[styles.termsBold, { textDecorationLine: 'underline', color: colors.primary.DEFAULT }]}
             onPress={() => router.push('/legal/terms' as any)}
           >
             Conditions Générales d'Utilisation
@@ -162,12 +162,12 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
+    fontFamily: typography.families.bold,
+    color: colors.text.DEFAULT,
   },
   stepSubtitle: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.text.muted,
     marginTop: -4,
     lineHeight: 18,
   },
@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#374151',
+    fontFamily: typography.families.bold,
+    color: colors.text.body,
     marginLeft: 2,
   },
   optionalText: {
-    fontWeight: '400',
-    color: '#9CA3AF',
+    fontFamily: typography.families.normal,
+    color: colors.text.subtle,
   },
   vehicleGrid: {
     flexDirection: 'row',
@@ -197,9 +197,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: radii.lg,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   vehicleCardActive: {
     backgroundColor: '#FFF7ED',
@@ -207,12 +207,12 @@ const styles = StyleSheet.create({
   },
   vehicleText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontFamily: typography.families.semibold,
+    color: colors.grey[600],
   },
   vehicleTextActive: {
     color: colors.primary.DEFAULT,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
   },
   zoneSelector: {
     flexDirection: 'row',
@@ -221,9 +221,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: radii.lg,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   zoneSelectorLeft: {
     flexDirection: 'row',
@@ -232,12 +232,12 @@ const styles = StyleSheet.create({
   },
   zoneSelectorText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#9CA3AF',
+    fontFamily: typography.families.medium,
+    color: colors.text.subtle,
   },
   zoneSelectorTextActive: {
-    color: '#111827',
-    fontWeight: '700',
+    color: colors.text.DEFAULT,
+    fontFamily: typography.families.bold,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -253,29 +253,29 @@ const styles = StyleSheet.create({
   },
   zoneBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     color: colors.primary.DEFAULT,
   },
   zoneBadgeMore: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.bg.subtle,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   zoneBadgeMoreText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#4B5563',
+    fontFamily: typography.families.bold,
+    color: colors.grey[600],
   },
   input: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.grey[50],
     borderRadius: radii.lg,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
-    color: '#111827',
+    color: colors.text.DEFAULT,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border.DEFAULT,
   },
   multilineInput: {
     minHeight: 70,
@@ -295,8 +295,8 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border.strong,
+    backgroundColor: colors.bg.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -308,11 +308,11 @@ const styles = StyleSheet.create({
   termsText: {
     flex: 1,
     fontSize: 12,
-    color: '#4B5563',
+    color: colors.grey[600],
     lineHeight: 18,
   },
   termsBold: {
-    fontWeight: '700',
+    fontFamily: typography.families.bold,
     color: colors.primary.DEFAULT,
   },
 });
