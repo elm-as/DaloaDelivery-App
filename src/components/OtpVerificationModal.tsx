@@ -65,8 +65,8 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   };
 
   const handleConfirm = async () => {
-    if (otpCode.length !== 4) {
-      setErrorMsg(`Veuillez saisir le code OTP à 4 chiffres fourni par ${personRole}.`);
+    if (otpCode.length !== 6) {
+      setErrorMsg(`Veuillez saisir le code OTP à 6 chiffres fourni par ${personRole}.`);
       return;
     }
     if (!photoUri) {
@@ -95,9 +95,9 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
         </Text>
 
         {/* OTP Input */}
-        <Text style={styles.inputLabel}>Code Secret OTP (4 chiffres) *</Text>
+        <Text style={styles.inputLabel}>Code Secret OTP (6 chiffres) *</Text>
         <OtpInput
-          length={4}
+          length={6}
           value={otpCode}
           onChange={setOtpCode}
           isError={Boolean(errorMsg)}
