@@ -14,7 +14,7 @@ import {
   Bike, Car, Truck, Zap, Wallet, Shield, ChevronRight, Moon, AlertTriangle, ShieldCheck,
   Star, Navigation, Package, MapPin, RefreshCw,
 } from 'lucide-react-native';
-import { colors, radii, Button, DeliveryOrderCard, Skeleton } from '@daloa/ui';
+import { colors, radii, Button, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
 import { useDriverDailyStats, useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
@@ -136,7 +136,13 @@ export default function LivreurTabScreen() {
       Haptics.success();
       await refetchRuns();
       router.push(`/run/${assignmentId}` as any);
-    } catch (err) {
+    } catch (err: any) {
+      // L'échec était avalé : la course restait affichée sans la moindre explication.
+      Haptics.warning();
+      showAlert(
+        "Acceptation impossible",
+        err?.message || "Cette course n'est plus disponible."
+      );
       refetchRuns();
     }
   };

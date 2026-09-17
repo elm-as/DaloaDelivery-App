@@ -170,7 +170,7 @@ export const ProfileHeroHeader: React.FC<Props> = ({ driverProfile, user, topIns
 const styles = StyleSheet.create({
   heroHeader: {
     paddingHorizontal: spacing[5],
-    paddingBottom: spacing[6],
+    paddingBottom: spacing[10],
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },

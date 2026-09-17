@@ -65,7 +65,12 @@ export default function AvailableRunsScreen() {
       await refetch();
       router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
-      showAlert('Course déjà prise', 'Un autre coursier vient d’accepter cette course.');
+      // Ne plus supposer la cause : la RPC renvoie le vrai motif du refus
+      // (`assignment_unavailable`, `not_a_delivery_person`, erreur réseau…).
+      showAlert(
+        'Acceptation impossible',
+        err?.message || 'Un autre coursier vient d’accepter cette course.'
+      );
       refetch();
     } finally {
       setAcceptingId(null);
@@ -293,67 +298,13 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: colors.bg.DEFAULT,
   },
-  curfewBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#0F172A',
-    borderRadius: radii.xl,
-    margin: spacing[4],
-  },
-  curfewTitle: {
-    fontSize: 17,
-    fontFamily: typography.families.extrabold,
-    color: '#FBBF24',
-    marginTop: 12,
-  },
-  curfewSub: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    maxWidth: 280,
-  },
-  offlineBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: colors.bg.DEFAULT,
-  },
-  offlineTitle: {
-    fontSize: 17,
-    fontFamily: typography.families.extrabold,
-    color: colors.text.DEFAULT,
-    marginTop: 12,
-  },
-  offlineSub: {
-    fontSize: 13,
-    color: colors.grey[600],
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    maxWidth: 260,
-  },
-  emptyBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-    marginTop: 40,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: typography.families.extrabold,
-    color: colors.text.DEFAULT,
-    marginTop: 12,
-  },
-  emptySub: {
-    fontSize: 12.5,
-    color: colors.grey[500],
-    textAlign: 'center',
-    marginTop: 4,
-    maxWidth: 250,
-    lineHeight: 17,
-  },
+  curfewBox: { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#0F172A', borderRadius: radii.xl, margin: spacing[4] },
+  curfewTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: '#FBBF24', marginTop: 12 },
+  curfewSub: { fontSize: 13, color: '#94A3B8', textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 280 },
+  offlineBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg.DEFAULT },
+  offlineTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: colors.text.DEFAULT, marginTop: 12 },
+  offlineSub: { fontSize: 13, color: colors.grey[600], textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 260 },
+  emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 40 },
+  emptyTitle: { fontSize: 16, fontFamily: typography.families.extrabold, color: colors.text.DEFAULT, marginTop: 12 },
+  emptySub: { fontSize: 12.5, color: colors.grey[500], textAlign: 'center', marginTop: 4, maxWidth: 250, lineHeight: 17 },
 });

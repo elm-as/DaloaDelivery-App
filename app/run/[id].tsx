@@ -1,14 +1,6 @@
 import { colors, showAlert } from '@daloa/ui';
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
@@ -21,6 +13,23 @@ import { RunStageCard } from '../../src/components/run/RunStageCard';
 import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
 import { isCurfewActive } from '../../src/utils/security';
 import { runStyles as styles } from '../../src/components/run/runStyles';
+
+/**
+ * Les neuf valeurs autorisées par la contrainte CHECK de `delivery_assignments.status`.
+ * Le ternaire précédent n'en couvrait que deux et faisait tomber tout le reste sur
+ * « Livrée » — y compris une course simplement disponible.
+ */
+const RUN_STAGE_LABELS: Record<string, string> = {
+  pending_seller_confirmation: 'En attente du vendeur',
+  awaiting_pickup: 'À accepter',
+  accepted: 'Étape 1 : Ramassage',
+  picked_up: 'Étape 2 : Livraison',
+  in_transit: 'Étape 2 : Livraison',
+  delivered: 'Livrée',
+  auto_released: 'Livrée',
+  disputed: 'Litige en cours',
+  cancelled: 'Annulée',
+};
 
 export default function DeliveryRunExecutionScreen() {
   const { id: assignmentId } = useLocalSearchParams<{ id: string }>();
@@ -116,6 +125,12 @@ export default function DeliveryRunExecutionScreen() {
     setIsOtpModalOpen(true);
   };
 
+  const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
+    setOtpType(type);
+    setScannedOtp('');
+    setIsOtpModalOpen(true);
+  };
+
   const handleConfirmOtp = async (otp: string, photoUri?: string) => {
     try {
       setIsVerifyingOtp(true);
@@ -191,9 +206,12 @@ export default function DeliveryRunExecutionScreen() {
     );
   }
 
-  const isPickupStage = assignment.status === 'assigned' || assignment.status === 'accepted';
-  const isDeliveryStage = assignment.status === 'picked_up';
-  const isCompleted = assignment.status === 'delivered';
+  // `verify_pickup` écrit `in_transit`, pas `picked_up` : sans les deux valeurs ici,
+  // l'écran retombait sur « Livrée » juste après un ramassage réussi et désactivait
+  // les deux étapes, bloquant le livreur avant la remise.
+  const isPickupStage = assignment.status === 'accepted';
+  const isDeliveryStage = assignment.status === 'picked_up' || assignment.status === 'in_transit';
+  const isCompleted = assignment.status === 'delivered' || assignment.status === 'auto_released';
   const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
   const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
   const curfew = isCurfewActive();
@@ -227,7 +245,7 @@ export default function DeliveryRunExecutionScreen() {
           </View>
           <View style={styles.stageStatusBadge}>
             <Text style={styles.stageStatusText}>
-              {isPickupStage ? 'Étape 1 : Ramassage' : isDeliveryStage ? 'Étape 2 : Livraison' : 'Livrée'}
+              {RUN_STAGE_LABELS[assignment.status] ?? 'Course indisponible'}
             </Text>
           </View>
         </View>
@@ -242,17 +260,12 @@ export default function DeliveryRunExecutionScreen() {
           isActive={isPickupStage}
           isDone={isDeliveryStage || isCompleted}
           onCall={() => handleCall(order.seller?.phone)}
-          onGps={() =>
-            handleOpenGps(
-              assignment.pickup_location,
-              order.seller?.shop_latitude,
-              order.seller?.shop_longitude
-            )
-          }
+          onGps={() => handleOpenGps(assignment.pickup_location, order.seller?.shop_latitude, order.seller?.shop_longitude)}
           onScan={() => {
             setOtpType('pickup');
             setIsScannerOpen(true);
           }}
+          onEnterOtp={() => handleOpenOtpModal('pickup')}
           scanButtonText="Scanner le QR code du vendeur"
         />
 
@@ -266,13 +279,12 @@ export default function DeliveryRunExecutionScreen() {
           isActive={isDeliveryStage}
           isDone={isCompleted}
           onCall={() => handleCall(order.buyer?.phone)}
-          onGps={() =>
-            handleOpenGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)
-          }
+          onGps={() => handleOpenGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)}
           onScan={() => {
             setOtpType('delivery');
             setIsScannerOpen(true);
           }}
+          onEnterOtp={() => handleOpenOtpModal('delivery')}
           scanButtonText="Scanner le QR code du client"
         />
 
@@ -281,7 +293,8 @@ export default function DeliveryRunExecutionScreen() {
           <Text style={styles.itemCardTitle}>Contenu de la commande</Text>
           <Text style={styles.itemTitle}>{order.listings?.title || 'Article commande'}</Text>
           <Text style={styles.itemSub}>
-            Quantité : {order.quantity || 1} • Prix article : {formatFCFA(order.total_amount || 0)}
+            Quantité : {order.quantity || 1} • Prix article :{' '}
+            {formatFCFA(order.product_amount ?? order.total_amount ?? 0)}
           </Text>
         </View>
 
@@ -306,8 +319,7 @@ export default function DeliveryRunExecutionScreen() {
         onCodeScanned={handleCodeScanned}
         onManualEntry={() => {
           setIsScannerOpen(false);
-          setScannedOtp('');
-          setIsOtpModalOpen(true);
+          handleOpenOtpModal(otpType);
         }}
       />
 

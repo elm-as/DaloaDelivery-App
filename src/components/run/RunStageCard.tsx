@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { PhoneCall, Navigation, ScanLine, CheckCircle2, MapPin, Phone } from 'lucide-react-native';
+import { PhoneCall, Navigation, ScanLine, CheckCircle2, MapPin, Phone, KeyRound } from 'lucide-react-native';
 import { colors, radii, spacing, Button, typography } from '@daloa/ui';
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
   onGps: () => void;
   onScan: () => void;
   scanButtonText: string;
+  onEnterOtp?: () => void;
 }
 
 export const RunStageCard: React.FC<Props> = ({
@@ -29,6 +30,7 @@ export const RunStageCard: React.FC<Props> = ({
   onGps,
   onScan,
   scanButtonText,
+  onEnterOtp,
 }) => {
   return (
     <View
@@ -78,7 +80,7 @@ export const RunStageCard: React.FC<Props> = ({
       )}
 
       {isActive && (
-        <View style={{ marginTop: spacing[3] }}>
+        <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
           <Button
             title={scanButtonText}
             variant="primary"
@@ -87,6 +89,16 @@ export const RunStageCard: React.FC<Props> = ({
             leftIcon={<ScanLine size={18} color={colors.text.inverse} />}
             fullWidth
           />
+          {onEnterOtp && (
+            <Button
+              title="Saisir le code secret (OTP)"
+              variant="outline"
+              size="md"
+              onPress={onEnterOtp}
+              leftIcon={<KeyRound size={16} color={colors.primary.DEFAULT} />}
+              fullWidth
+            />
+          )}
         </View>
       )}
     </View>
