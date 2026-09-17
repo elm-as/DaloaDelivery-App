@@ -55,7 +55,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -86,11 +87,11 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "elmas.rt",
+    "owner": "elmas-dev",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "ad6fcbd5-9cdb-4f8d-a1d2-029fd33a4a99"
+        "projectId": "a7f46ad7-d586-47be-a53c-891c03475367"
       }
     }
   }
