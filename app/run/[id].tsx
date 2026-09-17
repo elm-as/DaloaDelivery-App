@@ -173,7 +173,11 @@ export default function DeliveryRunExecutionScreen() {
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        showAlert('Livraison réussie ! 🚀', `Félicitations ! Vos gains ont été crédités.`);
+        showAlert(
+          'Livraison réussie ! 🚀',
+          'Félicitations ! Vos gains ont été crédités sur votre solde.',
+          [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
+        );
       }
     } catch (err: any) {
       throw err;
