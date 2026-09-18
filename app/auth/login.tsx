@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Bike, Lock, Mail, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing, Input, Button, KeyboardScreen } from '@daloa/ui';
-import { Haptics } from '@daloa/utils';
+import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 import { supabase, deliveryPersonService } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
@@ -86,7 +86,7 @@ export default function DriverLoginScreen() {
           return;
         }
       } catch {}
-      setErrorMsg(err.message || 'Identifiants livreur incorrects.');
+      setErrorMsg(formatUserErrorMessage(err, 'Identifiants livreur incorrects.'));
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +113,7 @@ export default function DriverLoginScreen() {
         }
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Échec de la connexion avec Google');
+      setErrorMsg(formatUserErrorMessage(err, 'Échec de la connexion avec Google'));
     } finally {
       setIsGoogleLoading(false);
     }

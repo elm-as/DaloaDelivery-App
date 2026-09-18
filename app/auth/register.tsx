@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { AlertCircle } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@daloa/ui';
-import { Haptics } from '@daloa/utils';
+import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 import { normalizePayoutNetwork } from '@daloa/config';
 import { supabase, deliveryPersonService } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -135,7 +135,7 @@ export default function DriverRegisterScreen() {
         setStep(2);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Échec de la connexion Google');
+      setErrorMsg(formatUserErrorMessage(err, 'Échec de la connexion Google'));
     } finally {
       setIsGoogleLoading(false);
     }
@@ -304,7 +304,7 @@ export default function DriverRegisterScreen() {
       router.replace('/(tabs)/livreur' as any);
     } catch (err: any) {
       console.error('Erreur inscription:', err);
-      setErrorMsg(err.message || "Une erreur est survenue lors de l'inscription.");
+      setErrorMsg(formatUserErrorMessage(err, "Une erreur est survenue lors de l'inscription."));
     } finally {
       setSubmitting(false);
     }
