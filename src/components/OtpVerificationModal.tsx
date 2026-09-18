@@ -9,7 +9,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { BottomSheet, Button, OtpInput, colors, radii, spacing, typography, showAlert } from '@daloa/ui';
 import { Camera, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
-import { Haptics } from '@daloa/utils';
+import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 
 export interface OtpVerificationModalProps {
   visible: boolean;
@@ -80,7 +80,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
       setOtpCode('');
       setPhotoUri(null);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Code OTP incorrect ou erreur de validation');
+      setErrorMsg(formatUserErrorMessage(err, 'Code OTP incorrect ou erreur de validation'));
     }
   };
 

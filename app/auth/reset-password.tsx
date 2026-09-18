@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { authService } from '@daloa/api';
 import { colors, radii, spacing, Header, Input, Button, typography } from '@daloa/ui';
 import { KeyRound, Mail, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react-native';
-import { Haptics } from '@daloa/utils';
+import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 
 export default function DriverResetPasswordScreen() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function DriverResetPasswordScreen() {
       Haptics.success();
       setIsSuccess(true);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Impossible d’envoyer le lien de réinitialisation.');
+      setErrorMsg(formatUserErrorMessage(err, 'Impossible d’envoyer le lien de réinitialisation.'));
     } finally {
       setIsLoading(false);
     }
