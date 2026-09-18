@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
-import { payoutService, usePayoutSettings } from '@daloa/api';
+import { payoutService, usePayoutSettings, denormalizePayoutNetwork } from '@daloa/api';
 import { MOBILE_MONEY_NETWORKS } from '@daloa/config';
 import {
   colors,
@@ -26,7 +26,7 @@ import { Haptics } from '@daloa/utils';
 
 export default function PayoutSetupScreen() {
   const router = useRouter();
-  const { user } = useDriverAuth();
+  const { user, profile, driverProfile, refreshDriverProfile } = useDriverAuth();
   const { data: currentSettings, refetch } = usePayoutSettings(user?.id);
 
   const [network, setNetwork] = useState<'wave' | 'orange' | 'mtn' | 'moov'>('wave');
@@ -37,10 +37,16 @@ export default function PayoutSetupScreen() {
   useEffect(() => {
     if (currentSettings) {
       setNetwork((currentSettings.network as any) || 'wave');
-      setPhone(currentSettings.phone || '');
-      setAccountName(currentSettings.accountName || '');
+      setPhone(currentSettings.phone || driverProfile?.payout_number || driverProfile?.phone || profile?.phone || '');
+      setAccountName(currentSettings.accountName || driverProfile?.name || profile?.full_name || '');
+    } else if (driverProfile || profile) {
+      if (driverProfile?.payout_network) {
+        setNetwork((denormalizePayoutNetwork(driverProfile.payout_network) as any) || 'wave');
+      }
+      setPhone(driverProfile?.payout_number || driverProfile?.phone || profile?.phone || '');
+      setAccountName(driverProfile?.name || profile?.full_name || '');
     }
-  }, [currentSettings]);
+  }, [currentSettings, driverProfile, profile]);
 
   const handleSave = async () => {
     if (!user?.id) return;
@@ -62,6 +68,9 @@ export default function PayoutSetupScreen() {
         isActive: true,
       });
 
+      if (refreshDriverProfile) {
+        await refreshDriverProfile();
+      }
       Haptics.success();
       refetch();
       showAlert('Compte enregistré', 'Vos gains seront versés sur ce compte Mobile Money.', [
