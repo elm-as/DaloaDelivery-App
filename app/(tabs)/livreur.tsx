@@ -415,7 +415,7 @@ export default function LivreurTabScreen() {
             <View style={styles.curfewCard}>
               <Moon size={22} color="#FBBF24" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.curfewTitle}>Couvre-feu de sécurité (22h30 — 05h30)</Text>
+                <Text style={styles.curfewTitle}>Couvre-feu de sécurité (22h30 à 05h30)</Text>
                 <Text style={styles.curfewSub}>
                   Les attributions de courses sont automatiquement suspendues durant la nuit pour protéger les livreurs et les marchandises à Daloa.
                 </Text>

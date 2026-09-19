@@ -16,8 +16,8 @@ export const DRIVER_LEGAL_NOTICE_DATA: DriverLegalNoticeGroup[] = [
     items: [
       { label: 'Plateforme', value: 'DaloaDelivery (delivery.daloamarket.com)' },
       { label: 'Directeur de la publication', value: 'OULOBO Elmas Tresor' },
-      { label: 'Forme juridique', value: 'Entreprise individuelle — non immatriculée au RCCM à ce jour' },
-      { label: 'Adresse de l’éditeur', value: 'RueO21,68 — Yopougon, Abidjan, Côte d’Ivoire' },
+      { label: 'Forme juridique', value: 'Entreprise individuelle, non immatriculée au RCCM à ce jour' },
+      { label: 'Adresse de l’éditeur', value: 'RueO21,68, Yopougon, Abidjan, Côte d’Ivoire' },
       { label: 'Zone d’activité', value: 'Daloa et sa région, Côte d’Ivoire' },
       { label: 'Emails officiels', value: 'support@daloamarket.com / contact@daloamarket.com' },
       { label: 'WhatsApp (pas d’appels)', value: '+225 01 73 80 15 59' },
@@ -39,7 +39,7 @@ export const DRIVER_LEGAL_NOTICE_DATA: DriverLegalNoticeGroup[] = [
     items: [
       { label: 'Droit applicable', value: 'Droit de la République de Côte d’Ivoire' },
       { label: 'Juridiction compétente', value: 'Tribunaux compétents de la ville de Daloa' },
-      { label: 'Propriété intellectuelle', value: 'Tous droits réservés © 2026 ELMAS — Charte ElmasCore' },
+      { label: 'Propriété intellectuelle', value: 'Tous droits réservés © 2026 ELMAS, Charte ElmasCore' },
     ],
   },
 ];

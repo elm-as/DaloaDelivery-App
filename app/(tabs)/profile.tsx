@@ -144,7 +144,7 @@ export default function DriverProfileScreen() {
                 Faites vérifier votre profil
               </AppText>
               <AppText variant="caption" color={colors.text.muted}>
-                Téléversez votre pièce d'identité — et votre permis si vous roulez en moto, voiture ou triporteur.
+                Téléversez votre pièce d'identité, et votre permis si vous roulez en moto, voiture ou triporteur.
               </AppText>
             </View>
             <ChevronRight size={18} color={colors.text.subtle} />

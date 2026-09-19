@@ -67,7 +67,7 @@ export const DRIVER_PRIVACY_SECTIONS: DriverPrivacySection[] = [
     title: 'Hébergement & Sous-traitants',
     summary: 'Qui héberge vos données et pour quel usage.',
     paragraphs: [
-      'Nos sous-traitants sont : Supabase (base de données, authentification, stockage chiffré de vos pièces d’identité), Money Fusion (versement de vos gains Mobile Money), Mapbox (cartes et calcul d’itinéraires), Expo — avec Apple et Google pour l’acheminement — (notifications de nouvelles courses), Netlify et Render (hébergement des services).',
+      'Nos sous-traitants sont : Supabase (base de données, authentification, stockage chiffré de vos pièces d’identité), Money Fusion (versement de vos gains Mobile Money), Mapbox (cartes et calcul d’itinéraires), Expo (avec Apple et Google pour l’acheminement) pour les notifications de nouvelles courses, Netlify et Render (hébergement des services).',
       'Certains de ces prestataires hébergent des données en dehors de la Côte d’Ivoire, notamment en Europe. Les transferts sont encadrés par les engagements contractuels de ces prestataires.',
       'Aucun traceur publicitaire, aucun pixel de suivi et aucun outil de profilage commercial n’est utilisé dans l’application.',
     ],
@@ -82,7 +82,7 @@ export const DRIVER_PRIVACY_SECTIONS: DriverPrivacySection[] = [
       'Les traces de courses et de versements sont conservées jusqu’à 10 ans, conformément aux obligations comptables et fiscales ivoiriennes. Cette conservation s’impose à nous et survit à la suppression de votre compte.',
       'Les pièces d’identité transmises lors de votre inscription sont conservées pendant la durée de votre activité sur la plateforme, puis supprimées, sauf litige en cours ou obligation légale contraire.',
       'Les points GPS enregistrés au cours d’une course sont rattachés à la course concernée et suivent sa durée de conservation. Le partage en direct de votre position, lui, cesse dès la validation du code OTP.',
-      'À la suppression d’un compte, nous gardons une empreinte cryptographique irréversible (SHA-256) de son adresse e-mail et de son identifiant de connexion — jamais l’adresse elle-même. Elle sert uniquement à reconnaître la réinscription d’une personne dont le compte avait été banni ou signalé, et elle est effacée automatiquement au bout de 3 ans.',
+      'À la suppression d’un compte, nous gardons une empreinte cryptographique irréversible (SHA-256) de son adresse e-mail et de son identifiant de connexion (jamais l’adresse elle-même). Elle sert uniquement à reconnaître la réinscription d’une personne dont le compte avait été banni ou signalé, et elle est effacée automatiquement au bout de 3 ans.',
     ],
   },
 ];

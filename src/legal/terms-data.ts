@@ -31,7 +31,7 @@ export const DRIVER_TERMS_ARTICLES: DriverLegalArticle[] = [
     ],
     bullets: [
       'Être âgé d’au moins 16 ans révolus et juridiquement capable ; un candidat mineur doit fournir l’autorisation écrite de son représentant légal',
-      'Conduire uniquement un véhicule pour lequel vous détenez le permis exigé par le code de la route ivoirien — la catégorie dépend de votre âge et de la cylindrée',
+      'Conduire uniquement un véhicule pour lequel vous détenez le permis exigé par le code de la route ivoirien : la catégorie dépend de votre âge et de la cylindrée',
       'Fournir une pièce d’identité nationale (CNI ou Passeport en cours de validité)',
       'Posséder un permis de conduire valide adapté au véhicule utilisé (Moto ou Voiture)',
       'Disposer d’un véhicule conforme aux règles de sécurité du code de la route ivoirien',

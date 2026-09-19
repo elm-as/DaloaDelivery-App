@@ -174,7 +174,7 @@ export default function HistoryScreen() {
           <View style={styles.curfewCard}>
             <Moon size={22} color="#FBBF24" />
             <View style={styles.flex1}>
-              <Text style={styles.curfewTitle}>Couvre-feu de sécurité (22h30 — 05h30)</Text>
+              <Text style={styles.curfewTitle}>Couvre-feu de sécurité (22h30 à 05h30)</Text>
               <Text style={styles.curfewSub}>
                 Les nouvelles livraisons sont suspendues durant la nuit pour votre sécurité. Vous pouvez toujours clôturer vos courses en cours.
               </Text>
