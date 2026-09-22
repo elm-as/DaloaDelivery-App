@@ -14,7 +14,7 @@ export const AppGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, profile, driverProfile, isLoading, isAdmin } = useDriverAuth();
 
   // 1. Maintenance (les admins restent autorisés à naviguer)
-  if (settings?.maintenance.enabled && !isAdmin) {
+  if (settings?.maintenance?.enabled && !isAdmin) {
     return (
       <MaintenanceScreen
         message={settings.maintenance.message}

@@ -20,7 +20,7 @@ import {
   Header,
   Input,
   Button,
-  showAlert,
+  ConfirmDialog,
 } from '@daloa/ui';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
@@ -41,6 +41,8 @@ export default function PayoutSetupScreen() {
   const [phone, setPhone] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [errorDialogMessage, setErrorDialogMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentSettings) {
@@ -59,11 +61,11 @@ export default function PayoutSetupScreen() {
   const handleSave = async () => {
     if (!user?.id) return;
     if (!phone.trim() || phone.length < 8) {
-      showAlert('Erreur', 'Numéro de téléphone invalide.');
+      setErrorDialogMessage('Veuillez renseigner un numéro de téléphone valide à 10 chiffres.');
       return;
     }
     if (!accountName.trim()) {
-      showAlert('Erreur', 'Le nom du titulaire est obligatoire.');
+      setErrorDialogMessage('Le nom du titulaire est obligatoire.');
       return;
     }
 
@@ -81,11 +83,9 @@ export default function PayoutSetupScreen() {
       }
       Haptics.success();
       refetch();
-      showAlert('Compte enregistré', 'Vos gains seront versés sur ce compte Mobile Money.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      setShowSuccessDialog(true);
     } catch (err: any) {
-      showAlert('Erreur', err.message || 'Impossible d’enregistrer le compte');
+      setErrorDialogMessage(err.message || 'Impossible d’enregistrer le compte de retrait.');
     } finally {
       setIsSaving(false);
     }
@@ -165,6 +165,32 @@ export default function PayoutSetupScreen() {
           />
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={showSuccessDialog}
+        type="success"
+        title="Compte enregistré"
+        message="Vos gains seront désormais versés sur ce compte Mobile Money."
+        confirmText="Continuer"
+        onConfirm={() => {
+          setShowSuccessDialog(false);
+          router.back();
+        }}
+        onCancel={() => {
+          setShowSuccessDialog(false);
+          router.back();
+        }}
+      />
+
+      <ConfirmDialog
+        visible={Boolean(errorDialogMessage)}
+        type="warning"
+        title="Information requise"
+        message={errorDialogMessage || ''}
+        confirmText="Compris"
+        onConfirm={() => setErrorDialogMessage(null)}
+        onCancel={() => setErrorDialogMessage(null)}
+      />
     </SafeAreaView>
   );
 }
