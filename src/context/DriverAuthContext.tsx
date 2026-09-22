@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile, DeliveryPersonRow, LoginInput, RegisterInput, Coordinates } from '@daloa/types';
 import { authService, deliveryService, supabase, notificationsService } from '@daloa/api';
 import * as Location from 'expo-location';
+import { DALOA_CENTER } from '@daloa/config';
+import { isLocationInDaloa } from '@daloa/utils';
 import '../lib/location-polyfill';
 
 interface DriverAuthContextType {
@@ -66,10 +68,10 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         if (isCancelled) return;
 
-        const coords: Coordinates = {
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-        };
+        const isInside = isLocationInDaloa(loc.coords.latitude, loc.coords.longitude);
+        const coords: Coordinates = isInside
+          ? { lat: loc.coords.latitude, lng: loc.coords.longitude }
+          : { lat: DALOA_CENTER.lat, lng: DALOA_CENTER.lng };
         setDriverLocation(coords);
 
         if (driverProfile?.id && isOnline) {
@@ -85,10 +87,10 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           },
           (newLoc) => {
             if (isCancelled) return;
-            const newCoords: Coordinates = {
-              lat: newLoc.coords.latitude,
-              lng: newLoc.coords.longitude,
-            };
+            const isNewInside = isLocationInDaloa(newLoc.coords.latitude, newLoc.coords.longitude);
+            const newCoords: Coordinates = isNewInside
+              ? { lat: newLoc.coords.latitude, lng: newLoc.coords.longitude }
+              : { lat: DALOA_CENTER.lat, lng: DALOA_CENTER.lng };
             setDriverLocation(newCoords);
             if (driverProfile?.id && isOnline) {
               deliveryService.updateDriverLocation(driverProfile.id, newCoords);

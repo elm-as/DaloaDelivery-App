@@ -15,7 +15,8 @@ import {
   Star, Navigation, Package, MapPin, RefreshCw,
 } from 'lucide-react-native';
 import { colors, radii, Button, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
-import { Haptics } from '@daloa/utils';
+import { DALOA_CENTER } from '@daloa/config';
+import { Haptics, isLocationInDaloa } from '@daloa/utils';
 import { useDriverDailyStats, useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -69,13 +70,15 @@ export default function LivreurTabScreen() {
   const mapDrivers = useMemo(() => {
     const coords: any = driverLocation || driverProfile?.current_location;
     if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') return [];
+    const validLat = isLocationInDaloa(coords.lat, coords.lng) ? coords.lat : DALOA_CENTER.lat;
+    const validLng = isLocationInDaloa(coords.lat, coords.lng) ? coords.lng : DALOA_CENTER.lng;
     return [{
       id: driverProfile?.id || 'me',
       name: driverProfile?.name || 'Ma position',
       vehicle: driverProfile?.vehicle_type || 'Moto',
       rating: Number(driverProfile?.rating) || 5,
-      lat: coords.lat,
-      lng: coords.lng,
+      lat: validLat,
+      lng: validLng,
     }];
   }, [driverLocation, driverProfile]);
 
@@ -101,7 +104,8 @@ export default function LivreurTabScreen() {
   };
 
   const handleToggleOnline = async () => {
-    Haptics.selection();
+    if (!driverProfile?.id) return;
+    Haptics.lightImpact();
     await toggleOnlineStatus(!isOnline);
   };
 
@@ -117,11 +121,17 @@ export default function LivreurTabScreen() {
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-      await deliveryService.updateDriverLocation(driverProfile.id, {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      });
+      const rawLat = position.coords.latitude;
+      const rawLng = position.coords.longitude;
+      const isInside = isLocationInDaloa(rawLat, rawLng);
+      const coords = isInside
+        ? { lat: rawLat, lng: rawLng }
+        : { lat: DALOA_CENTER.lat, lng: DALOA_CENTER.lng };
+      await deliveryService.updateDriverLocation(driverProfile.id, coords);
       await refreshDriverProfile();
+      if (!isInside) {
+        showAlert('Mode test', 'Votre GPS physique est hors de Daloa. Position calée sur Daloa.');
+      }
     } catch (err) {
       console.warn('Position indisponible:', err);
     } finally {
