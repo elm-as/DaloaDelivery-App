@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, typography } from '@daloa/ui';
+import { colors, radii, typography, spacing } from '@daloa/ui';
 
 export const earningsStyles = StyleSheet.create({
   container: {
@@ -39,10 +39,42 @@ export const earningsStyles = StyleSheet.create({
     padding: 14,
     backgroundColor: colors.bg.DEFAULT,
   },
+  pendingAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#FFF4E6',
+    borderWidth: 1.5,
+    borderColor: colors.primary[200],
+    borderRadius: radii.xl,
+    padding: 14,
+    marginBottom: 14,
+  },
+  pendingAlertIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    backgroundColor: colors.primary[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  pendingAlertTitle: {
+    fontSize: 14,
+    fontFamily: typography.families.extrabold,
+    color: colors.primary[900],
+    marginBottom: 2,
+  },
+  pendingAlertSub: {
+    fontSize: 12,
+    fontFamily: typography.families.medium,
+    color: colors.primary[800],
+    lineHeight: 16,
+  },
   kpiRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   kpiCard: {
     flex: 1,
@@ -70,7 +102,14 @@ export const earningsStyles = StyleSheet.create({
     fontSize: 16,
     fontFamily: typography.families.black,
     color: colors.primary[600],
+    fontVariant: ['tabular-nums'],
     marginTop: 2,
+  },
+  kpiSub: {
+    fontSize: 10.5,
+    fontFamily: typography.families.medium,
+    color: colors.grey[500],
+    marginTop: 3,
   },
   card: {
     backgroundColor: colors.bg.surface,
@@ -112,6 +151,7 @@ export const earningsStyles = StyleSheet.create({
   phoneText: {
     fontSize: 11.5,
     color: colors.grey[500],
+    fontVariant: ['tabular-nums'],
   },
   modifyBtn: {
     paddingHorizontal: 10,
@@ -138,6 +178,22 @@ export const earningsStyles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: typography.families.extrabold,
     color: colors.primary[700],
+  },
+  autoPayoutInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: colors.bg.subtle,
+    borderRadius: radii.md,
+  },
+  autoPayoutInfoText: {
+    fontSize: 11,
+    fontFamily: typography.families.medium,
+    color: colors.grey[600],
+    flex: 1,
+    lineHeight: 15,
   },
   sectionHeading: {
     fontSize: 13,
@@ -170,21 +226,44 @@ export const earningsStyles = StyleSheet.create({
     fontSize: 13.5,
     fontFamily: typography.families.extrabold,
     color: colors.text.DEFAULT,
+    fontVariant: ['tabular-nums'],
   },
   payoutDate: {
     fontSize: 11,
     color: colors.grey[400],
   },
-  payoutStatusBadge: {
+  statusBadgeSuccess: {
     backgroundColor: colors.status.successLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radii.full,
   },
-  payoutStatusText: {
+  statusTextSuccess: {
     fontSize: 10.5,
     fontFamily: typography.families.extrabold,
     color: '#059669',
+  },
+  statusBadgePending: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  statusTextPending: {
+    fontSize: 10.5,
+    fontFamily: typography.families.extrabold,
+    color: '#D97706',
+  },
+  statusBadgeFailed: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  statusTextFailed: {
+    fontSize: 10.5,
+    fontFamily: typography.families.extrabold,
+    color: '#DC2626',
   },
   emptyPayouts: {
     paddingVertical: 14,
