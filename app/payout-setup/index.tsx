@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -23,6 +24,13 @@ import {
 } from '@daloa/ui';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
+
+const OPERATOR_LOGOS: Record<string, any> = {
+  wave: require('../../assets/operators/wave.png'),
+  orange: require('../../assets/operators/orange.png'),
+  mtn: require('../../assets/operators/mtn.jpeg'),
+  moov: require('../../assets/operators/moov.png'),
+};
 
 export default function PayoutSetupScreen() {
   const router = useRouter();
@@ -103,6 +111,8 @@ export default function PayoutSetupScreen() {
         <View style={styles.networksGrid}>
           {MOBILE_MONEY_NETWORKS.map((net) => {
             const isSelected = network === net.id;
+            const logoSource = OPERATOR_LOGOS[net.id];
+
             return (
               <TouchableOpacity
                 key={net.id}
@@ -112,11 +122,17 @@ export default function PayoutSetupScreen() {
                 }}
                 style={[styles.networkCard, isSelected && styles.networkCardActive]}
               >
-                <View style={[styles.networkDot, { backgroundColor: net.color }]} />
+                <View style={[styles.networkLogoWrapper, isSelected && styles.networkLogoWrapperActive]}>
+                  {logoSource ? (
+                    <Image source={logoSource} style={styles.networkLogo} resizeMode="contain" />
+                  ) : (
+                    <View style={[styles.networkDot, { backgroundColor: net.color }]} />
+                  )}
+                </View>
                 <Text style={[styles.networkName, isSelected && styles.networkNameActive]}>
                   {net.name}
                 </Text>
-                {isSelected && <CheckCircle2 size={16} color={colors.primary.DEFAULT} />}
+                {isSelected && <CheckCircle2 size={18} color={colors.primary.DEFAULT} />}
               </TouchableOpacity>
             );
           })}
@@ -207,10 +223,29 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.DEFAULT,
     backgroundColor: colors.primary[50],
   },
+  networkLogoWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    padding: 3,
+  },
+  networkLogoWrapperActive: {
+    borderColor: colors.primary.DEFAULT,
+  },
+  networkLogo: {
+    width: '100%',
+    height: '100%',
+  },
   networkDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
   networkName: {
     color: colors.text.DEFAULT,

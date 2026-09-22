@@ -8,9 +8,11 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, MoreVertical, Bell, X, Shield, FileText, HelpCircle } from 'lucide-react-native';
+import { ArrowLeft, MoreVertical, Bell, X, Shield, FileText, HelpCircle, Zap } from 'lucide-react-native';
 import { colors, radii, spacing, AppText, typography } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
+import { useAvailableRunsBrief } from '@daloa/api';
+import { useDriverAuth } from '../context/DriverAuthContext';
 
 interface DeliveryTopBarProps {
   title?: string;
@@ -26,6 +28,16 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+
+  /* La cloche affichait un point rouge codé en dur, allumé en permanence, et
+     deux notifications de démonstration. Elle montre désormais les vraies
+     courses à prendre — et seulement pour un livreur connecté : un visiteur de
+     l'annuaire n'a aucune course à récupérer. */
+  const { isAuthenticated, driverProfile, isOnline } = useDriverAuth();
+  const isDriver = Boolean(isAuthenticated && driverProfile);
+  const { data: brief } = useAvailableRunsBrief(isDriver);
+  const availableCount = isDriver ? brief?.count ?? 0 : 0;
+  const availableRuns = isDriver ? brief?.runs ?? [] : [];
 
   const handleBack = () => {
     Haptics.selection();
@@ -89,10 +101,20 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
             setShowNotifs(true);
           }}
           style={styles.iconCircle}
-          accessibilityLabel="Notifications"
+          accessibilityLabel={
+            availableCount > 0
+              ? `Notifications, ${availableCount} course${availableCount > 1 ? 's' : ''} disponible${availableCount > 1 ? 's' : ''}`
+              : 'Notifications'
+          }
         >
           <Bell size={18} color={colors.grey[600]} />
-          <View style={styles.unreadBadge} />
+          {availableCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>
+                {availableCount > 9 ? '9+' : availableCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -172,29 +194,79 @@ export const DeliveryTopBar: React.FC<DeliveryTopBarProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.notifItem}>
-              <View style={[styles.notifDot, { backgroundColor: colors.primary.DEFAULT }]} />
-              <View style={{ flex: 1 }}>
-                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
-                  Besoin d'une livraison rapide ?
-                </AppText>
-                <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
-                  Consultez notre annuaire pour trouver le livreur idéal à Daloa.
-                </AppText>
-              </View>
-            </View>
+            {!isDriver ? (
+              <>
+                <View style={styles.notifItem}>
+                  <View style={[styles.notifDot, { backgroundColor: colors.primary.DEFAULT }]} />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
+                      Besoin d'une livraison rapide ?
+                    </AppText>
+                    <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
+                      Consultez notre annuaire pour trouver le livreur idéal à Daloa.
+                    </AppText>
+                  </View>
+                </View>
 
-            <View style={styles.notifItem}>
-              <View style={[styles.notifDot, { backgroundColor: colors.status.success }]} />
-              <View style={{ flex: 1 }}>
-                <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
-                  Service Express Daloa
-                </AppText>
-                <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
-                  Tous nos livreurs partenaires sont vérifiés et disponibles sur WhatsApp.
+                <View style={styles.notifItem}>
+                  <View style={[styles.notifDot, { backgroundColor: colors.status.success }]} />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
+                      Service Express Daloa
+                    </AppText>
+                    <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
+                      Tous nos livreurs partenaires sont vérifiés et disponibles sur WhatsApp.
+                    </AppText>
+                  </View>
+                </View>
+              </>
+            ) : availableRuns.length === 0 ? (
+              <View style={styles.notifEmpty}>
+                <AppText variant="caption" color={colors.text.muted} style={{ textAlign: 'center' }}>
+                  {isOnline
+                    ? 'Aucune course disponible pour le moment.'
+                    : 'Vous êtes hors ligne : passez en ligne pour recevoir les courses.'}
                 </AppText>
               </View>
-            </View>
+            ) : (
+              <>
+                {availableRuns.map((run) => (
+                  <TouchableOpacity
+                    key={run.assignmentId}
+                    style={styles.notifItem}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setShowNotifs(false);
+                      router.push('/(tabs)/available' as any);
+                    }}
+                  >
+                    <View style={[styles.notifDot, { backgroundColor: colors.primary.DEFAULT }]} />
+                    <View style={{ flex: 1 }}>
+                      <AppText variant="caption" color={colors.text.DEFAULT} style={{ fontFamily: typography.families.bold }}>
+                        Course à prendre · {run.deliveryPrice} FCFA
+                      </AppText>
+                      <AppText variant="caption" color={colors.text.muted} style={{ marginTop: 2 }} numberOfLines={1}>
+                        {run.pickupLocation} → {run.dropoffLocation}
+                      </AppText>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity
+                  style={styles.notifCta}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setShowNotifs(false);
+                    router.push('/(tabs)/available' as any);
+                  }}
+                >
+                  <Zap size={14} color={colors.primary.DEFAULT} />
+                  <AppText variant="caption" color={colors.primary.DEFAULT} style={{ fontFamily: typography.families.bold }}>
+                    Voir les {availableCount} course{availableCount > 1 ? 's' : ''} disponible{availableCount > 1 ? 's' : ''}
+                  </AppText>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -259,14 +331,37 @@ const styles = StyleSheet.create({
   },
   unreadBadge: {
     position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: 8,
     backgroundColor: colors.status.error,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: colors.bg.surface,
+  },
+  unreadBadgeText: {
+    color: colors.text.inverse,
+    fontSize: 9,
+    fontFamily: typography.families.black,
+    fontVariant: ['tabular-nums'],
+  },
+  notifEmpty: {
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[2],
+  },
+  notifCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: spacing[2],
+    paddingVertical: spacing[2],
+    borderRadius: radii.lg,
+    backgroundColor: colors.primary[50],
   },
   modalBackdrop: {
     flex: 1,

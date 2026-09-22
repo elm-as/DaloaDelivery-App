@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
-import { Platform, View, StyleSheet } from 'react-native';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 import { Home, Search, Truck, Package, User } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { colors, useAccent, typography } from '@daloa/ui';
+import { useAvailableRunsBrief, useActiveDriverRun } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 
 /* Icône d'onglet avec pill de fond animée (miroir du BottomNavBar web DaloaDelivery).
@@ -17,11 +18,13 @@ function DeliveryTabIcon({
   color,
   focused,
   pillColor,
+  badgeCount = 0,
 }: {
   icon: any;
   color: string;
   focused: boolean;
   pillColor: string;
+  badgeCount?: number;
 }) {
   const progress = useSharedValue(focused ? 1 : 0);
 
@@ -44,6 +47,11 @@ function DeliveryTabIcon({
       <Animated.View style={iconStyle}>
         <Icon size={21} color={color} strokeWidth={focused ? 2.5 : 1.8} />
       </Animated.View>
+      {badgeCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -52,6 +60,15 @@ export default function DeliveryTabLayout() {
   const accent = useAccent();
   const { isAuthenticated, driverProfile } = useDriverAuth();
   const isDriver = Boolean(isAuthenticated && driverProfile);
+
+  /* Nombre de courses à prendre : même requête (et même cache) que la cloche
+     de l'en-tête, pour ne pas sonder la base deux fois. */
+  const { data: runsBrief } = useAvailableRunsBrief(isDriver);
+  const availableCount = isDriver ? runsBrief?.count ?? 0 : 0;
+
+  /* Course en cours d'acheminement → pastille sur « Livraisons ». */
+  const { data: activeRun } = useActiveDriverRun(isDriver ? driverProfile?.id : null);
+  const activeRunCount = activeRun ? 1 : 0;
 
   return (
     <Tabs
@@ -125,6 +142,7 @@ export default function DeliveryTabLayout() {
               color={color}
               focused={focused}
               pillColor={accent[50]}
+              badgeCount={availableCount}
             />
           ),
         }}
@@ -146,6 +164,7 @@ export default function DeliveryTabLayout() {
               color={color}
               focused={focused}
               pillColor={accent[50]}
+              badgeCount={activeRunCount}
             />
           ),
         }}
@@ -202,5 +221,25 @@ const styles = StyleSheet.create({
     left: 2,
     right: 2,
     borderRadius: 10,
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: 8,
+    backgroundColor: colors.status.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.bg.surface,
+  },
+  badgeText: {
+    color: colors.text.inverse,
+    fontSize: 9,
+    fontFamily: typography.families.black,
+    fontVariant: ['tabular-nums'],
   },
 });
