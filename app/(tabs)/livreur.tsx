@@ -5,6 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect, useFocusEffect } from 'expo-router';
@@ -35,7 +36,7 @@ export default function LivreurTabScreen() {
   const router = useRouter();
   const {
     driverProfile, isOnline, toggleOnlineStatus, isAuthenticated, isAdmin, driverLocation,
-    refreshDriverProfile,
+    refreshDriverProfile, isLoading,
   } = useDriverAuth();
 
   const [activeTab, setActiveTab] = useState<'liste' | 'carte'>('liste');
@@ -171,8 +172,20 @@ export default function LivreurTabScreen() {
     return <Redirect href={'/admin' as any} />;
   }
 
+  // ── Cas 0 : Session en cours de chargement initial ──
+  if (isLoading && !driverProfile) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <DeliveryTopBar title="Espace Livreur" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // ── Cas 1 : Visiteur non connecté (Page de recrutement / Espace Livreur) ──
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !driverProfile) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <DeliveryTopBar title="Espace Livreur" />

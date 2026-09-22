@@ -3,8 +3,11 @@ import { UserProfile, DeliveryPersonRow, LoginInput, RegisterInput, Coordinates 
 import { authService, deliveryService, supabase, notificationsService } from '@daloa/api';
 import * as Location from 'expo-location';
 import { DALOA_CENTER } from '@daloa/config';
-import { isLocationInDaloa } from '@daloa/utils';
+import { isLocationInDaloa, SecureStorageAdapter } from '@daloa/utils';
 import '../lib/location-polyfill';
+
+const CACHED_USER_PROFILE_KEY = 'daloa_cached_user_profile';
+const CACHED_DRIVER_PROFILE_KEY = 'daloa_cached_driver_profile';
 
 interface DriverAuthContextType {
   user: any | null;
@@ -43,11 +46,39 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchSession = async () => {
     try {
       setIsLoading(true);
+      // 1. Hydratation immédiate depuis le stockage persistant (élimine le flash "déconnecté")
+      const [cachedUser, cachedDriver] = await Promise.all([
+        SecureStorageAdapter.getItem(CACHED_USER_PROFILE_KEY),
+        SecureStorageAdapter.getItem(CACHED_DRIVER_PROFILE_KEY),
+      ]);
+      if (cachedUser) {
+        try {
+          const parsed = JSON.parse(cachedUser);
+          if (parsed && typeof parsed === 'object') setProfile(parsed);
+        } catch {}
+      }
+      if (cachedDriver) {
+        try {
+          const parsedDp = JSON.parse(cachedDriver);
+          if (parsedDp && typeof parsedDp === 'object') {
+            setDriverProfile(parsedDp);
+            setIsOnline(Boolean(parsedDp.is_available));
+          }
+        } catch {}
+      }
+
+      // 2. Synchronisation de la session auprès de Supabase
       const sessionData = await authService.getCurrentSession();
       setUser(sessionData.user);
-      setProfile(sessionData.profile);
-      setDriverProfile(sessionData.deliveryProfile || null);
-      setIsOnline(Boolean(sessionData.deliveryProfile?.is_available));
+      if (sessionData.profile) {
+        setProfile(sessionData.profile);
+        void SecureStorageAdapter.setItem(CACHED_USER_PROFILE_KEY, JSON.stringify(sessionData.profile));
+      }
+      if (sessionData.deliveryProfile) {
+        setDriverProfile(sessionData.deliveryProfile);
+        setIsOnline(Boolean(sessionData.deliveryProfile.is_available));
+        void SecureStorageAdapter.setItem(CACHED_DRIVER_PROFILE_KEY, JSON.stringify(sessionData.deliveryProfile));
+      }
     } catch (err) {
       console.warn('Erreur session livreur:', err);
     } finally {
@@ -138,11 +169,13 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       if (session?.user) {
         setUser(session.user);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
         setDriverProfile(null);
         setIsOnline(false);
+        void SecureStorageAdapter.removeItem(CACHED_USER_PROFILE_KEY);
+        void SecureStorageAdapter.removeItem(CACHED_DRIVER_PROFILE_KEY);
       }
       setIsLoading(false);
     });
@@ -165,10 +198,16 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         ]);
 
         if (isMounted) {
-          if (p) setProfile(p as any);
+          if (p) {
+            setProfile(p as any);
+            void SecureStorageAdapter.setItem(CACHED_USER_PROFILE_KEY, JSON.stringify(p));
+          }
           const driverRow = dp as DeliveryPersonRow | null;
-          setDriverProfile(driverRow);
-          setIsOnline(Boolean(driverRow?.is_available));
+          if (driverRow) {
+            setDriverProfile(driverRow);
+            setIsOnline(Boolean(driverRow.is_available));
+            void SecureStorageAdapter.setItem(CACHED_DRIVER_PROFILE_KEY, JSON.stringify(driverRow));
+          }
         }
       } catch (err) {
         console.warn('Erreur synchronisation données livreur:', err);
@@ -194,7 +233,10 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const login = async (input: LoginInput) => {
     const result = await authService.login(input);
     setUser(result.user);
-    setProfile(result.profile);
+    if (result.profile) {
+      setProfile(result.profile);
+      void SecureStorageAdapter.setItem(CACHED_USER_PROFILE_KEY, JSON.stringify(result.profile));
+    }
 
     if (result.user?.id) {
       const { data: dp } = await supabase
@@ -203,8 +245,11 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .eq('user_id', result.user.id)
         .maybeSingle();
       const driverRow = dp as DeliveryPersonRow | null;
-      setDriverProfile(driverRow);
-      setIsOnline(Boolean(driverRow?.is_available));
+      if (driverRow) {
+        setDriverProfile(driverRow);
+        setIsOnline(Boolean(driverRow.is_available));
+        void SecureStorageAdapter.setItem(CACHED_DRIVER_PROFILE_KEY, JSON.stringify(driverRow));
+      }
     }
   };
 
@@ -230,6 +275,8 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setDriverProfile(null);
       setIsOnline(false);
       setDriverLocation(null);
+      void SecureStorageAdapter.removeItem(CACHED_USER_PROFILE_KEY);
+      void SecureStorageAdapter.removeItem(CACHED_DRIVER_PROFILE_KEY);
     }
   };
 

@@ -58,8 +58,8 @@ function DeliveryTabIcon({
 
 export default function DeliveryTabLayout() {
   const accent = useAccent();
-  const { isAuthenticated, driverProfile } = useDriverAuth();
-  const isDriver = Boolean(isAuthenticated && driverProfile);
+  const { isAuthenticated, driverProfile, isLoading } = useDriverAuth();
+  const isDriver = Boolean(driverProfile || (isAuthenticated && !isLoading));
 
   /* Nombre de courses à prendre : même requête (et même cache) que la cloche
      de l'en-tête, pour ne pas sonder la base deux fois. */
