@@ -101,6 +101,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
           value={otpCode}
           onChange={setOtpCode}
           isError={Boolean(errorMsg)}
+          autoFocus={visible}
         />
 
         {/* Photo Proof Capture */}
@@ -138,7 +139,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
           variant={isPickup ? 'primary' : 'secondary'}
           size="lg"
           loading={loading}
-          disabled={otpCode.length !== 4 || !photoUri || loading}
+          disabled={otpCode.length !== 6 || !photoUri || loading}
           onPress={handleConfirm}
           fullWidth
           style={styles.submitBtn}
