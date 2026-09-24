@@ -14,7 +14,24 @@ export interface DeliveryMapProps {
 /** Carte des courses — version mobile (WebView). Voir `DeliveryMap.web.tsx`
  *  pour la variante navigateur : même HTML, autre conteneur. */
 export const DeliveryMap: React.FC<DeliveryMapProps> = ({ drivers, orders, height = 400, style }) => {
-  const html = useMemo(() => buildDeliveryMapHtml(drivers, orders), [drivers, orders]);
+  /* Les tableaux `drivers` et `orders` sont recréés à chaque sondage (toutes les
+     6 s) : mémoïser dessus régénérait le HTML, donc rechargeait la WebView, qui
+     repartait à zéro — zoom et déplacement perdus, clignotement à chaque cycle.
+     On ne régénère plus que si le contenu a réellement changé. */
+  const markersKey = useMemo(
+    () =>
+      JSON.stringify([
+        drivers.map((d) => [d.id, d.lat?.toFixed(5), d.lng?.toFixed(5)]),
+        orders.map((o) => [o.id, o.lat?.toFixed(5), o.lng?.toFixed(5)]),
+      ]),
+    [drivers, orders]
+  );
+
+  const html = useMemo(
+    () => buildDeliveryMapHtml(drivers, orders),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [markersKey]
+  );
 
   return (
     <View style={[styles.wrap, { height }, style]}>
