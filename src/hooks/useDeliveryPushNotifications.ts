@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -113,8 +113,16 @@ export function useDeliveryPushNotifications() {
       }
 
       // URL de redirection spécifique
-      if (typeof data?.url === 'string' && data.url.startsWith('/')) {
-        router.push(data.url as any);
+      // Les modèles de l'admin envoient des adresses complètes
+      // (https://delivery.daloamarket.com/dashboard) : on garde le chemin,
+      // l'app a les mêmes routes que le site. Lien externe : ouvert à part.
+      if (typeof data?.url === 'string') {
+        const path = data.url.replace(/^https?:\/\/delivery\.daloamarket\.com/i, '') || '/';
+        if (path.startsWith('/')) {
+          router.push(path as any);
+        } else if (/^https?:\/\//i.test(path)) {
+          Linking.openURL(path).catch(() => {});
+        }
       }
     };
 
