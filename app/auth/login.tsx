@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { Bike, Lock, Mail, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing, Input, Button, KeyboardScreen } from '@daloa/ui';
 import { Haptics, formatUserErrorMessage } from '@daloa/utils';
-import { supabase, deliveryPersonService } from '@daloa/api';
+import { supabase, deliveryPersonService, rpcOutcome } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
 import { GoogleIcon } from '../../src/components/GoogleIcon';
@@ -76,9 +76,10 @@ export default function DriverLoginScreen() {
       }
     } catch (err: any) {
       try {
-        const { data: provInfo } = await supabase.rpc('get_auth_provider_for_email', {
+        const { data: provRaw } = await supabase.rpc('get_auth_provider_for_email', {
           p_email: emailOrPhone.trim(),
         });
+        const provInfo = rpcOutcome<{ exists?: boolean; has_password?: boolean; provider?: string }>(provRaw);
         if (provInfo?.exists && !provInfo?.has_password && provInfo?.provider === 'google') {
           setErrorMsg(
             "Ce compte a été créé avec Google sur DaloaMarket. Aucun mot de passe n'est configuré : veuillez cliquer sur « Continuer avec Google » ci-dessous."

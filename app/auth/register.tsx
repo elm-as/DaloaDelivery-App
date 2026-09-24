@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@daloa/ui';
 import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 import { normalizePayoutNetwork } from '@daloa/config';
-import { supabase, deliveryPersonService } from '@daloa/api';
+import { supabase, deliveryPersonService, rpcOutcome } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
 import { RegistrationStepHeader } from '../../src/components/registration/RegistrationStepHeader';
@@ -196,9 +196,10 @@ export default function DriverRegisterScreen() {
           if (isAlreadyRegistered) {
             // Vérifier d'abord si ce compte a été créé via Google (aucun mot de passe configuré)
             try {
-              const { data: provInfo } = await supabase.rpc('get_auth_provider_for_email', {
+              const { data: provRaw } = await supabase.rpc('get_auth_provider_for_email', {
                 p_email: email.trim(),
               });
+              const provInfo = rpcOutcome<{ exists?: boolean; has_password?: boolean; provider?: string }>(provRaw);
               if (provInfo?.exists && !provInfo?.has_password && provInfo?.provider === 'google') {
                 throw new Error(
                   "Ce compte a été créé avec Google sur DaloaMarket. Aucun mot de passe n'a été défini pour cette adresse. Veuillez cliquer sur « Continuer avec Google » en haut pour activer votre profil livreur en 1 clic !"
@@ -259,31 +260,27 @@ export default function DriverRegisterScreen() {
 
       const cleanPayoutNetwork = normalizePayoutNetwork(payoutNetwork);
 
-      // Conserver le rôle existant (admin ou vendeur) si l'utilisateur en possède déjà un sur DaloaMarket
       const { data: currentUserRow } = await supabase
         .from('users')
-        .select('role, avatar_url')
+        .select('avatar_url')
         .eq('id', authUserId)
         .maybeSingle();
 
-      const preservedRole =
-        currentUserRow?.role === 'admin' ||
-        currentUserRow?.role === 'superadmin' ||
-        currentUserRow?.role === 'vendeur'
-          ? currentUserRow.role
-          : 'livreur';
-
-      await supabase
+      // Pas de `role` ici : la base refuse qu'un utilisateur change le sien et
+      // l'UPDATE entier échouait (numéro de versement perdu). Le rôle livreur
+      // est posé par le trigger delivery_person_sets_role à la création de la
+      // fiche, sans jamais rétrograder un admin.
+      const { error: profileErr } = await supabase
         .from('users')
         .update({
           full_name: fullName.trim(),
           phone: phone.trim(),
           avatar_url: uploadedPhotoUrl || currentUserRow?.avatar_url || null,
-          role: preservedRole,
           payout_network: cleanPayoutNetwork,
           payout_number: payoutNumber || phone.trim(),
         } as any)
         .eq('id', authUserId);
+      if (profileErr) throw profileErr;
 
       await deliveryPersonService.createDeliveryPerson({
         user_id: authUserId,

@@ -48,7 +48,8 @@ export default function AnnuaireScreen() {
         const validDrivers = data.filter(
           (d: any) => Boolean(d.name?.trim() && d.phone?.trim())
         );
-        setLivreurs(validDrivers);
+        // Vue `delivery_persons_directory` : colonnes toutes nullables côté types.
+        setLivreurs(validDrivers as unknown as DeliveryPersonData[]);
       }
     } catch (err) {
       console.warn('Erreur chargement annuaire:', err);

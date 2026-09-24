@@ -46,7 +46,8 @@ export default function HomeScreen() {
           if (a.rating > 0 || b.rating > 0) return b.rating - a.rating;
           return 0;
         });
-        setOnlineLivreurs(shuffled);
+        // Vue `delivery_persons_directory` : colonnes toutes nullables côté types.
+        setOnlineLivreurs(shuffled as unknown as DeliveryPersonData[]);
       }
     } catch (err) {
       console.warn('Erreur chargement livreurs en ligne:', err);

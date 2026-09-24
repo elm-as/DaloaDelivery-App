@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import type { Json } from '@daloa/types';
 
 /**
  * Journalisation comportementale côté serveur (table `events`).
@@ -40,13 +41,30 @@ export const analyticsService = {
         event_name: eventName,
         user_id: userId ?? null,
         listing_id: listingId ?? null,
-        props: props ?? {},
+        props: (props ?? {}) as Json,
       })
       .then(({ error }) => {
         if (error && typeof __DEV__ !== 'undefined' && __DEV__) {
           console.warn('[analytics] logEvent échoué:', eventName, error.message);
         }
       });
+  },
+  /**
+   * Incrémente le compteur de vues d'une annonce (RPC Supabase increment_listing_views).
+   * Protège contre les vues en doublon par viewer/24h et n'échoue jamais de façon bloquante.
+   */
+  async incrementListingViews(listingId: string, viewerId?: string | null): Promise<void> {
+    try {
+      const vid = viewerId || `anon_${Math.random().toString(36).substring(2, 12)}`;
+      await supabase.rpc('increment_listing_views', {
+        p_listing_id: listingId,
+        p_viewer_id: vid,
+      });
+    } catch (e: unknown) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[analytics] increment_listing_views échoué:', e);
+      }
+    }
   },
 };
 

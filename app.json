@@ -80,7 +80,13 @@
           "photosPermission": "DaloaDelivery a besoin d'accéder à vos documents pour la vérification CNI/KYC."
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FF9800"
+        }
+      ],
       "expo-font",
       "expo-web-browser"
     ],

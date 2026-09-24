@@ -13,7 +13,7 @@ import { supabase } from '@daloa/api';
 
 /**
  * Écran de suspension de compte livreur :
- * Affiche l'alerte de suspension, le formulaire de recours (ban_appeals)
+ * Affiche l'alerte de suspension, le formulaire de recours (RPC submit_ban_appeal)
  * et permet la déconnexion immédiate.
  */
 export const DriverBannedScreen: React.FC = () => {
@@ -29,13 +29,13 @@ export const DriverBannedScreen: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      await supabase.from('ban_appeals').insert({
-        user_id: user?.id || 'anonymous',
-        full_name: profile?.full_name || 'Livreur',
-        phone: profile?.phone || '',
-        reason: appealReason.trim(),
-        status: 'pending',
+      // `ban_appeals` n'existe pas : l'insert échouait et l'écran annonçait
+      // quand même « transmis ». Le recours est enregistré sur le compte par
+      // la RPC, que l'admin web lit déjà.
+      const { error } = await supabase.rpc('submit_ban_appeal', {
+        p_reason: appealReason.trim(),
       });
+      if (error) throw error;
 
       showAlert('Recours envoyé', 'L’équipe de modération logistique étudiera votre dossier.');
       setAppealReason('');

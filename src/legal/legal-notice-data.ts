@@ -20,7 +20,7 @@ export const DRIVER_LEGAL_NOTICE_DATA: DriverLegalNoticeGroup[] = [
       { label: 'Adresse de l’éditeur', value: 'RueO21,68, Yopougon, Abidjan, Côte d’Ivoire' },
       { label: 'Zone d’activité', value: 'Daloa et sa région, Côte d’Ivoire' },
       { label: 'Emails officiels', value: 'support@daloamarket.com / contact@daloamarket.com' },
-      { label: 'WhatsApp (pas d’appels)', value: '+225 01 73 80 15 59' },
+      { label: 'WhatsApp (pas d’appels)', value: '+225 07 04 16 33 61' },
     ],
   },
   {

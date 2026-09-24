@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Redirect, useFocusEffect } from 'expo-router';
@@ -14,9 +15,9 @@ import {
   usePayoutSettings,
   usePayoutHistory,
   useDriverDailyStats,
-  paymentService,
 } from '@daloa/api';
-import { colors, Button, showAlert } from '@daloa/ui';
+import { getSupportWhatsAppUrl } from '@daloa/config';
+import { colors } from '@daloa/ui';
 import {
   Wallet,
   ArrowDownRight,
@@ -39,7 +40,6 @@ export default function EarningsScreen() {
   const { data: payouts, refetch: refetchPayouts } = usePayoutHistory(user?.id, 'delivery');
   const { data: driverStats, refetch: refetchStats } = useDriverDailyStats(driverProfile?.id);
 
-  const [isRequesting, setIsRequesting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const earningsToday = driverStats?.earningsToday || 0;
@@ -75,48 +75,6 @@ export default function EarningsScreen() {
       router.back();
     } else {
       router.replace('/(tabs)/livreur');
-    }
-  };
-
-  const handleRequestPayout = async () => {
-    if (!payoutSettings) {
-      showAlert(
-        'Numéro Mobile Money requis',
-        'Veuillez d’abord enregistrer votre numéro Mobile Money pour recevoir vos gains de livraison.',
-        [{ text: 'Configurer', onPress: () => router.push('/payout-setup' as any) }]
-      );
-      return;
-    }
-
-    if (availableBalance <= 0) {
-      showAlert(
-        'Aucun reliquat à retirer',
-        'L’ensemble de vos gains de livraison est déjà transféré ou en cours de versement automatique.'
-      );
-      return;
-    }
-
-    Haptics.success();
-    setIsRequesting(true);
-
-    try {
-      await paymentService.requestPayout({
-        userId: user!.id,
-        recipientType: 'driver',
-        amount: availableBalance,
-        network: payoutSettings.network,
-        phone: payoutSettings.phone,
-      });
-
-      await Promise.all([refetchStats(), refetchPayouts()]);
-      showAlert(
-        'Demande de retrait enregistrée ! 🎉',
-        `Votre demande de retrait de ${formatFCFA(availableBalance)} a été transmise avec succès.`
-      );
-    } catch (err: any) {
-      showAlert('Erreur', err.message || 'Impossible d’effectuer le retrait.');
-    } finally {
-      setIsRequesting(false);
     }
   };
 
@@ -288,17 +246,27 @@ export default function EarningsScreen() {
             </Text>
           </View>
 
+          {/* Pas de retrait manuel : les versements sont automatiques (comme sur
+              le site livreur). L'ancien bouton écrivait dans `payouts` des
+              colonnes inexistantes, sur une table fermée aux clients : il
+              échouait toujours. Un reliquat signale un versement en retard. */}
           {availableBalance > 0 && (
-            <View style={{ marginTop: 14 }}>
-              <Button
-                title={`Retirer le reliquat (${formatFCFA(availableBalance)})`}
-                variant="primary"
-                size="md"
-                loading={isRequesting}
-                disabled={isRequesting}
-                onPress={handleRequestPayout}
-              />
-            </View>
+            <TouchableOpacity
+              style={[styles.autoPayoutInfo, { marginTop: 14 }]}
+              onPress={() =>
+                Linking.openURL(
+                  getSupportWhatsAppUrl(
+                    `Bonjour, j'ai ${formatFCFA(availableBalance)} de gains de livraison non encore versés.`
+                  )
+                )
+              }
+            >
+              <Info size={14} color={colors.grey[500]} />
+              <Text style={styles.autoPayoutInfoText}>
+                {formatFCFA(availableBalance)} de gains ne sont pas encore versés. Ils partent
+                automatiquement ; sans versement sous 24 h, touchez ici pour prévenir le support.
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
 
