@@ -193,7 +193,7 @@ export const DriverAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async function syncDriverData() {
       try {
         const [{ data: p }, { data: dp }] = await Promise.all([
-          supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
+          supabase.from('users_private').select('*').eq('id', user.id).maybeSingle(),
           supabase.from('delivery_persons').select('*').eq('user_id', user.id).maybeSingle(),
         ]);
 

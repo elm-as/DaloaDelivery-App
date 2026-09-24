@@ -45,7 +45,7 @@ export default function DriverLoginScreen() {
 
   const handleLogin = async () => {
     if (!emailOrPhone.trim()) {
-      setErrorMsg('Veuillez renseigner votre adresse e-mail ou numéro.');
+      setErrorMsg('Veuillez renseigner votre adresse e-mail.');
       return;
     }
     if (!password) {
@@ -189,8 +189,9 @@ export default function DriverLoginScreen() {
           </View>
 
           <Input
-            label="Email ou Numéro de téléphone *"
-            placeholder="Ex: 07 01 02 03 04 ou coursier@daloa.ci"
+            label="Adresse e-mail *"
+            placeholder="Ex : coursier@gmail.com"
+            keyboardType="email-address"
             value={emailOrPhone}
             onChangeText={setEmailOrPhone}
             leftIcon={<Mail size={16} color={colors.text.subtle} />}

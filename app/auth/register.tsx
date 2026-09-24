@@ -60,7 +60,7 @@ export default function DriverRegisterScreen() {
           }
 
           const { data: uRow } = await supabase
-            .from('users')
+            .from('users_private')
             .select('full_name, phone, avatar_url')
             .eq('id', session.user.id)
             .maybeSingle();

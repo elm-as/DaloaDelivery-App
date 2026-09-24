@@ -14,7 +14,7 @@ import {
   useAccent,
   showAlert,
 } from '@daloa/ui';
-import { VEHICLE_TYPES } from '@daloa/config';
+import { VEHICLE_TYPES, normalizeVehicleId, vehicleLabel } from '@daloa/config';
 import { deliveryPersonService } from '@daloa/api';
 import { Haptics } from '@daloa/utils';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -55,7 +55,7 @@ export default function EditDriverProfileScreen() {
     setPhone(driverProfile.phone ?? '');
     setDescription((driverProfile as any).description ?? '');
     setPricing((driverProfile as any).pricing_description ?? '');
-    setVehicleType(((driverProfile.vehicle_type as string) || 'moto').toLowerCase());
+    setVehicleType(normalizeVehicleId((driverProfile.vehicle_type as string) || 'moto'));
     setVehicleDetails((driverProfile as any).vehicle_details ?? '');
     setZones(Array.isArray(driverProfile.coverage_zones) ? [...driverProfile.coverage_zones] : []);
     setPhotoUri((driverProfile as any).photo_url ?? null);
@@ -69,7 +69,7 @@ export default function EditDriverProfileScreen() {
       phone !== (driverProfile.phone ?? '') ||
       description !== ((driverProfile as any).description ?? '') ||
       pricing !== ((driverProfile as any).pricing_description ?? '') ||
-      vehicleType !== (((driverProfile.vehicle_type as string) || 'moto').toLowerCase()) ||
+      vehicleType !== normalizeVehicleId((driverProfile.vehicle_type as string) || 'moto') ||
       vehicleDetails !== ((driverProfile as any).vehicle_details ?? '') ||
       zones.length !== initialZones.length ||
       zones.some((z) => !initialZones.includes(z))
@@ -132,7 +132,9 @@ export default function EditDriverProfileScreen() {
         phone: phone.trim(),
         description: description.trim() || null,
         pricing_description: pricing.trim() || null,
-        vehicle_type: vehicleType,
+        // Même écriture que l'inscription et le site (« Moto ») : la règle du
+        // permis de conduire et le site comparent ce libellé.
+        vehicle_type: vehicleLabel(vehicleType),
         vehicle_details: vehicleDetails.trim() || null,
         coverage_zones: zones,
       } as any);

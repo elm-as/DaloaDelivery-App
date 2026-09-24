@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
 import { formatFCFA, Haptics } from '@daloa/utils';
-import { deliveryService, supabase } from '@daloa/api';
+import { deliveryService, supabase, PUBLIC_USER_COLUMNS, attachContactPhones } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { OtpVerificationModal } from '../../src/components/OtpVerificationModal';
 import { QrScannerModal } from '../../src/components/QrScannerModal';
@@ -75,10 +75,12 @@ export default function DeliveryRunExecutionScreen() {
 
       const { data: orderData, error: orderErr } = await supabase
         .from('orders')
-        .select('*, seller:seller_id(*), buyer:buyer_id(*), listings:listing_id(*)')
+        .select(`*, seller:seller_id(${PUBLIC_USER_COLUMNS}), buyer:buyer_id(${PUBLIC_USER_COLUMNS}), listings:listing_id(*)`)
         .eq('id', assignData.order_id)
         .single();
       if (orderErr) throw orderErr;
+      // Téléphones du vendeur et de l'acheteur : réservés au livreur de la course.
+      await attachContactPhones([(orderData as any).seller, (orderData as any).buyer]);
 
       setAssignment(assignData);
       setOrder(orderData);

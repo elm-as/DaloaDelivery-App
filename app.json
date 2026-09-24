@@ -37,11 +37,83 @@
           "data": [
             {
               "scheme": "https",
-              "host": "delivery.daloamarket.com"
+              "host": "delivery.daloamarket.com",
+              "pathPrefix": "/course/"
             },
             {
               "scheme": "https",
-              "host": "www.delivery.daloamarket.com"
+              "host": "delivery.daloamarket.com",
+              "pathPrefix": "/livreur/"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/dashboard"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/inscription"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/devenir-livreur"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/affiliations"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/livraisons"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/commandes"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "pathPrefix": "/course/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "pathPrefix": "/livreur/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/dashboard"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/inscription"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/devenir-livreur"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/affiliations"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/livraisons"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/commandes"
             }
           ],
           "category": [
@@ -54,8 +126,9 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },
