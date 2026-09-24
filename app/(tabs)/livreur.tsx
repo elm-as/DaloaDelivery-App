@@ -17,7 +17,7 @@ import {
 } from 'lucide-react-native';
 import { colors, radii, Button, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
 import { DALOA_CENTER } from '@daloa/config';
-import { Haptics, isLocationInDaloa } from '@daloa/utils';
+import { Haptics, isLocationInDaloa, withTimeout, GPS_TIMEOUT_MS } from '@daloa/utils';
 import { useDriverDailyStats, useAvailableRuns, deliveryService } from '@daloa/api';
 import { AvailableDeliveryRun } from '@daloa/types';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
@@ -119,9 +119,17 @@ export default function LivreurTabScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // `Accuracy.High` est le pire cas : sans garde-temps, le bouton restait
+      // sur « En cours… » tant que la puce ne trouvait pas de fix.
+      const position = await withTimeout(
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+        GPS_TIMEOUT_MS,
+        () => Location.getLastKnownPositionAsync()
+      );
+      if (!position?.coords) {
+        showAlert('Position indisponible', 'Impossible d’obtenir votre position. Vérifiez que la localisation est activée.');
+        return;
+      }
       const rawLat = position.coords.latitude;
       const rawLng = position.coords.longitude;
       const isInside = isLocationInDaloa(rawLat, rawLng);
