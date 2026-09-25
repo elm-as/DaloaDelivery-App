@@ -134,7 +134,7 @@ export function buildDeliveryMapHtml(
 
   if (points.length > 0) {
     var bounds = L.latLngBounds(points);
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
   }
 
   setTimeout(function () { map.invalidateSize(); }, 250);

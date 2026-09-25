@@ -21,8 +21,9 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({ drivers, orders, heigh
   const markersKey = useMemo(
     () =>
       JSON.stringify([
-        drivers.map((d) => [d.id, d.lat?.toFixed(5), d.lng?.toFixed(5)]),
-        orders.map((o) => [o.id, o.lat?.toFixed(5), o.lng?.toFixed(5)]),
+        // ~100 m : un livreur qui roule ne doit pas recharger la carte à chaque sondage.
+        drivers.map((d) => [d.id, d.lat?.toFixed(3), d.lng?.toFixed(3)]),
+        orders.map((o) => [o.id, o.lat?.toFixed(4), o.lng?.toFixed(4)]),
       ]),
     [drivers, orders]
   );
@@ -40,6 +41,9 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({ drivers, orders, heigh
         source={{ html }}
         style={styles.web}
         scrollEnabled={false}
+        // Android : la page qui défile ne vole plus les glissements du doigt.
+        nestedScrollEnabled
+        overScrollMode="never"
         javaScriptEnabled
         domStorageEnabled
         setSupportMultipleWindows={false}

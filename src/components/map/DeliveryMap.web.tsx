@@ -16,7 +16,18 @@ export interface DeliveryMapProps {
  * chargé est exactement celui de la version mobile.
  */
 export const DeliveryMap: React.FC<DeliveryMapProps> = ({ drivers, orders, height = 400, style }) => {
-  const html = useMemo(() => buildDeliveryMapHtml(drivers, orders), [drivers, orders]);
+  // Même règle que la version mobile : on ne régénère la carte (et on ne perd
+  // le zoom) que si les positions ont réellement changé.
+  const markersKey = useMemo(
+    () =>
+      JSON.stringify([
+        drivers.map((d) => [d.id, d.lat?.toFixed(3), d.lng?.toFixed(3)]),
+        orders.map((o) => [o.id, o.lat?.toFixed(4), o.lng?.toFixed(4)]),
+      ]),
+    [drivers, orders]
+  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const html = useMemo(() => buildDeliveryMapHtml(drivers, orders), [markersKey]);
 
   return (
     <View style={[styles.wrap, { height }, style]}>
