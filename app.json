@@ -176,7 +176,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "elmas-dev",
+    "owner": "elmas-devs-team",
     "extra": {
       "router": {},
       "eas": {
