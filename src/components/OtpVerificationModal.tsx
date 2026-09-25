@@ -32,12 +32,23 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   const [otpCode, setOtpCode] = useState(initialCode);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Le rouge des cases ne s'applique qu'à une erreur de code, pas à la photo.
+  const [codeError, setCodeError] = useState(false);
+
+  const handleCodeChange = (code: string) => {
+    setOtpCode(code);
+    if (codeError) {
+      setCodeError(false);
+      setErrorMsg(null);
+    }
+  };
 
   // Synchronise le code pré-rempli (ex. après un scan QR) à l'ouverture.
   React.useEffect(() => {
     if (visible) {
       setOtpCode(initialCode);
       setErrorMsg(null);
+      setCodeError(false);
     }
   }, [visible, initialCode]);
 
@@ -60,26 +71,33 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
+      // La photo manquait : son message d'erreur n'a plus lieu d'être.
+      if (!codeError) setErrorMsg(null);
       Haptics.selection();
     }
   };
 
   const handleConfirm = async () => {
     if (otpCode.length !== 6) {
+      setCodeError(true);
       setErrorMsg(`Veuillez saisir le code OTP à 6 chiffres fourni par ${personRole}.`);
       return;
     }
     if (!photoUri) {
+      setCodeError(false);
       setErrorMsg('La photo de preuve du colis est obligatoire avant validation.');
       return;
     }
 
     try {
       setErrorMsg(null);
+      setCodeError(false);
       await onSubmit(otpCode, photoUri);
       setOtpCode('');
       setPhotoUri(null);
     } catch (err: any) {
+      // Refus du serveur : le plus souvent un code erroné.
+      setCodeError(true);
       setErrorMsg(formatUserErrorMessage(err, 'Code OTP incorrect ou erreur de validation'));
     }
   };
@@ -99,8 +117,8 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
         <OtpInput
           length={6}
           value={otpCode}
-          onChange={setOtpCode}
-          isError={Boolean(errorMsg)}
+          onChange={handleCodeChange}
+          isError={codeError}
           autoFocus={visible}
         />
 

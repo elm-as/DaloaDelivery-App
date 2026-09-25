@@ -114,6 +114,16 @@
               "scheme": "https",
               "host": "www.delivery.daloamarket.com",
               "path": "/commandes"
+            },
+            {
+              "scheme": "https",
+              "host": "delivery.daloamarket.com",
+              "path": "/annuaire"
+            },
+            {
+              "scheme": "https",
+              "host": "www.delivery.daloamarket.com",
+              "path": "/annuaire"
             }
           ],
           "category": [
