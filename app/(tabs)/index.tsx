@@ -92,11 +92,13 @@ export default function HomeScreen() {
   // vers sa console, qui tient lieu d'« Accueil » comme sur le web.
   // Place apres les hooks — un retour anticipe en tete de composant changeait le
   // nombre de hooks rendus des que la session se resolvait, et faisait planter React.
-  if (isAuthenticated && isAdmin) {
-    return <Redirect href={'/admin' as any} />;
-  }
+  // Admin ET livreur : la fiche livreur passe en premier (la console reste
+  // accessible par le bouton « Admin » du profil).
   if (isAuthenticated && driverProfile) {
     return <Redirect href="/(tabs)/livreur" />;
+  }
+  if (isAuthenticated && isAdmin) {
+    return <Redirect href={'/admin' as any} />;
   }
 
   return (

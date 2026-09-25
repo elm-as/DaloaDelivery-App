@@ -25,16 +25,17 @@ export default function AuthCallbackScreen() {
 
     const navigateUser = async (userId: string) => {
       try {
-        const { data: userRow } = await supabase.from('users').select('role').eq('id', userId).maybeSingle();
-        if (cancelled) return;
-        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
-          router.replace('/admin' as any);
-          return;
-        }
+        // Admin ET livreur : écrans livreur d'abord ; admin sans fiche : console.
         const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(userId);
         if (cancelled) return;
         if (driverProfile) {
           router.replace('/(tabs)/livreur' as any);
+          return;
+        }
+        const { data: userRow } = await supabase.from('users').select('role').eq('id', userId).maybeSingle();
+        if (cancelled) return;
+        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
+          router.replace('/admin' as any);
         } else {
           router.replace('/auth/register' as any);
         }

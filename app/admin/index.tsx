@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { supabase } from '@daloa/api';
-import { colors, radii, spacing, AppText, AppPressable, Button, useAccent, showAlert } from '@daloa/ui';
-import { ArrowLeft, ShieldCheck, Lock, CheckCircle2, Scale, Truck, ExternalLink, XCircle, User } from 'lucide-react-native';
+import { colors, radii, spacing, AppText, AppPressable, useAccent, showAlert } from '@daloa/ui';
+import { ArrowLeft, ShieldCheck, CheckCircle2, Scale, Truck, ExternalLink, XCircle, User } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { EmptyRow } from '../../src/components/admin/EmptyRow';
@@ -34,7 +34,7 @@ export default function AdminScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const accent = useAccent();
-  const { isAdmin, isLoading: authLoading } = useDriverAuth();
+  const { isAdmin, isLoading: authLoading, driverProfile } = useDriverAuth();
 
   const [drivers, setDrivers] = useState<(DriverRow & { verification_rejection_reason?: string | null })[]>([]);
   const [filter, setFilter] = useState<Filter>('pending');
@@ -102,19 +102,11 @@ export default function AdminScreen() {
     }
   };
 
+  // Pas (ou plus) admin : retour automatique à ses écrans. L'écran « Accès
+  // réservé » laissait bloqué quelqu'un arrivé ici quand il était encore admin
+  // (rôle changé, profil en cache) : son bouton « Retour » n'avait rien derrière.
   if (!authLoading && !isAdmin) {
-    return (
-      <View style={[styles.screen, styles.denied, { paddingTop: insets.top + spacing[10] }]}>
-        <View style={styles.deniedIcon}>
-          <Lock size={26} color={colors.status.errorDark} />
-        </View>
-        <AppText variant="title">Accès réservé</AppText>
-        <AppText variant="body" color={colors.text.muted} style={styles.centerText}>
-          Cette console est réservée à l’équipe DaloaDelivery.
-        </AppText>
-        <Button title="Retour" variant="delivery" onPress={() => router.back()} />
-      </View>
-    );
+    return <Redirect href={(driverProfile ? '/(tabs)/livreur' : '/(tabs)') as any} />;
   }
 
   const counts = {
@@ -251,7 +243,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg.DEFAULT },
   flex: { flex: 1 },
   tnum: { fontVariant: ['tabular-nums'] },
-  centerText: { textAlign: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   hero: {
     paddingHorizontal: spacing[4],
@@ -316,15 +307,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: radii.lg,
     backgroundColor: colors.bg.subtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  denied: { alignItems: 'center', paddingHorizontal: spacing[6], gap: spacing[3] },
-  deniedIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.status.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
   },

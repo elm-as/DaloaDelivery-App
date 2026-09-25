@@ -33,10 +33,11 @@ export default function DriverLoginScreen() {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (isAdmin) {
-        router.replace('/admin' as any);
-      } else if (driverProfile) {
+      // Admin ET livreur : écrans livreur d'abord.
+      if (driverProfile) {
         router.replace('/(tabs)/livreur' as any);
+      } else if (isAdmin) {
+        router.replace('/admin' as any);
       } else {
         router.replace('/auth/register' as any);
       }
@@ -60,14 +61,14 @@ export default function DriverLoginScreen() {
       Haptics.success();
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
-        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
-          router.replace('/admin' as any);
-          return;
-        }
         const dp = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
         if (dp) {
           router.replace('/(tabs)/livreur' as any);
+          return;
+        }
+        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
+          router.replace('/admin' as any);
         } else {
           router.replace('/auth/register' as any);
         }
@@ -101,14 +102,14 @@ export default function DriverLoginScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         Haptics.success();
-        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
-        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
-          router.replace('/admin' as any);
-          return;
-        }
         const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
         if (driverProfile) {
           router.replace('/(tabs)/livreur' as any);
+          return;
+        }
+        const { data: userRow } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        if (userRow?.role === 'admin' || userRow?.role === 'superadmin') {
+          router.replace('/admin' as any);
         } else {
           router.replace('/auth/register' as any);
         }
