@@ -17,7 +17,7 @@ export interface OtpVerificationModalProps {
   type: 'pickup' | 'delivery';
   /** Code pré-rempli (ex. issu d'un scan QR). */
   initialCode?: string;
-  onSubmit: (otp: string, photoUri: string) => Promise<void>;
+  onSubmit: (otp: string, photoUri: string, photoBase64?: string | null) => Promise<void>;
   loading?: boolean;
 }
 
@@ -31,6 +31,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 }) => {
   const [otpCode, setOtpCode] = useState(initialCode);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   // Le rouge des cases ne s'applique qu'à une erreur de code, pas à la photo.
   const [codeError, setCodeError] = useState(false);
@@ -65,12 +66,15 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      quality: 0.7,
+      quality: 0.5,
       allowsEditing: true,
+      // Binaire lu par l'appareil : l'envoi ne dépend plus de fetch(file://…).
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
+      setPhotoBase64(result.assets[0].base64 ?? null);
       // La photo manquait : son message d'erreur n'a plus lieu d'être.
       if (!codeError) setErrorMsg(null);
       Haptics.selection();
@@ -92,9 +96,10 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     try {
       setErrorMsg(null);
       setCodeError(false);
-      await onSubmit(otpCode, photoUri);
+      await onSubmit(otpCode, photoUri, photoBase64);
       setOtpCode('');
       setPhotoUri(null);
+      setPhotoBase64(null);
     } catch (err: any) {
       // Refus du serveur : le plus souvent un code erroné.
       setCodeError(true);

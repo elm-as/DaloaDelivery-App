@@ -133,13 +133,13 @@ export default function DeliveryRunExecutionScreen() {
     setIsOtpModalOpen(true);
   };
 
-  const handleConfirmOtp = async (otp: string, photoUri?: string) => {
+  const handleConfirmOtp = async (otp: string, photoUri?: string, photoBase64?: string | null) => {
     try {
       setIsVerifyingOtp(true);
       let uploadedPhotoUrl: string | undefined = undefined;
 
       if (photoUri) {
-        uploadedPhotoUrl = await deliveryService.uploadDeliveryProof(photoUri, assignment.id);
+        uploadedPhotoUrl = await deliveryService.uploadDeliveryProof({ fileUri: photoUri, base64: photoBase64 }, assignment.id);
       }
 
       if (otpType === 'pickup') {
