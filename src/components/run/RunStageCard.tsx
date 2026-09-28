@@ -16,6 +16,8 @@ interface Props {
   onScan: () => void;
   scanButtonText: string;
   onEnterOtp?: () => void;
+  /** Remplace « Scanner » et « Saisir le code » (ex. course payée en espèces : pas de code acheteur). */
+  primaryAction?: { title: string; onPress: () => void };
 }
 
 export const RunStageCard: React.FC<Props> = ({
@@ -31,6 +33,7 @@ export const RunStageCard: React.FC<Props> = ({
   onScan,
   scanButtonText,
   onEnterOtp,
+  primaryAction,
 }) => {
   return (
     <View
@@ -79,7 +82,19 @@ export const RunStageCard: React.FC<Props> = ({
         </View>
       )}
 
-      {isActive && (
+      {isActive && primaryAction && (
+        <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
+          <Button
+            title={primaryAction.title}
+            variant="primary"
+            size="lg"
+            onPress={primaryAction.onPress}
+            fullWidth
+          />
+        </View>
+      )}
+
+      {isActive && !primaryAction && (
         <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
           <Button
             title={scanButtonText}

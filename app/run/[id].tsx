@@ -188,6 +188,45 @@ export default function DeliveryRunExecutionScreen() {
     }
   };
 
+  // Course payée en espèces (livreur affilié au vendeur) : l'acheteur paie à la
+  // réception, il n'a pas de code. Le livreur valide « livré et encaissé ».
+  const isCashOnDelivery = Boolean(order?.payment_method && order.payment_method !== 'online');
+
+  const handleConfirmCashDelivery = () => {
+    const amount = Number(order?.total_amount) || 0;
+    showAlert(
+      'Livré et encaissé ?',
+      `Confirmez que vous avez remis le colis et encaissé ${formatFCFA(amount)} auprès du client.`,
+      [
+        { text: 'Pas encore', style: 'cancel' },
+        {
+          text: 'Oui, encaissé',
+          onPress: async () => {
+            try {
+              setIsVerifyingOtp(true);
+              const dropoffCoords =
+                order?.delivery_lat != null && order?.delivery_lng != null
+                  ? { lat: Number(order.delivery_lat), lng: Number(order.delivery_lng) }
+                  : null;
+              await deliveryService.verifyDeliveryOtp(assignment.id, '', '', driverLocation || undefined, dropoffCoords);
+              Haptics.success();
+              await fetchRunData();
+              showAlert(
+                'Livraison validée',
+                `L'encaissement de ${formatFCFA(amount)} est enregistré. Remettez au vendeur sa part selon votre accord.`,
+                [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
+              );
+            } catch (err: any) {
+              showAlert('Validation impossible', err.message || 'Réessayez dans un instant.');
+            } finally {
+              setIsVerifyingOtp(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleReportIncident = async (reason: string) => {
     try {
       setIsSubmittingIncident(true);
@@ -292,6 +331,14 @@ export default function DeliveryRunExecutionScreen() {
           }}
           onEnterOtp={() => handleOpenOtpModal('delivery')}
           scanButtonText="Scanner le QR code du client"
+          primaryAction={
+            isCashOnDelivery
+              ? {
+                  title: `Livré et encaissé · ${formatFCFA(Number(order.total_amount) || 0)}`,
+                  onPress: handleConfirmCashDelivery,
+                }
+              : undefined
+          }
         />
 
         {/* Détails du colis */}
