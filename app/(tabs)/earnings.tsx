@@ -15,10 +15,9 @@ import {
   usePayoutSettings,
   usePayoutHistory,
   useDriverDailyStats,
-  payoutService,
 } from '@daloa/api';
 import { getSupportWhatsAppUrl } from '@daloa/config';
-import { colors, CodDebtNotice } from '@daloa/ui';
+import { colors } from '@daloa/ui';
 import {
   Wallet,
   ArrowDownRight,
@@ -42,12 +41,6 @@ export default function EarningsScreen() {
   const { data: driverStats, refetch: refetchStats } = useDriverDailyStats(driverProfile?.id);
 
   const [refreshing, setRefreshing] = useState(false);
-  // Commission à reverser sur les courses encaissées en espèces (10 % de la
-  // course, plus la commission vendeur hors phase 0).
-  const [codDebt, setCodDebt] = useState({ count: 0, total: 0 });
-  const loadCodDebt = useCallback(async () => {
-    if (user?.id) setCodDebt(await payoutService.getOwnCodDebt(user.id));
-  }, [user?.id]);
 
   const earningsToday = driverStats?.earningsToday || 0;
   const completedRunsToday = driverStats?.completedRunsToday || 0;
@@ -64,8 +57,7 @@ export default function EarningsScreen() {
       refetchStats();
       refetchPayouts();
       refetchSettings();
-      loadCodDebt();
-    }, [refetchStats, refetchPayouts, refetchSettings, loadCodDebt])
+    }, [refetchStats, refetchPayouts, refetchSettings])
   );
 
   const handleRefresh = async () => {
@@ -147,7 +139,6 @@ export default function EarningsScreen() {
           />
         }
       >
-        <CodDebtNotice count={codDebt.count} total={codDebt.total} role="delivery" formatAmount={formatFCFA} />
         {/* Alerte Versement en cours si des gains sont en transit */}
         {pendingPayoutAmount > 0 && (
           <View style={styles.pendingAlertCard}>
