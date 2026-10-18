@@ -173,10 +173,10 @@ export default function EarningsScreen() {
 
           <View style={styles.kpiCard}>
             <View style={[styles.kpiIconWrapper, { backgroundColor: colors.status.successLight }]}>
-              <Wallet size={16} color="#059669" />
+              <Wallet size={16} color={colors.status.successDark} />
             </View>
             <Text style={styles.kpiLabel}>Total gains cumulés</Text>
-            <Text style={[styles.kpiValue, { color: '#059669' }]}>
+            <Text style={[styles.kpiValue, { color: colors.status.successDark }]}>
               {formatFCFA(totalLifetimeEarnings)}
             </Text>
             <Text style={styles.kpiSub}>
@@ -199,7 +199,7 @@ export default function EarningsScreen() {
           </View>
 
           <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#F3F4F6' }]}>
+            <View style={[styles.kpiIconWrapper, { backgroundColor: colors.bg.subtle }]}>
               <PackageCheck size={16} color={colors.grey[700]} />
             </View>
             <Text style={styles.kpiLabel}>Déjà encaissé</Text>

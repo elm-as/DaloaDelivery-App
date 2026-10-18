@@ -6,8 +6,17 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.grey[50],
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surface,
+  },
   scrollContent: {
     paddingBottom: 24,
+  },
+  contentPad: {
+    paddingHorizontal: spacing[4],
   },
   unauthContent: {
     paddingBottom: 32,

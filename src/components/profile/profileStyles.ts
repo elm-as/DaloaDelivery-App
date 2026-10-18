@@ -66,12 +66,12 @@ export const profileStyles = StyleSheet.create({
   adminBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAF5FF',
+    backgroundColor: colors.secondary[50],
     marginHorizontal: spacing[4],
     padding: spacing[3],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#F3E8FF',
+    borderColor: colors.secondary[100],
     gap: spacing[3],
   },
   logoutBtn: {
@@ -85,7 +85,7 @@ export const profileStyles = StyleSheet.create({
     paddingVertical: spacing[3],
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: colors.status.errorBorder,
     gap: spacing[2],
   },
   /* ── Cartes de synthèse, comme le profil web (Note / Livraisons / Quartiers) ── */

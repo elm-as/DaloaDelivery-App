@@ -1,30 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Linking } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Bike,
   ShieldCheck,
-  CreditCard,
-  Users,
-  Store,
-  HelpCircle,
-  FileText,
   LogOut,
   ChevronRight,
   Shield,
   UserPen,
-  Wallet,
   Mail,
   Trash2,
 } from 'lucide-react-native';
 import { colors, spacing, AppText, AppPressable, ConfirmDialog } from '@daloa/ui';
 import { Haptics } from '@daloa/utils';
-import { getSupportWhatsAppUrl } from '@daloa/config';
 import { supabase } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { UnauthenticatedProfileView } from '../../src/components/profile/UnauthenticatedProfileView';
 import { ProfileHeroHeader } from '../../src/components/profile/ProfileHeroHeader';
+import { ProfileStatsRow } from '../../src/components/profile/ProfileStatsRow';
+import { ProfileOperationsSection } from '../../src/components/profile/ProfileOperationsSection';
+import { ProfileLegalSection } from '../../src/components/profile/ProfileLegalSection';
 import { profileStyles as styles } from '../../src/components/profile/profileStyles';
 
 export default function DriverProfileScreen() {
@@ -102,31 +97,13 @@ export default function DriverProfileScreen() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* 1 bis. Note · Livraisons · Quartiers — les trois compteurs du profil web */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <AppText variant="title" color={colors.primary.DEFAULT} style={styles.statValue}>
-              {driverProfile?.total_reviews && driverProfile.total_reviews > 0 && driverProfile?.rating != null
-                ? Number(driverProfile.rating).toFixed(1)
-                : '-'}
-            </AppText>
-            <AppText variant="caption" style={styles.statLabel}>
-              {driverProfile?.total_reviews && driverProfile.total_reviews > 0 ? 'Note globale' : 'Nouveau'}
-            </AppText>
-          </View>
-          <View style={styles.statCard}>
-            <AppText variant="title" color={colors.text.DEFAULT} style={styles.statValue}>
-              {deliveredCount}
-            </AppText>
-            <AppText variant="caption" style={styles.statLabel}>Livraisons</AppText>
-          </View>
-          <View style={styles.statCard}>
-            <AppText variant="title" color="#059669" style={styles.statValue}>
-              {zonesCount}
-            </AppText>
-            <AppText variant="caption" style={styles.statLabel}>Quartiers</AppText>
-          </View>
-        </View>
+        {/* 1 bis. Note · Livraisons · Quartiers — compteurs tabular-nums */}
+        <ProfileStatsRow
+          rating={driverProfile?.rating}
+          totalReviews={driverProfile?.total_reviews}
+          deliveredCount={deliveredCount}
+          zonesCount={zonesCount}
+        />
 
         {/* 2. Invitation à la vérification KYC si non certifié */}
         {!isVerified && (
@@ -198,178 +175,10 @@ export default function DriverProfileScreen() {
         </View>
 
         {/* 3. Section Opérations & Règlements */}
-        <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
-          OPÉRATIONS & RÈGLEMENTS
-        </AppText>
-        <View style={styles.cardGroup}>
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/(tabs)/earnings' as any)}
-            style={styles.menuRow}
-            accessibilityLabel="Mes gains et retraits"
-          >
-            <View style={styles.menuIconWrap}>
-              <Wallet size={18} color={colors.status.successDark} />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Mes gains
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Solde disponible, retraits et historique des versements
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/payout-setup' as any)}
-            style={[styles.menuRow, styles.borderBottom]}
-            accessibilityLabel="Paramètres de retrait"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.primary[50] }]}>
-              <CreditCard size={18} color={colors.primary[700]} />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Paramètres de retrait (Mobile Money)
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Wave, Orange Money, MTN MoMo, Moov
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/directory' as any)}
-            style={[styles.menuRow, styles.borderBottom]}
-            accessibilityLabel="Annuaire des livreurs"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.infoLight }]}>
-              <Users size={18} color={colors.categories.electronics.text} />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Annuaire des Livreurs Daloa
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Voir les coursiers partenaires enregistrés
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/affiliations' as any)}
-            style={styles.menuRow}
-            accessibilityLabel="Mes boutiques affiliées"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.successLight }]}>
-              <Store size={18} color="#059669" />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Mes Boutiques Affiliées
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Marchands partenaires dont vous êtes le coursier attitré
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-        </View>
+        <ProfileOperationsSection />
 
         {/* 4. Section Assistance & Légal */}
-        <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
-          ASSISTANCE & LÉGAL
-        </AppText>
-        <View style={styles.cardGroup}>
-          <AppPressable
-            haptic="light"
-            onPress={() => {
-              Linking.openURL(getSupportWhatsAppUrl('Bonjour Support DaloaDelivery, je suis livreur et j\'ai besoin d\'assistance')).catch(() => {});
-            }}
-            style={[styles.menuRow, styles.borderBottom]}
-            accessibilityLabel="Assistance livreurs WhatsApp"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.successLight }]}>
-              <HelpCircle size={18} color="#059669" />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Assistance Livreurs (WhatsApp)
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Support direct en cas d'urgence ou litige client
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/legal/terms' as any)}
-            style={[styles.menuRow, styles.borderBottom]}
-            accessibilityLabel="Conditions générales"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.bg.subtle }]}>
-              <FileText size={18} color={colors.text.muted} />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Conditions Générales d'Utilisation
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Charte officielle, sécurité et reversement des gains
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/legal/privacy' as any)}
-            style={[styles.menuRow, styles.borderBottom]}
-            accessibilityLabel="Politique de confidentialité"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.status.infoLight }]}>
-              <Shield size={18} color={colors.status.info} />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Protection & Confidentialité
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Données GPS, pièces d'identité et sécurité
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-
-          <AppPressable
-            haptic="light"
-            onPress={() => router.push('/legal/legal-notice' as any)}
-            style={styles.menuRow}
-            accessibilityLabel="Mentions légales"
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: '#F8FAFC' }]}>
-              <FileText size={18} color="#64748B" />
-            </View>
-            <View style={styles.flex1}>
-              <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
-                Mentions Légales & Éditeur
-              </AppText>
-              <AppText variant="caption" color={colors.text.muted}>
-                Identité juridique, hébergeur et infrastructure
-              </AppText>
-            </View>
-            <ChevronRight size={18} color={colors.text.subtle} />
-          </AppPressable>
-        </View>
+        <ProfileLegalSection />
 
         {/* 5. Console Admin si rôle autorisé */}
         {isAdmin && (
@@ -380,16 +189,16 @@ export default function DriverProfileScreen() {
               style={styles.adminBanner}
               accessibilityLabel="Console Administration"
             >
-              <Shield size={18} color="#9333EA" />
-              <AppText variant="bodyStrong" color="#9333EA" style={styles.flex1}>
+              <Shield size={18} color={colors.secondary.DEFAULT} />
+              <AppText variant="bodyStrong" color={colors.secondary.DEFAULT} style={styles.flex1}>
                 Console Administration DaloaDelivery
               </AppText>
-              <ChevronRight size={18} color="#9333EA" />
+              <ChevronRight size={18} color={colors.secondary.DEFAULT} />
             </AppPressable>
           </View>
         )}
 
-        {/* 5 bis. Compte Email — repris du profil web */}
+        {/* 5 bis. Compte Email */}
         <View style={styles.emailCard}>
           <View style={[styles.menuIconWrap, { backgroundColor: colors.bg.subtle }]}>
             <Mail size={18} color={colors.text.muted} />
@@ -404,8 +213,7 @@ export default function DriverProfileScreen() {
           </View>
         </View>
 
-        {/* 5 ter. Suppression du compte — exigence Google Play et Apple :
-            l'utilisateur doit pouvoir supprimer son compte depuis l'app. */}
+        {/* 5 ter. Suppression du compte — exigence Google Play et Apple */}
         <AppText variant="label" color={colors.text.muted} style={styles.sectionHeader}>
           ZONE DE DANGER
         </AppText>

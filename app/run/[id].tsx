@@ -106,7 +106,7 @@ export default function DeliveryRunExecutionScreen() {
 
   const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
     setOtpType(type);
-    setScannedOtp(isDemo ? '1234' : '');
+    setScannedOtp(isDemo ? '123456' : '');
     setIsOtpModalOpen(true);
   };
 
@@ -129,7 +129,7 @@ export default function DeliveryRunExecutionScreen() {
           setDemoStatus('in_transit');
           showAlert(
             'Ramassage validé ! 🎉',
-            'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur pour livrer (Code de test: 1234).'
+            'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur pour livrer (Code de test: 123456).'
           );
         } else {
           setDemoStatus('delivered');
@@ -381,6 +381,7 @@ export default function DeliveryRunExecutionScreen() {
         initialCode={scannedOtp}
         onSubmit={handleConfirmOtp}
         loading={isVerifyingOtp}
+        isDemo={isDemo}
       />
 
       <RunIncidentModal

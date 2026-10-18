@@ -8,14 +8,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Redirect, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter, Redirect } from 'expo-router';
 import * as Location from 'expo-location';
-import {
-  Bike, Car, Truck, Zap, Wallet, Shield, ChevronRight, Moon, AlertTriangle, ShieldCheck,
-  Star, Navigation, Package, MapPin, RefreshCw,
-} from 'lucide-react-native';
-import { colors, radii, Button, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
+import { Moon, Package, MapPin, RefreshCw } from 'lucide-react-native';
+import { colors, radii, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
 import { DALOA_CENTER } from '@daloa/config';
 import { Haptics, isLocationInDaloa, withTimeout, GPS_TIMEOUT_MS } from '@daloa/utils';
 import { useDriverDailyStats, useAvailableRuns, deliveryService } from '@daloa/api';
@@ -27,16 +23,13 @@ import { DeliveryMap } from '../../src/components/map/DeliveryMap';
 import { styles } from '../../src/components/livreur/livreurStyles';
 import { isCurfewActive } from '../../src/utils/security';
 import { DemoRunCard } from '../../src/components/DemoRunCard';
-
-/** Même correspondance véhicule → icône que le tableau de bord web. */
-const VEHICLE_ICONS: Record<string, any> = {
-  Moto: Bike, Vélo: Bike, Voiture: Car, Triporteur: Truck, motorcycle: Bike, car: Car,
-};
+import { LivreurDailySummary } from '../../src/components/livreur/LivreurDailySummary';
+import { LivreurStatsGrid } from '../../src/components/livreur/LivreurStatsGrid';
 
 export default function LivreurTabScreen() {
   const router = useRouter();
   const {
-    driverProfile, isOnline, toggleOnlineStatus, isAuthenticated, isAdmin, driverLocation,
+    driverProfile, isOnline, toggleOnlineStatus, isAuthenticated, driverLocation,
     refreshDriverProfile, isLoading,
   } = useDriverAuth();
 
@@ -51,8 +44,6 @@ export default function LivreurTabScreen() {
 
   const runList: AvailableDeliveryRun[] = availableRuns || [];
 
-  /* Le web met en avant les courses qui touchent une zone couverte par le livreur
-     (tri décroissant « dans ma zone » d'abord) — même règle ici. */
   const sortedRuns = useMemo(() => {
     const zones = driverProfile?.coverage_zones || [];
     if (zones.length === 0) return runList;
@@ -102,182 +93,88 @@ export default function LivreurTabScreen() {
   );
 
   const handleRefresh = async () => {
-    await Promise.all([refetchStats(), refetchRuns()]);
+    await Promise.all([refetchStats(), refetchRuns(), refreshDriverProfile()]);
   };
 
-  const handleToggleOnline = async () => {
-    if (!driverProfile?.id) return;
-    Haptics.lightImpact();
-    await toggleOnlineStatus(!isOnline);
-  };
-
-  /* Équivalent du bouton GPS du web : on redemande une position et on la publie
-     pour que la carte et les vendeurs voient le livreur au bon endroit. */
   const handleUpdateLocation = async () => {
-    if (!driverProfile?.id || locating) return;
-    Haptics.lightImpact();
-    setLocating(true);
     try {
+      setLocating(true);
+      Haptics.lightImpact();
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      // `Accuracy.High` est le pire cas : sans garde-temps, le bouton restait
-      // sur « En cours… » tant que la puce ne trouvait pas de fix.
-      const position = await withTimeout(
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-        GPS_TIMEOUT_MS,
-        () => Location.getLastKnownPositionAsync()
-      );
-      if (!position?.coords) {
-        showAlert('Position indisponible', 'Impossible d’obtenir votre position. Vérifiez que la localisation est activée.');
+      if (status !== 'granted') {
+        showAlert('Localisation refusée', 'Activez le GPS dans les réglages pour recevoir les courses à proximité.');
         return;
       }
-      const rawLat = position.coords.latitude;
-      const rawLng = position.coords.longitude;
-      const isInside = isLocationInDaloa(rawLat, rawLng);
-      const coords = isInside
-        ? { lat: rawLat, lng: rawLng }
-        : { lat: DALOA_CENTER.lat, lng: DALOA_CENTER.lng };
-      await deliveryService.updateDriverLocation(driverProfile.id, coords);
-      await refreshDriverProfile();
-      if (!isInside) {
-        showAlert('Mode test', 'Votre GPS physique est hors de Daloa. Position calée sur Daloa.');
+      const pos = await withTimeout(
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        GPS_TIMEOUT_MS
+      );
+      if (!pos) {
+        showAlert('Délai GPS dépassé', 'Impossible d’obtenir le signal GPS. Vérifiez que la localisation est active.');
+        return;
       }
-    } catch (err) {
-      console.warn('Position indisponible:', err);
+      if (driverProfile?.id) {
+        await deliveryService.updateDriverLocation(driverProfile.id, {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        await refreshDriverProfile();
+        Haptics.success();
+        showAlert('Position actualisée', 'Votre position a été mise à jour.');
+      }
+    } catch (err: any) {
+      showAlert('Erreur GPS', err?.message || 'Impossible de récupérer votre position.');
     } finally {
       setLocating(false);
     }
   };
 
   const handleAcceptRun = async (assignmentId: string) => {
-    if (!driverProfile?.id || isCurfewActive()) return;
+    if (isCurfewActive()) {
+      showAlert('Sécurité Nocturne', 'Les livraisons sont suspendues entre 22h30 et 05h30 pour votre sécurité.');
+      return;
+    }
+    if (!driverProfile?.id) {
+      showAlert('Erreur', 'Profil livreur introuvable.');
+      return;
+    }
+
     try {
       await deliveryService.acceptRun(assignmentId, driverProfile.id);
       Haptics.success();
       await refetchRuns();
       router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
-      // L'échec était avalé : la course restait affichée sans la moindre explication.
-      Haptics.warning();
-      showAlert(
-        "Acceptation impossible",
-        err?.message || "Cette course n'est plus disponible."
-      );
+      showAlert('Acceptation impossible', err?.message || 'Un autre coursier vient d’accepter cette course.');
       refetchRuns();
     }
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      refetchRuns();
-      refetchStats();
-    }, [refetchRuns, refetchStats])
-  );
-
-  // Un administrateur sans fiche livreur n'a rien à faire sur cette console.
-  // Placé après les hooks : un retour anticipé plus haut changerait le nombre de
-  // hooks rendus dès que la session se résout, et ferait planter React.
-  if (isAuthenticated && isAdmin && !driverProfile) {
-    return <Redirect href={'/admin' as any} />;
-  }
-
-  // ── Cas 0 : Session en cours de chargement initial ──
-  if (isLoading && !driverProfile) {
+  if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <DeliveryTopBar title="Espace Livreur" />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
-        </View>
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
       </SafeAreaView>
     );
   }
 
-  // ── Cas 1 : Visiteur non connecté (Page de recrutement / Espace Livreur) ──
-  if (!isAuthenticated && !driverProfile) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <DeliveryTopBar title="Espace Livreur" />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.unauthContent}>
-          <LinearGradient
-            colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.9, y: 1 }}
-            style={styles.unauthHero}
-          >
-            <View style={styles.unauthIconCircle}>
-              <Bike size={32} color={colors.primary[700]} />
-            </View>
-            <Text style={styles.unauthHeroTitle}>Rejoignez la flotte{'\n'}DaloaDelivery</Text>
-            <Text style={styles.unauthHeroSub}>
-              Devenez coursier partenaire à Daloa et générez des revenus réguliers avec des paiements directs.
-            </Text>
-          </LinearGradient>
-          <View style={styles.perksCard}>
-            <Text style={styles.perksHeader}>Pourquoi livrer avec nous ?</Text>
-
-            <View style={styles.perkRow}>
-              <View style={[styles.perkIcon, { backgroundColor: colors.status.successLight }]}>
-                <Wallet size={16} color="#059669" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.perkTitle}>Paiements Wave & MTN</Text>
-                <Text style={styles.perkDesc}>Encaissez vos gains chaque jour directement sur votre compte mobile money.</Text>
-              </View>
-            </View>
-
-            <View style={styles.perkRow}>
-              <View style={[styles.perkIcon, { backgroundColor: colors.primary[50] }]}>
-                <Zap size={16} color={colors.primary[700]} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.perkTitle}>Courses en direct</Text>
-                <Text style={styles.perkDesc}>Recevez les demandes de livraison en temps réel sur toute la ville de Daloa.</Text>
-              </View>
-            </View>
-
-            <View style={styles.perkRow}>
-              <View style={[styles.perkIcon, { backgroundColor: colors.status.infoLight }]}>
-                <Shield size={16} color={colors.categories.electronics.text} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.perkTitle}>Profil vérifié & sécurisé</Text>
-                <Text style={styles.perkDesc}>Bénéficiez de la confiance des commerçants et clients de DaloaMarket.</Text>
-              </View>
-            </View>
-
-            <View style={styles.actionButtonsWrap}>
-              <Button
-                title="Connexion Livreur"
-                variant="primary"
-                size="lg"
-                onPress={() => router.push('/auth/login' as any)}
-                fullWidth
-              />
-              <View style={{ height: 10 }} />
-              <Button
-                title="Devenir Livreur Partenaire"
-                variant="outline"
-                size="lg"
-                onPress={() => router.push('/auth/register' as any)}
-                fullWidth
-              />
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
+  if (!isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
   }
 
-  // ── Cas 2 : Livreur connecté — même tableau de bord que /dashboard sur le web ──
-  const VehicleIcon = VEHICLE_ICONS[driverProfile?.vehicle_type || ''] || Bike;
-  const zonesCount = driverProfile?.coverage_zones?.length || 0;
-  const hasLocation = Boolean(driverLocation || driverProfile?.current_location);
   const curfew = isCurfewActive();
+  const hasLocation = Boolean(driverLocation || driverProfile?.current_location);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <DeliveryTopBar title="Tableau de bord" />
+    <SafeAreaView style={styles.container}>
+      <DeliveryTopBar />
+      <DriverHeroHeader
+        driverProfile={driverProfile}
+        isOnline={isOnline}
+        onToggleOnline={() => toggleOnlineStatus(!isOnline)}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefetching}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -286,154 +183,21 @@ export default function LivreurTabScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={handleRefresh}
-            colors={[colors.primary.DEFAULT]}
             tintColor={colors.primary.DEFAULT}
+            colors={[colors.primary.DEFAULT]}
           />
         }
       >
-        <DriverHeroHeader
-          driverProfile={driverProfile}
-          isOnline={isOnline}
-          onToggleOnline={handleToggleOnline}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefetching}
-        />
+        <View style={styles.contentPad}>
+          <LivreurDailySummary earningsToday={stats?.earningsToday || 0} />
 
-        <View style={styles.dashSection}>
-          {/* Accès direct Admin si l'utilisateur a le rôle admin */}
-          {isAdmin && (
-            <TouchableOpacity
-              style={styles.adminBanner}
-              onPress={() => {
-                Haptics.selection();
-                router.push('/admin' as any);
-              }}
-            >
-              <ShieldCheck size={22} color="#1E40AF" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.adminBannerTitle}>Panneau d'Administration</Text>
-                <Text style={styles.adminBannerSub}>Validation des livreurs & litiges</Text>
-              </View>
-              <ChevronRight size={18} color="#1E40AF" />
-            </TouchableOpacity>
-          )}
+          <LivreurStatsGrid
+            driverProfile={driverProfile}
+            hasLocation={hasLocation}
+            locating={locating}
+            onUpdateLocation={handleUpdateLocation}
+          />
 
-          {/* Alerte Mode de Retrait Wave / MTN manquant */}
-          {driverProfile && (!driverProfile.payout_network || !driverProfile.payout_number) && (
-            <View style={styles.payoutWarningCard}>
-              <AlertTriangle size={22} color={colors.status.warningDark} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.payoutWarningTitle}>Mode de retrait non configuré</Text>
-                <Text style={styles.payoutWarningSub}>
-                  Renseignez votre compte Wave ou MTN pour recevoir automatiquement vos gains de livraisons.
-                </Text>
-                <TouchableOpacity
-                  style={styles.payoutWarningBtn}
-                  onPress={() => router.push('/payout-setup' as any)}
-                >
-                  <Text style={styles.payoutWarningBtnText}>Configurer mon retrait Wave / MTN</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Alerte si le compte est connecté mais sans fiche livreur */}
-          {!driverProfile && !isAdmin && (
-            <View style={styles.missingProfileCard}>
-              <Text style={styles.missingProfileTitle}>Finalisez votre inscription livreur</Text>
-              <Text style={styles.missingProfileSub}>
-                Vous êtes connecté à DaloaDelivery. Complétez vos informations de véhicule et Mobile Money pour commencer à livrer.
-              </Text>
-              <Button
-                title="Compléter ma fiche livreur"
-                variant="primary"
-                size="sm"
-                onPress={() => router.push('/auth/register' as any)}
-                style={styles.missingProfileBtn}
-              />
-            </View>
-          )}
-
-          {/* Gains du jour, net de commission */}
-          <View style={styles.earningsCard}>
-            <View>
-              <Text style={styles.earningsLabel}>Gains du jour (net de commission)</Text>
-              <View style={styles.earningsValueRow}>
-                <Text style={styles.earningsValue}>
-                  {(stats?.earningsToday || 0).toLocaleString('fr-FR')}
-                </Text>
-                <Text style={styles.earningsCurrency}>FCFA</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.detailsBtn}
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.lightImpact();
-                router.push('/(tabs)/earnings');
-              }}
-              accessibilityLabel="Détails des gains"
-            >
-              <Text style={styles.detailsBtnText}>Détails</Text>
-              <ChevronRight size={15} color={colors.primary[700]} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Note · Véhicule · GPS */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={[styles.statIconWrap, { backgroundColor: '#FEF3C7' }]}>
-                <Star size={16} color="#F59E0B" fill="#F59E0B" />
-              </View>
-              <Text style={styles.statValue}>
-                {driverProfile?.total_reviews && driverProfile.total_reviews > 0 && driverProfile?.rating != null
-                  ? Number(driverProfile.rating).toFixed(1)
-                  : '-'}
-              </Text>
-              <Text style={styles.statCaption}>
-                {driverProfile?.total_reviews && driverProfile.total_reviews > 0
-                  ? `${driverProfile.total_reviews} avis`
-                  : 'Nouveau'}
-              </Text>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={[styles.statIconWrap, { backgroundColor: colors.primary[50] }]}>
-                <VehicleIcon size={16} color={colors.primary[700]} />
-              </View>
-              <Text style={styles.statValueSm} numberOfLines={1}>
-                {driverProfile?.vehicle_type || 'Moto'}
-              </Text>
-              <Text style={styles.statCaption}>{zonesCount} zones</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.statCard}
-              activeOpacity={0.85}
-              onPress={handleUpdateLocation}
-              accessibilityLabel="Mettre à jour ma position GPS"
-            >
-              <View
-                style={[
-                  styles.statIconWrap,
-                  { backgroundColor: hasLocation ? colors.status.successLight : colors.grey[50] },
-                ]}
-              >
-                <Navigation size={16} color={hasLocation ? '#059669' : colors.grey[400]} />
-              </View>
-              <Text style={styles.statValueSm}>GPS</Text>
-              <Text
-                style={[
-                  styles.statCaption,
-                  hasLocation && !locating ? { color: '#059669' } : null,
-                ]}
-              >
-                {locating ? 'En cours...' : hasLocation ? 'À jour' : 'Activer'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Courses disponibles */}
           <View style={styles.runsHeaderRow}>
             <Text style={styles.runsHeaderTitle}>Courses disponibles</Text>
             {!curfew && sortedRuns.length > 0 && (
@@ -445,7 +209,7 @@ export default function LivreurTabScreen() {
 
           {curfew ? (
             <View style={styles.curfewCard}>
-              <Moon size={22} color="#FBBF24" />
+              <Moon size={22} color={colors.status.warning} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.curfewTitle}>Couvre-feu de sécurité (22h30 à 05h30)</Text>
                 <Text style={styles.curfewSub}>

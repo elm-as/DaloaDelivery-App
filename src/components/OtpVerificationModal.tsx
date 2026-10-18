@@ -19,6 +19,7 @@ export interface OtpVerificationModalProps {
   initialCode?: string;
   onSubmit: (otp: string, photoUri: string, photoBase64?: string | null) => Promise<void>;
   loading?: boolean;
+  isDemo?: boolean;
 }
 
 export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
@@ -28,6 +29,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   initialCode = '',
   onSubmit,
   loading = false,
+  isDemo = false,
 }) => {
   const [otpCode, setOtpCode] = useState(initialCode);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -87,7 +89,8 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
       setErrorMsg(`Veuillez saisir le code OTP à 6 chiffres fourni par ${personRole}.`);
       return;
     }
-    if (!photoUri) {
+    const effectivePhoto = photoUri || (isDemo ? 'https://daloamarket.com/demo-proof.jpg' : null);
+    if (!effectivePhoto) {
       setCodeError(false);
       setErrorMsg('La photo de preuve du colis est obligatoire avant validation.');
       return;
@@ -96,7 +99,7 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     try {
       setErrorMsg(null);
       setCodeError(false);
-      await onSubmit(otpCode, photoUri, photoBase64);
+      await onSubmit(otpCode, effectivePhoto, photoBase64);
       setOtpCode('');
       setPhotoUri(null);
       setPhotoBase64(null);

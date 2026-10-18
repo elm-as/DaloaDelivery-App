@@ -43,7 +43,7 @@ export const earningsStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: '#FFF4E6',
+    backgroundColor: colors.primary[50],
     borderWidth: 1.5,
     borderColor: colors.primary[200],
     borderRadius: radii.xl,
@@ -241,10 +241,10 @@ export const earningsStyles = StyleSheet.create({
   statusTextSuccess: {
     fontSize: 10.5,
     fontFamily: typography.families.extrabold,
-    color: '#059669',
+    color: colors.status.successDark,
   },
   statusBadgePending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.status.warningLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radii.full,
@@ -252,10 +252,10 @@ export const earningsStyles = StyleSheet.create({
   statusTextPending: {
     fontSize: 10.5,
     fontFamily: typography.families.extrabold,
-    color: '#D97706',
+    color: colors.status.warningDark,
   },
   statusBadgeFailed: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.status.errorLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radii.full,
@@ -263,7 +263,7 @@ export const earningsStyles = StyleSheet.create({
   statusTextFailed: {
     fontSize: 10.5,
     fontFamily: typography.families.extrabold,
-    color: '#DC2626',
+    color: colors.status.errorDark,
   },
   emptyPayouts: {
     paddingVertical: 14,
