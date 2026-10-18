@@ -17,6 +17,8 @@ import { colors, radii, spacing, typography, DeliveryOrderCard, Skeleton, Button
 import { Zap, AlertCircle, ArrowLeft, Moon } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 import { isCurfewActive } from '../../src/utils/security';
+import { DemoRunCard } from '../../src/components/DemoRunCard';
+import { isDemoRun } from '../../src/services/demoRunService';
 
 export default function AvailableRunsScreen() {
   const router = useRouter();
@@ -46,6 +48,12 @@ export default function AvailableRunsScreen() {
   );
 
   const handleAcceptRun = async (assignmentId: string) => {
+    if (isDemoRun(assignmentId)) {
+      Haptics.success();
+      router.push(`/run/${assignmentId}` as any);
+      return;
+    }
+
     if (isCurfewActive()) {
       showAlert(
         'Sécurité Nocturne',
@@ -148,6 +156,9 @@ export default function AvailableRunsScreen() {
           <Text style={styles.curfewSub}>
             L'attribution et la prise de courses sont suspendues entre 22h30 et 05h30 pour protéger les livreurs partenaires.
           </Text>
+          <View style={{ marginTop: 16, width: '100%' }}>
+            <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
+          </View>
         </View>
       ) : !isOnline ? (
         <View style={styles.offlineBox}>
@@ -184,12 +195,15 @@ export default function AvailableRunsScreen() {
               <Skeleton width="100%" height={160} borderRadius={radii.xl} />
             </View>
           ) : runList.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Zap size={44} color={colors.grey[300]} />
-              <Text style={styles.emptyTitle}>Aucune course en attente</Text>
-              <Text style={styles.emptySub}>
-                Toutes les livraisons à Daloa sont prises en charge. Restez connecté, de nouvelles commandes arrivent !
-              </Text>
+            <View>
+              <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
+              <View style={styles.emptyBox}>
+                <Zap size={44} color={colors.grey[300]} />
+                <Text style={styles.emptyTitle}>Aucune course en attente</Text>
+                <Text style={styles.emptySub}>
+                  Toutes les livraisons à Daloa sont prises en charge. Restez connecté, de nouvelles commandes arrivent !
+                </Text>
+              </View>
             </View>
           ) : (
             runList.map((run: AvailableDeliveryRun) => (

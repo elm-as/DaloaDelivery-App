@@ -1,6 +1,6 @@
 import { colors, showAlert } from '@daloa/ui';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
@@ -12,13 +12,10 @@ import { QrScannerModal } from '../../src/components/QrScannerModal';
 import { RunStageCard } from '../../src/components/run/RunStageCard';
 import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
 import { isCurfewActive } from '../../src/utils/security';
+import { makePhoneCall, openExternalGps } from '../../src/utils/navigationHelper';
+import { isDemoRun, createDemoRunDetails } from '../../src/services/demoRunService';
 import { runStyles as styles } from '../../src/components/run/runStyles';
 
-/**
- * Les neuf valeurs autorisées par la contrainte CHECK de `delivery_assignments.status`.
- * Le ternaire précédent n'en couvrait que deux et faisait tomber tout le reste sur
- * « Livrée » — y compris une course simplement disponible.
- */
 const RUN_STAGE_LABELS: Record<string, string> = {
   pending_seller_confirmation: 'En attente du vendeur',
   awaiting_pickup: 'À accepter',
@@ -36,6 +33,9 @@ export default function DeliveryRunExecutionScreen() {
   const router = useRouter();
   const { driverLocation } = useDriverAuth();
 
+  const isDemo = isDemoRun(assignmentId);
+  const [demoStatus, setDemoStatus] = useState<string>('accepted');
+
   const [assignment, setAssignment] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +51,15 @@ export default function DeliveryRunExecutionScreen() {
 
   const fetchRunData = async () => {
     if (!assignmentId) return;
+
+    if (isDemo) {
+      const demo = createDemoRunDetails(demoStatus);
+      setAssignment(demo.assignment);
+      setOrder(demo.order);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       let assignData: any = null;
@@ -79,13 +88,12 @@ export default function DeliveryRunExecutionScreen() {
         .eq('id', assignData.order_id)
         .single();
       if (orderErr) throw orderErr;
-      // Téléphones du vendeur et de l'acheteur : réservés au livreur de la course.
+
       await attachContactPhones([(orderData as any).seller, (orderData as any).buyer]);
 
       setAssignment(assignData);
       setOrder(orderData);
     } catch (err: any) {
-      console.error('Erreur chargement course:', err);
       showAlert('Erreur', err.message || 'Impossible de charger les détails de la course.');
     } finally {
       setLoading(false);
@@ -94,30 +102,12 @@ export default function DeliveryRunExecutionScreen() {
 
   useEffect(() => {
     fetchRunData();
-  }, [assignmentId]);
+  }, [assignmentId, demoStatus]);
 
-  const handleCall = (phone?: string) => {
-    if (!phone) {
-      showAlert('Numéro indisponible', 'Aucun contact téléphonique renseigné.');
-      return;
-    }
-    Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`);
-  };
-
-  const handleOpenGps = (address: string, lat?: number | null, lng?: number | null) => {
-    if (lat && lng) {
-      const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
-      const latLng = `${lat},${lng}`;
-      const label = encodeURIComponent(address);
-      const url = Platform.select({
-        ios: `${scheme}${label}@${latLng}`,
-        android: `${scheme}${latLng}(${label})`,
-      });
-      if (url) Linking.openURL(url);
-    } else {
-      const encoded = encodeURIComponent(`${address}, Daloa, Côte d'Ivoire`);
-      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encoded}`);
-    }
+  const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
+    setOtpType(type);
+    setScannedOtp(isDemo ? '1234' : '');
+    setIsOtpModalOpen(true);
   };
 
   const handleCodeScanned = (code: string) => {
@@ -127,13 +117,32 @@ export default function DeliveryRunExecutionScreen() {
     setIsOtpModalOpen(true);
   };
 
-  const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
-    setOtpType(type);
-    setScannedOtp('');
-    setIsOtpModalOpen(true);
-  };
-
   const handleConfirmOtp = async (otp: string, photoUri?: string, photoBase64?: string | null) => {
+    if (isDemo) {
+      setIsVerifyingOtp(true);
+      setTimeout(() => {
+        setIsVerifyingOtp(false);
+        Haptics.success();
+        setIsOtpModalOpen(false);
+
+        if (otpType === 'pickup') {
+          setDemoStatus('in_transit');
+          showAlert(
+            'Ramassage validé ! 🎉',
+            'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur pour livrer (Code de test: 1234).'
+          );
+        } else {
+          setDemoStatus('delivered');
+          showAlert(
+            'Livraison réussie ! 🚀',
+            'Félicitations ! Vos gains de 1 350 FCFA ont été crédités sur votre solde démo.',
+            [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
+          );
+        }
+      }, 400);
+      return;
+    }
+
     try {
       setIsVerifyingOtp(true);
       let uploadedPhotoUrl: string | undefined = undefined;
@@ -148,13 +157,7 @@ export default function DeliveryRunExecutionScreen() {
             ? { lat: Number(order.seller.shop_latitude), lng: Number(order.seller.shop_longitude) }
             : null;
 
-        await deliveryService.verifyPickupOtp(
-          assignment.id,
-          otp,
-          uploadedPhotoUrl || '',
-          driverLocation || undefined,
-          pickupCoords
-        );
+        await deliveryService.verifyPickupOtp(assignment.id, otp, uploadedPhotoUrl || '', driverLocation || undefined, pickupCoords);
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
@@ -165,13 +168,7 @@ export default function DeliveryRunExecutionScreen() {
             ? { lat: Number(order.delivery_lat), lng: Number(order.delivery_lng) }
             : null;
 
-        await deliveryService.verifyDeliveryOtp(
-          assignment.id,
-          otp,
-          uploadedPhotoUrl || '',
-          driverLocation || undefined,
-          dropoffCoords
-        );
+        await deliveryService.verifyDeliveryOtp(assignment.id, otp, uploadedPhotoUrl || '', driverLocation || undefined, dropoffCoords);
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
@@ -181,15 +178,11 @@ export default function DeliveryRunExecutionScreen() {
           [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
         );
       }
-    } catch (err: any) {
-      throw err;
     } finally {
       setIsVerifyingOtp(false);
     }
   };
 
-  // Course payée en espèces (livreur affilié au vendeur) : l'acheteur paie à la
-  // réception, il n'a pas de code. Le livreur valide « livré et encaissé ».
   const isCashOnDelivery = Boolean(order?.payment_method && order.payment_method !== 'online');
 
   const handleConfirmCashDelivery = () => {
@@ -202,6 +195,14 @@ export default function DeliveryRunExecutionScreen() {
         {
           text: 'Oui, encaissé',
           onPress: async () => {
+            if (isDemo) {
+              setDemoStatus('delivered');
+              Haptics.success();
+              showAlert('Livraison démo validée', 'Encaissement démo enregistré.', [
+                { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
+              ]);
+              return;
+            }
             try {
               setIsVerifyingOtp(true);
               const dropoffCoords =
@@ -228,6 +229,13 @@ export default function DeliveryRunExecutionScreen() {
   };
 
   const handleReportIncident = async (reason: string) => {
+    if (isDemo) {
+      setIsIncidentModalOpen(false);
+      Haptics.warning();
+      showAlert('Incident démo signalé', 'En conditions réelles, le support logistique DaloaDelivery est immédiatement alerté.');
+      return;
+    }
+
     try {
       setIsSubmittingIncident(true);
       await deliveryService.reportIncident(assignment.id, reason);
@@ -251,15 +259,12 @@ export default function DeliveryRunExecutionScreen() {
     );
   }
 
-  // `verify_pickup` écrit `in_transit`, pas `picked_up` : sans les deux valeurs ici,
-  // l'écran retombait sur « Livrée » juste après un ramassage réussi et désactivait
-  // les deux étapes, bloquant le livreur avant la remise.
   const isPickupStage = assignment.status === 'accepted';
   const isDeliveryStage = assignment.status === 'picked_up' || assignment.status === 'in_transit';
   const isCompleted = assignment.status === 'delivered' || assignment.status === 'auto_released';
   const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
-  const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1); // = versement réel
-  const curfew = isCurfewActive();
+  const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
+  const curfew = isCurfewActive(isDemo);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -272,7 +277,6 @@ export default function DeliveryRunExecutionScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Alerte couvre-feu */}
         {curfew && (
           <View style={styles.curfewBanner}>
             <AlertTriangle size={18} color={colors.categories.home.text} />
@@ -282,7 +286,6 @@ export default function DeliveryRunExecutionScreen() {
           </View>
         )}
 
-        {/* Statut & Gain Net */}
         <View style={styles.gainCard}>
           <View>
             <Text style={styles.gainLabel}>Gain Net (90%)</Text>
@@ -295,7 +298,6 @@ export default function DeliveryRunExecutionScreen() {
           </View>
         </View>
 
-        {/* Étape 1 : Ramassage Vendeur */}
         <RunStageCard
           stepNumber={1}
           title="Ramassage chez le Vendeur"
@@ -304,8 +306,8 @@ export default function DeliveryRunExecutionScreen() {
           partnerPhone={order.seller?.phone || 'Non renseigné'}
           isActive={isPickupStage}
           isDone={isDeliveryStage || isCompleted}
-          onCall={() => handleCall(order.seller?.phone)}
-          onGps={() => handleOpenGps(assignment.pickup_location, order.seller?.shop_latitude, order.seller?.shop_longitude)}
+          onCall={() => makePhoneCall(order.seller?.phone)}
+          onGps={() => openExternalGps(assignment.pickup_location, order.seller?.shop_latitude, order.seller?.shop_longitude)}
           onScan={() => {
             setOtpType('pickup');
             setIsScannerOpen(true);
@@ -314,7 +316,6 @@ export default function DeliveryRunExecutionScreen() {
           scanButtonText="Scanner le QR code du vendeur"
         />
 
-        {/* Étape 2 : Livraison Acheteur */}
         <RunStageCard
           stepNumber={2}
           title="Livraison chez l'Acheteur"
@@ -323,8 +324,8 @@ export default function DeliveryRunExecutionScreen() {
           partnerPhone={order.buyer?.phone || 'Non renseigné'}
           isActive={isDeliveryStage}
           isDone={isCompleted}
-          onCall={() => handleCall(order.buyer?.phone)}
-          onGps={() => handleOpenGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)}
+          onCall={() => makePhoneCall(order.buyer?.phone)}
+          onGps={() => openExternalGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)}
           onScan={() => {
             setOtpType('delivery');
             setIsScannerOpen(true);
@@ -341,7 +342,6 @@ export default function DeliveryRunExecutionScreen() {
           }
         />
 
-        {/* Détails du colis */}
         <View style={styles.itemCard}>
           <Text style={styles.itemCardTitle}>Contenu de la commande</Text>
           <Text style={styles.itemTitle}>{order.listings?.title || 'Article commande'}</Text>
@@ -351,7 +351,6 @@ export default function DeliveryRunExecutionScreen() {
           </Text>
         </View>
 
-        {/* Bouton Signaler Incident */}
         {!isCompleted && (
           <TouchableOpacity
             onPress={() => setIsIncidentModalOpen(true)}
@@ -364,7 +363,6 @@ export default function DeliveryRunExecutionScreen() {
         )}
       </ScrollView>
 
-      {/* Scanner QR natif DaloaDelivery */}
       <QrScannerModal
         visible={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
@@ -376,7 +374,6 @@ export default function DeliveryRunExecutionScreen() {
         }}
       />
 
-      {/* Modale OTP + Photo de preuve */}
       <OtpVerificationModal
         visible={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
@@ -386,7 +383,6 @@ export default function DeliveryRunExecutionScreen() {
         loading={isVerifyingOtp}
       />
 
-      {/* Modale Incident avec tags rapides */}
       <RunIncidentModal
         visible={isIncidentModalOpen}
         onClose={() => setIsIncidentModalOpen(false)}
