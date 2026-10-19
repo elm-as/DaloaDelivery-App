@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { notificationsService } from '@daloa/api';
 import { useDriverAuth } from '../context/DriverAuthContext';
+import { runAlertEngine } from '../services/runAlertEngine';
 
 let isHandlerInitialized = false;
 
@@ -60,6 +61,7 @@ export function useDeliveryPushNotifications() {
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#EA580C',
           });
+          await runAlertEngine.initNotificationChannel();
         }
 
         const projectId =
@@ -99,6 +101,7 @@ export function useDeliveryPushNotifications() {
       }
 
       if (assignmentId) {
+        runAlertEngine.stopCurrentAlert(assignmentId);
         router.push(`/run/${assignmentId}` as any);
         return;
       }
@@ -133,8 +136,21 @@ export function useDeliveryPushNotifications() {
 
     responseSub.current = Notifications.addNotificationResponseReceivedListener(handleResponse);
 
+    const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
+      const data = notification?.request?.content?.data as any;
+      if (data?.type === 'DRIVER_RUN_AVAILABLE' || data?.tag === 'run-available') {
+        runAlertEngine.notifyNewRun({
+          assignmentId: data?.assignmentId || data?.id || '',
+          pickupLocation: data?.pickupLocation || data?.pickup_location,
+          dropoffLocation: data?.dropoffLocation || data?.dropoff_location,
+          deliveryPrice: Number(data?.deliveryPrice || data?.delivery_price) || 500,
+        });
+      }
+    });
+
     return () => {
       responseSub.current?.remove();
+      receivedSub.remove();
     };
   }, [router, user?.id]);
 }

@@ -19,6 +19,7 @@ import { Haptics } from '@daloa/utils';
 import { isCurfewActive } from '../../src/utils/security';
 import { DemoRunCard } from '../../src/components/DemoRunCard';
 import { isDemoRun } from '../../src/services/demoRunService';
+import { runAlertEngine } from '../../src/services/runAlertEngine';
 
 export default function AvailableRunsScreen() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function AvailableRunsScreen() {
   );
 
   const handleAcceptRun = async (assignmentId: string) => {
+    runAlertEngine.stopCurrentAlert(assignmentId);
     if (isDemoRun(assignmentId)) {
       Haptics.success();
       router.push(`/run/${assignmentId}` as any);
@@ -222,6 +224,19 @@ export default function AvailableRunsScreen() {
                   seller_phone: run.sellerPhone,
                   buyer_phone: run.buyerPhone,
                   created_at: run.createdAt,
+                  is_express: run.isExpress,
+                  package_description: run.packageDescription,
+                  package_type: run.packageType,
+                  sender_name: run.senderName,
+                  recipient_name: run.recipientName,
+                  payer_role: run.payerRole,
+                  is_cod: run.isCod,
+                  buyer_cod_reliability_score: run.buyerCodReliabilityScore,
+                  buyer_cod_delivered_count: run.buyerCodDeliveredCount,
+                  buyer_cod_refused_count: run.buyerCodRefusedCount,
+                  is_grouped: run.isGrouped,
+                  group_total_stops: run.groupTotalStops,
+                  group_completed_stops: run.groupCompletedStops,
                 }}
                 onPress={() => handleAcceptRun(run.assignmentId)}
                 onAccept={() => handleAcceptRun(run.assignmentId)}
@@ -313,28 +328,9 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: colors.bg.DEFAULT,
   },
-  curfewBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: colors.bg.inverse,
-    borderRadius: radii.xl,
-    margin: spacing[4],
-  },
-  curfewTitle: {
-    fontSize: 17,
-    fontFamily: typography.families.extrabold,
-    color: colors.status.warning,
-    marginTop: 12,
-  },
-  curfewSub: {
-    fontSize: 13,
-    color: colors.grey[400],
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    maxWidth: 280,
-  },
+  curfewBox: { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg.inverse, borderRadius: radii.xl, margin: spacing[4] },
+  curfewTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: colors.status.warning, marginTop: 12 },
+  curfewSub: { fontSize: 13, color: colors.grey[400], textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 280 },
   offlineBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg.DEFAULT },
   offlineTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: colors.text.DEFAULT, marginTop: 12 },
   offlineSub: { fontSize: 13, color: colors.grey[600], textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 260 },

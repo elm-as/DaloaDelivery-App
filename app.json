@@ -2,7 +2,7 @@
   "expo": {
     "name": "DaloaDelivery",
     "slug": "daloadelivery",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "daloadelivery",
@@ -23,6 +23,7 @@
       ]
     },
     "android": {
+      "versionCode": 2,
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
