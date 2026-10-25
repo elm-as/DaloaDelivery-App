@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Wallet, CreditCard, Users, Store, ChevronRight } from 'lucide-react-native';
+import { Wallet, CreditCard, Users, Store, ChevronRight, Volume2 } from 'lucide-react-native';
 import { colors, AppText, AppPressable } from '@daloa/ui';
 import { profileStyles as styles } from './profileStyles';
 
@@ -49,6 +49,26 @@ export function ProfileOperationsSection() {
             </AppText>
             <AppText variant="caption" color={colors.text.muted}>
               Wave, Orange Money, MTN MoMo, Moov
+            </AppText>
+          </View>
+          <ChevronRight size={18} color={colors.text.subtle} />
+        </AppPressable>
+
+        <AppPressable
+          haptic="light"
+          onPress={() => router.push('/settings/alerts' as any)}
+          style={[styles.menuRow, styles.borderBottom]}
+          accessibilityLabel="Alertes et sonorités des courses"
+        >
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.primary[50] }]}>
+            <Volume2 size={18} color={colors.primary.DEFAULT} />
+          </View>
+          <View style={styles.flex1}>
+            <AppText variant="bodyStrong" color={colors.text.DEFAULT}>
+              Alertes & Sonorités Courses
+            </AppText>
+            <AppText variant="caption" color={colors.text.muted}>
+              Sonnerie d'urgence, synthèse vocale et vibreur
             </AppText>
           </View>
           <ChevronRight size={18} color={colors.text.subtle} />

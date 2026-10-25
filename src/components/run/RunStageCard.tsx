@@ -18,6 +18,8 @@ interface Props {
   onEnterOtp?: () => void;
   /** Remplace « Scanner » et « Saisir le code » (ex. course payée en espèces : pas de code acheteur). */
   primaryAction?: { title: string; onPress: () => void };
+  secondaryAction?: { title: string; onPress: () => void; variant?: 'outline' | 'danger' | 'ghost' };
+  reliabilityBadge?: React.ReactNode;
 }
 
 export const RunStageCard: React.FC<Props> = ({
@@ -34,6 +36,8 @@ export const RunStageCard: React.FC<Props> = ({
   scanButtonText,
   onEnterOtp,
   primaryAction,
+  secondaryAction,
+  reliabilityBadge,
 }) => {
   return (
     <View
@@ -62,7 +66,10 @@ export const RunStageCard: React.FC<Props> = ({
       </View>
 
       <View style={styles.partnerInfo}>
-        <Text style={styles.partnerName}>{partnerName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+          <Text style={styles.partnerName}>{partnerName}</Text>
+          {reliabilityBadge}
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
           <Phone size={11} color={colors.grey[600]} />
           <Text style={styles.partnerPhone}>{partnerPhone}</Text>
@@ -91,6 +98,15 @@ export const RunStageCard: React.FC<Props> = ({
             onPress={primaryAction.onPress}
             fullWidth
           />
+          {secondaryAction && (
+            <Button
+              title={secondaryAction.title}
+              variant={secondaryAction.variant || 'outline'}
+              size="md"
+              onPress={secondaryAction.onPress}
+              fullWidth
+            />
+          )}
         </View>
       )}
 
