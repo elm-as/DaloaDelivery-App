@@ -428,16 +428,16 @@ export default function DeliveryRunExecutionScreen() {
 
         <View style={styles.itemCard}>
           <Text style={styles.itemCardTitle}>
-            {isExpress ? 'Contenu de la course' : 'Contenu de la commande'}
+            {isExpress ? 'Format du colis (sécurisé)' : 'Contenu de la commande'}
           </Text>
           <Text style={styles.itemTitle}>
             {isExpress
-              ? ((assignment as any).package_description || (order as any).package_description || 'Colis Express Hors-Market')
+              ? ((assignment as any).package_description || (order as any).package_description || 'Colis scellé standard')
               : (order.listings?.title || 'Article commande')}
           </Text>
           <Text style={styles.itemSub}>
             {isExpress
-              ? `Course Express • Règlement : ${(assignment as any).payer_role === 'recipient' ? 'Par le destinataire' : 'Par l’expéditeur'}`
+              ? `Course Express • Règlement : ${(assignment as any).payer_role === 'recipient' ? 'À encaisser auprès du destinataire' : 'Déjà payé par l’expéditeur'}`
               : `Quantité : ${order.quantity || 1} • Prix article : ${formatFCFA(order.product_amount ?? order.total_amount ?? 0)}`}
           </Text>
         </View>
