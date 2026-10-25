@@ -25,6 +25,7 @@ import { isCurfewActive } from '../../src/utils/security';
 import { DemoRunCard } from '../../src/components/DemoRunCard';
 import { LivreurDailySummary } from '../../src/components/livreur/LivreurDailySummary';
 import { LivreurStatsGrid } from '../../src/components/livreur/LivreurStatsGrid';
+import { DriverGuestView } from '../../src/components/livreur/DriverGuestView';
 
 export default function LivreurTabScreen() {
   const router = useRouter();
@@ -159,7 +160,12 @@ export default function LivreurTabScreen() {
   }
 
   if (!isAuthenticated) {
-    return <Redirect href="/(tabs)" />;
+    return (
+      <SafeAreaView style={styles.container}>
+        <DeliveryTopBar />
+        <DriverGuestView />
+      </SafeAreaView>
+    );
   }
 
   const curfew = isCurfewActive();

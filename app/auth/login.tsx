@@ -6,7 +6,6 @@ import {
   Text,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Bike, Lock, Mail, ArrowLeft, AlertCircle, Eye, EyeOff } from 'lucide-react-native';
@@ -16,7 +15,6 @@ import { supabase, deliveryPersonService, rpcOutcome } from '@daloa/api';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { signInWithGoogle } from '../../src/lib/googleAuth';
 import { GoogleIcon } from '../../src/components/GoogleIcon';
-import { LoginValueProps } from '../../src/components/auth/LoginValueProps';
 import { loginStyles as styles } from '../../src/components/auth/loginStyles';
 
 export default function DriverLoginScreen() {
@@ -33,7 +31,6 @@ export default function DriverLoginScreen() {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      // Admin ET livreur : écrans livreur d'abord.
       if (driverProfile) {
         router.replace('/(tabs)/livreur' as any);
       } else if (isAdmin) {
@@ -102,8 +99,8 @@ export default function DriverLoginScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         Haptics.success();
-        const driverProfile = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
-        if (driverProfile) {
+        const dp = await deliveryPersonService.getDeliveryPersonByUserId(session.user.id);
+        if (dp) {
           router.replace('/(tabs)/livreur' as any);
           return;
         }
@@ -130,64 +127,40 @@ export default function DriverLoginScreen() {
     <KeyboardScreen>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing[3] }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* En-tête avec dégradé DaloaDelivery */}
-        <LinearGradient
-          colors={[colors.primary[400], colors.primary.DEFAULT, colors.primary[700]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.curvedHeader}
-        >
+        {/* Barre de retour supérieure */}
+        <View style={styles.topBar}>
           <TouchableOpacity
             onPress={handleBack}
             style={styles.backBtn}
             accessibilityLabel="Retour"
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <ArrowLeft size={18} color={colors.text.inverse} />
+            <ArrowLeft size={20} color={colors.text.DEFAULT} />
           </TouchableOpacity>
+        </View>
 
-          <View style={styles.logoBadge}>
-            <Bike size={32} color={colors.primary[700]} />
+        {/* En-tête épuré */}
+        <View style={styles.header}>
+          <View style={styles.iconBadge}>
+            <Bike size={26} color={colors.primary.DEFAULT} />
           </View>
+          <Text style={styles.title}>Connexion Livreur</Text>
+          <Text style={styles.subtitle}>
+            Accédez à votre espace coursier et démarrez vos livraisons.
+          </Text>
+        </View>
 
-          <Text style={styles.headerTitle}>Bon retour !</Text>
-          <Text style={styles.headerSubtitle}>Espace Coursier & Livreur DaloaDelivery</Text>
-        </LinearGradient>
-
-        {/* Carte de connexion */}
-        <View style={styles.formCard}>
+        {/* Formulaire sans surcharge */}
+        <View style={styles.form}>
           {errorMsg && (
             <View style={styles.errorBox}>
               <AlertCircle size={18} color={colors.status.errorDark} />
               <Text style={styles.errorText}>{errorMsg}</Text>
             </View>
           )}
-
-          {/* Bouton Google OAuth */}
-          <TouchableOpacity
-            onPress={handleGoogleAuth}
-            disabled={isGoogleLoading || isLoading}
-            style={styles.googleBtn}
-            activeOpacity={0.85}
-          >
-            {isGoogleLoading ? (
-              <ActivityIndicator size="small" color={colors.grey[600]} />
-            ) : (
-              <GoogleIcon size={20} />
-            )}
-            <Text style={styles.googleBtnText}>
-              {isGoogleLoading ? 'Connexion Google…' : 'Continuer avec Google'}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou avec identifiants</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
           <Input
             label="Adresse e-mail *"
@@ -199,7 +172,7 @@ export default function DriverLoginScreen() {
             autoCapitalize="none"
           />
 
-          <View style={{ marginTop: spacing[2] }}>
+          <View>
             <Input
               label="Mot de passe *"
               placeholder="Votre mot de passe"
@@ -239,16 +212,36 @@ export default function DriverLoginScreen() {
             fullWidth
           />
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google OAuth épuré */}
+          <TouchableOpacity
+            onPress={handleGoogleAuth}
+            disabled={isGoogleLoading || isLoading}
+            style={styles.googleBtn}
+            activeOpacity={0.85}
+          >
+            {isGoogleLoading ? (
+              <ActivityIndicator size="small" color={colors.grey[600]} />
+            ) : (
+              <GoogleIcon size={18} />
+            )}
+            <Text style={styles.googleBtnText}>
+              {isGoogleLoading ? 'Connexion Google…' : 'Continuer avec Google'}
+            </Text>
+          </TouchableOpacity>
+
           <View style={styles.registerRow}>
-            <Text style={styles.registerText}>Pas encore de compte livreur ? </Text>
+            <Text style={styles.registerText}>Pas encore de compte ?</Text>
             <TouchableOpacity onPress={() => router.push('/auth/register' as any)}>
               <Text style={styles.registerLink}>Devenir coursier partenaire</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Propositions de valeur (identiques au Web) */}
-        <LoginValueProps />
       </ScrollView>
     </KeyboardScreen>
   );
