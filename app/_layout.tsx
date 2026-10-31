@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1000 * 30, // 30s pour la logistique temps réel
+      staleTime: 1000 * 30,
     },
   },
 });
@@ -89,7 +89,6 @@ export default function DeliveryRootLayout() {
           <DriverAuthProvider>
             <DeliveryPushRegistrar />
             <StatusBar style="dark" backgroundColor={colors.neutrals.surface} />
-            {/* Hote des messages sur le web : sans lui, showAlert y est muet. */}
             <AlertHost />
             <AppGate>
               <Stack
@@ -102,6 +101,7 @@ export default function DeliveryRootLayout() {
               >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="run/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
                 <Stack.Screen name="directory/index" options={{ headerShown: false }} />
                 <Stack.Screen name="directory/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="verification/index" options={{ headerShown: false }} />
