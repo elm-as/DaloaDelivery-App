@@ -136,7 +136,8 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -179,7 +180,8 @@
           "android": {
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.facebook.jni.** { *; }\n-dontwarn com.facebook.react.**\n-dontwarn okhttp3.**\n-dontwarn okio.**"
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.facebook.jni.** { *; }\n-dontwarn com.facebook.react.**\n-dontwarn okhttp3.**\n-dontwarn okio.**",
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ]
@@ -187,11 +189,11 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "elmas-devs-team",
+    "owner": "elmas.rt",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a7f46ad7-d586-47be-a53c-891c03475367"
+        "projectId": "ad6fcbd5-9cdb-4f8d-a1d2-029fd33a4a99"
       }
     }
   }
