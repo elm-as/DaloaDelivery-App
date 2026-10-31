@@ -29,6 +29,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.daloamarket.delivery",
+      "versionCode": 9,
       "googleServicesFile": "./google-services.json",
       "intentFilters": [
         {
