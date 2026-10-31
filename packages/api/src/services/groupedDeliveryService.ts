@@ -1,12 +1,6 @@
 import { supabase } from '../supabase';
-import {
-  GroupedPickupStop,
-  OrderWithDetails,
-} from '@daloa/types';
-import {
-  calculateGroupedDeliveryQuote,
-  GroupedDeliveryBreakdown,
-} from '@daloa/config';
+import { GroupedPickupStop, OrderWithDetails } from '@daloa/types';
+import { calculateGroupedDeliveryQuote, GroupedDeliveryBreakdown } from '@daloa/config';
 
 export interface ConfirmStopResult {
   success: boolean;
@@ -30,16 +24,10 @@ export interface GroupedDeliveryRunDetails {
 }
 
 export const groupedDeliveryService = {
-  /**
-   * Calcule le devis de livraison groupée pour plusieurs vendeurs
-   */
   calculateQuote(sellerDeliveryFees: number[]): GroupedDeliveryBreakdown {
     return calculateGroupedDeliveryQuote(sellerDeliveryFees);
   },
 
-  /**
-   * Récupère les détails d'une tournée groupée avec toutes ses commandes et stops
-   */
   async getGroupedRunDetails(groupId: string): Promise<GroupedDeliveryRunDetails | null> {
     if (!groupId) return null;
 
@@ -67,17 +55,16 @@ export const groupedDeliveryService = {
     const assignment = assignmentRes.data as any;
 
     let stops: GroupedPickupStop[] = [];
-
     if (assignment?.grouped_stops && Array.isArray(assignment.grouped_stops)) {
-      stops = assignment.grouped_stops.map((s: any) => ({
-        stopIndex: Number(s.stop_index) || 1,
+      stops = assignment.grouped_stops.map((s: any, idx: number) => ({
+        stopIndex: Number(s.stop_index) || idx + 1,
         sellerId: s.seller_id,
-        shopName: s.shop_name || 'Boutique',
-        address: s.address,
+        shopName: s.shop_name || s.seller_name || 'Boutique',
+        address: s.address || s.pickup_address,
         district: s.district,
         latitude: s.latitude ? Number(s.latitude) : null,
         longitude: s.longitude ? Number(s.longitude) : null,
-        phone: s.phone,
+        phone: s.phone || s.seller_phone,
         status: s.status === 'picked_up' ? 'picked_up' : 'pending',
         pickedUpAt: s.picked_up_at,
         notes: s.notes,
@@ -92,7 +79,7 @@ export const groupedDeliveryService = {
         latitude: (o.seller as any)?.shop_latitude ?? null,
         longitude: (o.seller as any)?.shop_longitude ?? null,
         phone: o.seller?.phone,
-        status: o.status === 'shipped' || o.status === 'delivered' ? 'picked_up' : 'pending',
+        status: o.status === 'in_transit' || o.status === 'shipped' || o.status === 'delivered' ? 'picked_up' : 'pending',
         pickedUpAt: null,
       }));
     }
@@ -114,20 +101,19 @@ export const groupedDeliveryService = {
     };
   },
 
-  /**
-   * Confirme la collecte d'un stop spécifique lors d'une tournée groupée
-   */
   async confirmPickupStop(
     assignmentId: string,
     stopIndex: number,
     sellerId: string,
-    notes?: string
+    notes?: string,
+    otpCode?: string
   ): Promise<ConfirmStopResult> {
     const { data, error } = await supabase.rpc('confirm_grouped_pickup_stop' as any, {
       p_assignment_id: assignmentId,
       p_stop_index: stopIndex,
       p_seller_id: sellerId,
       p_notes: notes || null,
+      p_otp_code: otpCode?.trim() || null,
     } as any);
 
     if (error) {
@@ -135,20 +121,20 @@ export const groupedDeliveryService = {
     }
 
     const payload = data as any;
+    if (payload && payload.success === false) {
+      throw new Error(payload.error || payload.reason || 'Impossible de valider ce stop');
+    }
+
     return {
       success: Boolean(payload?.success),
       stopIndex: Number(payload?.stop_index) || stopIndex,
       completedStops: Number(payload?.completed_stops) || 0,
       totalStops: Number(payload?.total_stops) || 1,
-      allCompleted: Boolean(payload?.all_completed),
+      allCompleted: Boolean(payload?.all_completed || payload?.all_picked_up),
       newStatus: payload?.new_status || 'picked_up',
     };
   },
 
-  /**
-   * Initialise de manière atomique une tournée groupée pour une liste de commandes multi-vendeurs
-   * via la RPC SECURITY DEFINER `setup_grouped_delivery_run`.
-   */
   async setupGroupedDeliveryRun(
     orderIds: string[],
     _buyerId: string,

@@ -12,15 +12,12 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Support monorepo pnpm : inclure la racine du monorepo pour résoudre les packages partagés
 config.watchFolders = [monorepoRoot];
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// Exclusion des dépôts non-Expo du monorepo, et de l'app sœur : rien ne doit
-// se résoudre depuis ces arbres.
 const exclusionPattern =
   /[/\\](DaloaDelivery|DaloaMarket-v2|partners\.daloamarket\.com|docs\.daloamarket\.ci|status\.daloamarket\.ci|tuto\.daloamarket\.com|screeshots_app|docs|apps[/\\]daloamarket)([/\\]|$)/;
 
@@ -31,17 +28,34 @@ config.resolver.blockList = Array.isArray(currentBlockList)
     ? [currentBlockList, exclusionPattern]
     : [exclusionPattern];
 
-
-// Shims pour modules Node.js (ws, zlib, stream)
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
+  '@daloa/types': path.resolve(projectRoot, 'packages/types/src/index.ts'),
+  '@daloa/config': path.resolve(projectRoot, 'packages/config/src/index.ts'),
+  '@daloa/utils': path.resolve(projectRoot, 'packages/utils/src/index.ts'),
+  '@daloa/api': path.resolve(projectRoot, 'packages/api/src/index.ts'),
+  '@daloa/ui': path.resolve(projectRoot, 'packages/ui/src/index.ts'),
   stream: path.resolve(projectRoot, 'src/shims/stream.js'),
   ws: path.resolve(projectRoot, 'src/shims/ws.js'),
   zlib: path.resolve(projectRoot, 'src/shims/zlib.js'),
 };
 
+const localPackageMap = {
+  '@daloa/types': path.resolve(projectRoot, 'packages/types/src/index.ts'),
+  '@daloa/config': path.resolve(projectRoot, 'packages/config/src/index.ts'),
+  '@daloa/utils': path.resolve(projectRoot, 'packages/utils/src/index.ts'),
+  '@daloa/api': path.resolve(projectRoot, 'packages/api/src/index.ts'),
+  '@daloa/ui': path.resolve(projectRoot, 'packages/ui/src/index.ts'),
+};
+
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (localPackageMap[moduleName]) {
+    return {
+      filePath: localPackageMap[moduleName],
+      type: 'sourceFile',
+    };
+  }
   if (moduleName === 'ws') {
     return {
       filePath: path.resolve(projectRoot, 'src/shims/ws.js'),

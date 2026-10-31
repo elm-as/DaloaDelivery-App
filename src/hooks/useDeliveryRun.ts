@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { showAlert } from '@daloa/ui';
-import { deliveryService, supabase, PUBLIC_USER_COLUMNS, attachContactPhones } from '@daloa/api';
+import { Haptics } from '@daloa/utils';
+import {
+  deliveryService,
+  supabase,
+  PUBLIC_USER_COLUMNS,
+  SAFE_DELIVERY_ASSIGNMENT_COLUMNS,
+  attachContactPhones,
+} from '@daloa/api';
 import { isDemoRun, createDemoRunDetails } from '../services/demoRunService';
 
 interface UseDeliveryRunResult {
@@ -40,7 +47,7 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
 
       const { data: byId } = await supabase
         .from('delivery_assignments')
-        .select('*')
+        .select(SAFE_DELIVERY_ASSIGNMENT_COLUMNS)
         .eq('id', assignmentId)
         .maybeSingle();
 
@@ -49,7 +56,7 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
       } else {
         const { data: byOrder } = await supabase
           .from('delivery_assignments')
-          .select('*')
+          .select(SAFE_DELIVERY_ASSIGNMENT_COLUMNS)
           .eq('order_id', assignmentId)
           .maybeSingle();
         assignData = byOrder;
@@ -60,7 +67,7 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
       const { data: orderData, error: orderErr } = await supabase
         .from('orders')
         .select(
-          `*, seller:seller_id(${PUBLIC_USER_COLUMNS}), buyer:buyer_id(${PUBLIC_USER_COLUMNS}), listings:listing_id(*)`
+          `*, seller:seller_id(${PUBLIC_USER_COLUMNS}), buyer:buyer_id(${PUBLIC_USER_COLUMNS}), listings:listing_id(*), order_items(id, quantity, unit_price, product_amount, selected_variants, listings:listing_id(title, photos))`
         )
         .eq('id', assignData.order_id)
         .single();
@@ -84,6 +91,32 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
   useEffect(() => {
     fetchRunData();
   }, [fetchRunData]);
+
+  useEffect(() => {
+    if (isDemo || !assignment?.id) return;
+    const channel = supabase
+      .channel(`driver-run-v2-${assignment.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'delivery_assignments', filter: `id=eq.${assignment.id}` },
+        (payload) => {
+          const next = payload.new as any;
+          setAssignment((prev: any) => (prev ? { ...prev, ...next } : next));
+          if (next.status === 'cancelled') {
+            Haptics.warning();
+            showAlert('Course annulée', 'La commande associée a été annulée. Ne vous déplacez plus.');
+          } else if (next.status === 'disputed') {
+            Haptics.warning();
+            showAlert('Litige ouvert', 'Un litige a été ouvert sur cette course.');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isDemo, assignment?.id]);
 
   const reportIncident = useCallback(
     async (reason: string): Promise<void> => {
