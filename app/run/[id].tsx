@@ -1,19 +1,22 @@
-import { colors, showAlert } from '@daloa/ui';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
+import { colors, showAlert, BuyerReliabilityBadge, GroupedStopsTimeline } from '@daloa/ui';
 import { formatFCFA, Haptics } from '@daloa/utils';
-import { deliveryService, supabase, PUBLIC_USER_COLUMNS, attachContactPhones } from '@daloa/api';
+import { deliveryService, antiLapinService, groupedDeliveryService } from '@daloa/api';
+import { CodRefusalReason, GroupedPickupStop } from '@daloa/types';
 import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { OtpVerificationModal } from '../../src/components/OtpVerificationModal';
 import { QrScannerModal } from '../../src/components/QrScannerModal';
 import { RunStageCard } from '../../src/components/run/RunStageCard';
 import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
+import { CodRefusalModal } from '../../src/components/run/CodRefusalModal';
 import { isCurfewActive } from '../../src/utils/security';
 import { makePhoneCall, openExternalGps } from '../../src/utils/navigationHelper';
-import { isDemoRun, createDemoRunDetails } from '../../src/services/demoRunService';
+import { driverLocationTracker } from '../../src/services/driverLocationTracker';
+import { useDeliveryRun } from '../../src/hooks/useDeliveryRun';
 import { runStyles as styles } from '../../src/components/run/runStyles';
 
 const RUN_STAGE_LABELS: Record<string, string> = {
@@ -33,76 +36,37 @@ export default function DeliveryRunExecutionScreen() {
   const router = useRouter();
   const { driverLocation } = useDriverAuth();
 
-  const isDemo = isDemoRun(assignmentId);
-  const [demoStatus, setDemoStatus] = useState<string>('accepted');
-
-  const [assignment, setAssignment] = useState<any>(null);
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    assignment,
+    order,
+    loading,
+    isDemo,
+    setDemoStatus,
+    fetchRunData,
+    reportIncident,
+    isSubmittingIncident,
+  } = useDeliveryRun(assignmentId);
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannedOtp, setScannedOtp] = useState('');
   const [otpType, setOtpType] = useState<'pickup' | 'delivery'>('pickup');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
-  const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
-
-  const fetchRunData = async () => {
-    if (!assignmentId) return;
-
-    if (isDemo) {
-      const demo = createDemoRunDetails(demoStatus);
-      setAssignment(demo.assignment);
-      setOrder(demo.order);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      let assignData: any = null;
-      const { data: byId } = await supabase
-        .from('delivery_assignments')
-        .select('*')
-        .eq('id', assignmentId)
-        .maybeSingle();
-
-      if (byId) {
-        assignData = byId;
-      } else {
-        const { data: byOrder } = await supabase
-          .from('delivery_assignments')
-          .select('*')
-          .eq('order_id', assignmentId)
-          .maybeSingle();
-        assignData = byOrder;
-      }
-
-      if (!assignData) throw new Error('Course introuvable');
-
-      const { data: orderData, error: orderErr } = await supabase
-        .from('orders')
-        .select(`*, seller:seller_id(${PUBLIC_USER_COLUMNS}), buyer:buyer_id(${PUBLIC_USER_COLUMNS}), listings:listing_id(*)`)
-        .eq('id', assignData.order_id)
-        .single();
-      if (orderErr) throw orderErr;
-
-      await attachContactPhones([(orderData as any).seller, (orderData as any).buyer]);
-
-      setAssignment(assignData);
-      setOrder(orderData);
-    } catch (err: any) {
-      showAlert('Erreur', err.message || 'Impossible de charger les détails de la course.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isCodRefusalModalOpen, setIsCodRefusalModalOpen] = useState(false);
+  const [isReportingRefusal, setIsReportingRefusal] = useState(false);
+  const [confirmingStopIndex, setConfirmingStopIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchRunData();
-  }, [assignmentId, demoStatus]);
+    if (!assignment?.id) return;
+    if (['accepted', 'picked_up', 'in_transit'].includes(assignment.status)) {
+      const stop = driverLocationTracker.startTracking(assignment.id);
+      return () => stop();
+    }
+    driverLocationTracker.stopTracking();
+  }, [assignment?.id, assignment?.status]);
+
+  useEffect(() => () => driverLocationTracker.stopTracking(), []);
 
   const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
     setOtpType(type);
@@ -117,6 +81,30 @@ export default function DeliveryRunExecutionScreen() {
     setIsOtpModalOpen(true);
   };
 
+  const handleConfirmGroupedStop = async (stop: GroupedPickupStop) => {
+    if (!assignment?.id) return;
+    try {
+      setConfirmingStopIndex(stop.stopIndex);
+      const res = await groupedDeliveryService.confirmPickupStop(
+        assignment.id,
+        stop.stopIndex,
+        stop.sellerId
+      );
+      Haptics.success();
+      await fetchRunData();
+      showAlert(
+        res.allCompleted ? 'Tous les arrêts validés ! 🎉' : 'Arrêt validé !',
+        res.allCompleted
+          ? 'Tous les colis ont été récupérés. En route vers le client !'
+          : `Retrait ${res.completedStops}/${res.totalStops} enregistré.`
+      );
+    } catch (err: any) {
+      showAlert('Erreur', err.message || 'Impossible de valider cet arrêt.');
+    } finally {
+      setConfirmingStopIndex(null);
+    }
+  };
+
   const handleConfirmOtp = async (otp: string, photoUri?: string, photoBase64?: string | null) => {
     if (isDemo) {
       setIsVerifyingOtp(true);
@@ -124,20 +112,14 @@ export default function DeliveryRunExecutionScreen() {
         setIsVerifyingOtp(false);
         Haptics.success();
         setIsOtpModalOpen(false);
-
         if (otpType === 'pickup') {
           setDemoStatus('in_transit');
-          showAlert(
-            'Ramassage validé ! 🎉',
-            'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur pour livrer (Code de test: 123456).'
-          );
+          showAlert('Ramassage validé ! 🎉', 'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur (Code: 123456).');
         } else {
           setDemoStatus('delivered');
-          showAlert(
-            'Livraison réussie ! 🚀',
-            'Félicitations ! Vos gains de 1 350 FCFA ont été crédités sur votre solde démo.',
-            [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
-          );
+          showAlert('Livraison réussie ! 🚀', 'Félicitations ! Vos gains de 1 350 FCFA ont été crédités.', [
+            { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
+          ]);
         }
       }, 400);
       return;
@@ -145,45 +127,40 @@ export default function DeliveryRunExecutionScreen() {
 
     try {
       setIsVerifyingOtp(true);
-      let uploadedPhotoUrl: string | undefined = undefined;
-
-      if (photoUri) {
-        uploadedPhotoUrl = await deliveryService.uploadDeliveryProof({ fileUri: photoUri, base64: photoBase64 }, assignment.id);
-      }
+      const uploadedPhotoUrl = photoUri
+        ? await deliveryService.uploadDeliveryProof({ fileUri: photoUri, base64: photoBase64 }, assignment.id)
+        : '';
 
       if (otpType === 'pickup') {
         const pickupCoords =
           order?.seller?.shop_latitude != null && order?.seller?.shop_longitude != null
             ? { lat: Number(order.seller.shop_latitude), lng: Number(order.seller.shop_longitude) }
             : null;
-
-        await deliveryService.verifyPickupOtp(assignment.id, otp, uploadedPhotoUrl || '', driverLocation || undefined, pickupCoords);
+        await deliveryService.verifyPickupOtp(assignment.id, otp, uploadedPhotoUrl, driverLocation || undefined, pickupCoords);
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        showAlert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez l’acheteur.');
+        showAlert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez le destinataire.');
       } else {
         const dropoffCoords =
           order?.delivery_lat != null && order?.delivery_lng != null
             ? { lat: Number(order.delivery_lat), lng: Number(order.delivery_lng) }
             : null;
-
-        await deliveryService.verifyDeliveryOtp(assignment.id, otp, uploadedPhotoUrl || '', driverLocation || undefined, dropoffCoords);
+        await deliveryService.verifyDeliveryOtp(assignment.id, otp, uploadedPhotoUrl, driverLocation || undefined, dropoffCoords);
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        showAlert(
-          'Livraison réussie ! 🚀',
-          'Félicitations ! Vos gains ont été crédités sur votre solde.',
-          [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
-        );
+        showAlert('Livraison réussie ! 🚀', 'Félicitations ! Vos gains ont été crédités sur votre solde.', [
+          { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
+        ]);
       }
     } finally {
       setIsVerifyingOtp(false);
     }
   };
 
-  const isCashOnDelivery = Boolean(order?.payment_method && order.payment_method !== 'online');
+  const isExpress = Boolean(assignment?.is_express || (order as any)?.order_type === 'express');
+  const isCashOnDelivery = Boolean(order?.payment_method && order.payment_method !== 'online' && !isExpress);
 
   const handleConfirmCashDelivery = () => {
     const amount = Number(order?.total_amount) || 0;
@@ -228,25 +205,22 @@ export default function DeliveryRunExecutionScreen() {
     );
   };
 
-  const handleReportIncident = async (reason: string) => {
-    if (isDemo) {
-      setIsIncidentModalOpen(false);
-      Haptics.warning();
-      showAlert('Incident démo signalé', 'En conditions réelles, le support logistique DaloaDelivery est immédiatement alerté.');
-      return;
-    }
-
+  const handleCodRefusalSubmit = async (reason: CodRefusalReason, notes?: string) => {
+    if (!order) return;
     try {
-      setIsSubmittingIncident(true);
-      await deliveryService.reportIncident(assignment.id, reason);
+      setIsReportingRefusal(true);
+      await antiLapinService.reportCodRefusal({ orderId: order.id, reason, notes });
       Haptics.warning();
-      setIsIncidentModalOpen(false);
-      await fetchRunData();
-      showAlert('Incident signalé', 'Le support logistique DaloaDelivery a été alerté.');
+      setIsCodRefusalModalOpen(false);
+      showAlert(
+        'Incident Anti-Lapin enregistré',
+        'La commande a été clôturée et votre responsabilité est dégagée.',
+        [{ text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') }]
+      );
     } catch (err: any) {
-      showAlert('Erreur', err.message || 'Impossible de signaler l’incident.');
+      showAlert('Erreur', err.message || 'Impossible d’enregistrer le refus.');
     } finally {
-      setIsSubmittingIncident(false);
+      setIsReportingRefusal(false);
     }
   };
 
@@ -265,6 +239,9 @@ export default function DeliveryRunExecutionScreen() {
   const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
   const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
   const curfew = isCurfewActive(isDemo);
+  const orderItems = Array.isArray(order.order_items) && order.order_items.length > 0 ? order.order_items : null;
+  const senderPhone = isExpress ? (assignment.sender_phone || order.sender_phone) : order.seller?.phone;
+  const recipientPhone = isExpress ? (assignment.recipient_phone || order.recipient_phone) : order.buyer?.phone;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -288,75 +265,117 @@ export default function DeliveryRunExecutionScreen() {
 
         <View style={styles.gainCard}>
           <View>
-            <Text style={styles.gainLabel}>Gain Net (90%)</Text>
+            <Text style={styles.gainLabel}>{isExpress ? 'Gain Net Express (90%)' : 'Gain Net (90%)'}</Text>
             <Text style={styles.gainAmount}>{formatFCFA(netGain)}</Text>
           </View>
           <View style={styles.stageStatusBadge}>
-            <Text style={styles.stageStatusText}>
-              {RUN_STAGE_LABELS[assignment.status] ?? 'Course indisponible'}
-            </Text>
+            <Text style={styles.stageStatusText}>{RUN_STAGE_LABELS[assignment.status] ?? 'Course indisponible'}</Text>
           </View>
         </View>
 
+        {assignment.is_grouped && Array.isArray(assignment.grouped_stops) && assignment.grouped_stops.length > 0 && (
+          <View style={{ marginBottom: 12 }}>
+            <GroupedStopsTimeline
+              stops={assignment.grouped_stops.map((s: any, idx: number) => ({
+                stopIndex: Number(s.stop_index) || idx + 1,
+                sellerId: s.seller_id,
+                shopName: s.shop_name || s.seller_name || 'Boutique',
+                address: s.address || s.pickup_address,
+                district: s.district,
+                status: s.status === 'picked_up' ? 'picked_up' : 'pending',
+              }))}
+              dropoffAddress={assignment.dropoff_location || 'Adresse client'}
+              totalStops={Number(assignment.group_total_stops) || assignment.grouped_stops.length}
+              completedStops={Number(assignment.group_completed_stops) || 0}
+              onConfirmStop={isPickupStage ? handleConfirmGroupedStop : undefined}
+              confirmingStopIndex={confirmingStopIndex}
+            />
+          </View>
+        )}
+
         <RunStageCard
           stepNumber={1}
-          title="Ramassage chez le Vendeur"
+          title={isExpress ? "Ramassage chez l'Expéditeur" : 'Ramassage chez le Vendeur'}
           location={assignment.pickup_location || 'Quartier Vendeur'}
-          partnerName={order.seller?.shop_name || order.seller?.full_name || 'Boutique Vendeur'}
-          partnerPhone={order.seller?.phone || 'Non renseigné'}
+          partnerName={isExpress ? (assignment.sender_name || order.sender_name || 'Expéditeur') : (order.seller?.shop_name || order.seller?.full_name || 'Boutique Vendeur')}
+          partnerPhone={senderPhone || 'Non renseigné'}
           isActive={isPickupStage}
           isDone={isDeliveryStage || isCompleted}
-          onCall={() => makePhoneCall(order.seller?.phone)}
-          onGps={() => openExternalGps(assignment.pickup_location, order.seller?.shop_latitude, order.seller?.shop_longitude)}
-          onScan={() => {
-            setOtpType('pickup');
-            setIsScannerOpen(true);
-          }}
+          onCall={() => makePhoneCall(senderPhone)}
+          onGps={() => openExternalGps(assignment.pickup_location, isExpress ? assignment.pickup_lat : order.seller?.shop_latitude, isExpress ? assignment.pickup_lng : order.seller?.shop_longitude)}
+          onScan={() => { setOtpType('pickup'); setIsScannerOpen(true); }}
           onEnterOtp={() => handleOpenOtpModal('pickup')}
-          scanButtonText="Scanner le QR code du vendeur"
+          scanButtonText={isExpress ? "Scanner le code de l'expéditeur" : 'Scanner le QR code du vendeur'}
         />
 
         <RunStageCard
           stepNumber={2}
-          title="Livraison chez l'Acheteur"
+          title={isExpress ? 'Livraison au Destinataire' : "Livraison chez l'Acheteur"}
           location={assignment.dropoff_location || 'Quartier Destinataire'}
-          partnerName={order.buyer?.full_name || 'Client Destinataire'}
-          partnerPhone={order.buyer?.phone || 'Non renseigné'}
+          partnerName={isExpress ? (assignment.recipient_name || order.recipient_name || 'Destinataire') : (order.buyer?.full_name || 'Client Destinataire')}
+          partnerPhone={recipientPhone || 'Non renseigné'}
           isActive={isDeliveryStage}
           isDone={isCompleted}
-          onCall={() => makePhoneCall(order.buyer?.phone)}
-          onGps={() => openExternalGps(assignment.dropoff_location, order.delivery_lat, order.delivery_lng)}
-          onScan={() => {
-            setOtpType('delivery');
-            setIsScannerOpen(true);
-          }}
+          onCall={() => makePhoneCall(recipientPhone)}
+          onGps={() => openExternalGps(assignment.dropoff_location, isExpress ? assignment.dropoff_lat : order.delivery_lat, isExpress ? assignment.dropoff_lng : order.delivery_lng)}
+          onScan={() => { setOtpType('delivery'); setIsScannerOpen(true); }}
           onEnterOtp={() => handleOpenOtpModal('delivery')}
-          scanButtonText="Scanner le QR code du client"
+          scanButtonText={isExpress ? 'Scanner le code du destinataire' : 'Scanner le QR code du client'}
           primaryAction={
             isCashOnDelivery
-              ? {
-                  title: `Livré et encaissé · ${formatFCFA(Number(order.total_amount) || 0)}`,
-                  onPress: handleConfirmCashDelivery,
-                }
+              ? { title: `Livré et encaissé · ${formatFCFA(Number(order.total_amount) || 0)}`, onPress: handleConfirmCashDelivery }
               : undefined
+          }
+          secondaryAction={
+            isCashOnDelivery && isDeliveryStage && !isCompleted
+              ? { title: 'Signaler un refus / Injoignable', onPress: () => setIsCodRefusalModalOpen(true), variant: 'outline' }
+              : undefined
+          }
+          reliabilityBadge={
+            !isExpress && order.buyer ? (
+              <BuyerReliabilityBadge
+                compact
+                score={order.buyer.cod_reliability_score}
+                tier={
+                  (order.buyer.cod_refused_count ?? 0) >= 2
+                    ? 'at_risk'
+                    : (order.buyer.cod_refused_count ?? 0) === 1
+                    ? 'warning'
+                    : (order.buyer.cod_delivered_count ?? 0) === 0
+                    ? 'new_client'
+                    : 'verified'
+                }
+              />
+            ) : undefined
           }
         />
 
         <View style={styles.itemCard}>
-          <Text style={styles.itemCardTitle}>Contenu de la commande</Text>
-          <Text style={styles.itemTitle}>{order.listings?.title || 'Article commande'}</Text>
-          <Text style={styles.itemSub}>
-            Quantité : {order.quantity || 1} • Prix article :{' '}
-            {formatFCFA(order.product_amount ?? order.total_amount ?? 0)}
-          </Text>
+          <Text style={styles.itemCardTitle}>{isExpress ? 'Format du colis (sécurisé)' : 'Contenu de la commande'}</Text>
+          {isExpress ? (
+            <>
+              <Text style={styles.itemTitle}>{assignment.package_description || order.package_description || 'Colis scellé standard'}</Text>
+              <Text style={styles.itemSub}>
+                {`Course Express • Règlement : ${assignment.payer_role === 'recipient' ? `Encaisser ${formatFCFA(deliveryPrice)} chez le destinataire` : "Encaisser au départ auprès de l'expéditeur"}`}
+              </Text>
+            </>
+          ) : orderItems ? (
+            orderItems.map((it: any, idx: number) => (
+              <View key={it.id || idx} style={{ marginTop: idx > 0 ? 6 : 0 }}>
+                <Text style={styles.itemTitle}>{it.listings?.title || order.listings?.title || 'Article'}</Text>
+                <Text style={styles.itemSub}>Quantité : {it.quantity || 1} • {formatFCFA(it.product_amount ?? it.unit_price ?? 0)}</Text>
+              </View>
+            ))
+          ) : (
+            <>
+              <Text style={styles.itemTitle}>{order.listings?.title || 'Article commandé'}</Text>
+              <Text style={styles.itemSub}>Quantité : {order.quantity || 1} • Prix article : {formatFCFA(order.product_amount ?? order.total_amount ?? 0)}</Text>
+            </>
+          )}
         </View>
 
-        {!isCompleted && (
-          <TouchableOpacity
-            onPress={() => setIsIncidentModalOpen(true)}
-            style={styles.incidentBtn}
-            activeOpacity={0.8}
-          >
+        {!isCompleted && assignment.status !== 'cancelled' && (
+          <TouchableOpacity onPress={() => setIsIncidentModalOpen(true)} style={styles.incidentBtn} activeOpacity={0.8}>
             <AlertTriangle size={16} color={colors.status.errorDark} />
             <Text style={styles.incidentBtnText}>Signaler un incident ou litige</Text>
           </TouchableOpacity>
@@ -368,12 +387,8 @@ export default function DeliveryRunExecutionScreen() {
         onClose={() => setIsScannerOpen(false)}
         type={otpType}
         onCodeScanned={handleCodeScanned}
-        onManualEntry={() => {
-          setIsScannerOpen(false);
-          handleOpenOtpModal(otpType);
-        }}
+        onManualEntry={() => { setIsScannerOpen(false); handleOpenOtpModal(otpType); }}
       />
-
       <OtpVerificationModal
         visible={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
@@ -383,12 +398,17 @@ export default function DeliveryRunExecutionScreen() {
         loading={isVerifyingOtp}
         isDemo={isDemo}
       />
-
       <RunIncidentModal
         visible={isIncidentModalOpen}
         onClose={() => setIsIncidentModalOpen(false)}
-        onSubmit={handleReportIncident}
+        onSubmit={reportIncident}
         loading={isSubmittingIncident}
+      />
+      <CodRefusalModal
+        visible={isCodRefusalModalOpen}
+        onClose={() => setIsCodRefusalModalOpen(false)}
+        onSubmit={handleCodRefusalSubmit}
+        loading={isReportingRefusal}
       />
     </SafeAreaView>
   );

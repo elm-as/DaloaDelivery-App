@@ -299,6 +299,15 @@ export default function LivreurTabScreen() {
                       seller_phone: run.sellerPhone,
                       buyer_phone: run.buyerPhone,
                       created_at: run.createdAt,
+                      is_express: run.isExpress,
+                      package_description: run.packageDescription,
+                      package_type: run.packageType,
+                      sender_name: run.senderName,
+                      recipient_name: run.recipientName,
+                      payer_role: run.payerRole,
+                      is_grouped: run.isGrouped,
+                      group_total_stops: run.groupTotalStops,
+                      group_completed_stops: run.groupCompletedStops,
                     }}
                     onPress={() => handleAcceptRun(run.assignmentId)}
                     onAccept={() => handleAcceptRun(run.assignmentId)}

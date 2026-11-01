@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1000 * 30, // 30s pour la logistique temps réel
+      staleTime: 1000 * 30,
     },
   },
 });
@@ -89,7 +89,6 @@ export default function DeliveryRootLayout() {
           <DriverAuthProvider>
             <DeliveryPushRegistrar />
             <StatusBar style="dark" backgroundColor={colors.neutrals.surface} />
-            {/* Hote des messages sur le web : sans lui, showAlert y est muet. */}
             <AlertHost />
             <AppGate>
               <Stack
@@ -108,6 +107,7 @@ export default function DeliveryRootLayout() {
                 <Stack.Screen name="admin/index" options={{ headerShown: false }} />
                 <Stack.Screen name="affiliations/index" options={{ headerShown: false }} />
                 <Stack.Screen name="payout-setup/index" options={{ headerShown: false }} />
+                <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
                 <Stack.Screen name="settings/delete-account" options={{ headerShown: false }} />
                 <Stack.Screen name="auth/login" options={{ presentation: 'modal', headerShown: false }} />
                 <Stack.Screen name="auth/register" options={{ presentation: 'modal', headerShown: false }} />

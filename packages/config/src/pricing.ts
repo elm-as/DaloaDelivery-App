@@ -32,6 +32,12 @@ export const PRICING_CONFIG = {
     driverCommissionRate: 0.10, // 10% retenu par la plateforme sur la livraison
   },
 
+  // Livraison Groupée Multi-Marchands (F06)
+  groupedDelivery: {
+    additionalStopFee: 300, // FCFA par boutique supplémentaire
+    driverBonusPerStop: 250, // FCFA reversé au livreur par stop additionnel collecté
+  },
+
   // Commissions sur les ventes d'articles
   marketplace: {
     /** Montant minimum d'une annonce, variantes comprises (FCFA). */
@@ -54,6 +60,13 @@ export const PRICING_CONFIG = {
     { id: 'bronze', name: 'Pack Bronze', credits: 5, price: 500, popular: false },
     { id: 'silver', name: 'Pack Argent', credits: 12, price: 1000, popular: true },
     { id: 'gold', name: 'Pack Or', credits: 30, price: 2000, popular: false },
+  ],
+
+  // Sponsoring Carrousel Accueil (Boost Supérieur VIP réservé aux Vendeurs Pro)
+  carouselBannerPacks: [
+    { id: 'carousel_7d', days: 7, price: 3000, label: '7 jours de diffusion', popular: false },
+    { id: 'carousel_14d', days: 14, price: 5000, label: '14 jours de diffusion', popular: true },
+    { id: 'carousel_30d', days: 30, price: 10000, label: '30 jours de diffusion', popular: false },
   ],
 
   // La phase n'est plus codée ici : elle vient de system_settings.phase_config
@@ -113,7 +126,7 @@ export function reconcileRoadDistanceKm(
 /** Calcule le tarif de livraison en FCFA en fonction de la distance en kilomètres */
 export function calculateDeliveryFee(distanceKm: number, customFeeOverride?: number | null): number {
   if (customFeeOverride != null && customFeeOverride >= 0) {
-    return Math.round(customFeeOverride);
+    return Math.round(customFeeOverride / 50) * 50;
   }
 
   const { baseFee, baseKm, ratePerAdditionalKm } = PRICING_CONFIG.delivery;
@@ -123,7 +136,7 @@ export function calculateDeliveryFee(distanceKm: number, customFeeOverride?: num
 
   const extraKm = distanceKm - baseKm;
   const extraFee = Math.round(extraKm * ratePerAdditionalKm);
-  return baseFee + extraFee;
+  return Math.round((baseFee + extraFee) / 50) * 50;
 }
 
 /** Calcule la ventilation complète d'une commande Escrow */
@@ -132,7 +145,8 @@ export function calculateOrderBreakdown(params: {
   quantity?: number;
   distanceKm: number;
   isProSeller?: boolean;
-  deliveryMode?: 'delivery' | 'pickup';
+  deliveryMode?: 'delivery' | 'pickup' | 'pickup_point';
+  paymentMethod?: 'online' | 'cod' | 'cash_at_shop' | string;
   deliveryFeeOverride?: number | null;
   /**
    * Override du taux de commission vendeur issu de la config de phase
@@ -149,9 +163,9 @@ export function calculateOrderBreakdown(params: {
       ? 0
       : calculateDeliveryFee(params.distanceKm, params.deliveryFeeOverride);
 
-  const buyerServiceFee = Math.round(
-    productSubtotal * PRICING_CONFIG.marketplace.buyerServiceFeeRate
-  );
+  const isPickup = params.deliveryMode === 'pickup' || params.deliveryMode === 'pickup_point';
+  const isCash = isPickup || params.paymentMethod === 'cash_at_shop' || params.paymentMethod === 'cod';
+  const buyerServiceFee = isCash ? 0 : Math.round(productSubtotal * PRICING_CONFIG.marketplace.buyerServiceFeeRate);
 
   const sellerFeeRate = params.isProSeller
     ? PRICING_CONFIG.marketplace.proSellerFeeRate
@@ -186,3 +200,72 @@ export function calculateOrderBreakdown(params: {
     driverNetPayout,
   };
 }
+
+export interface GroupedDeliveryBreakdown {
+  totalGroupedFee: number;
+  baseFee: number;
+  additionalFee: number;
+  sumIndividualFees: number;
+  savings: number;
+  stopCount: number;
+  driverTotalGain: number;
+}
+
+/**
+ * Calcule le devis de livraison groupée multi-marchands (F06).
+ * Dégressif : base = max(frais individuels), puis +300 FCFA par stop supplémentaire.
+ */
+export function calculateGroupedDeliveryQuote(
+  sellerDeliveryFees: number[],
+  customAdditionalRate?: number
+): GroupedDeliveryBreakdown {
+  if (!sellerDeliveryFees || sellerDeliveryFees.length === 0) {
+    return {
+      totalGroupedFee: 0,
+      baseFee: 0,
+      additionalFee: 0,
+      sumIndividualFees: 0,
+      savings: 0,
+      stopCount: 0,
+      driverTotalGain: 0,
+    };
+  }
+
+  const stopCount = sellerDeliveryFees.length;
+  const sumIndividualFees = sellerDeliveryFees.reduce((a, b) => a + b, 0);
+  const baseFee = Math.max(...sellerDeliveryFees);
+
+  if (stopCount === 1) {
+    const driverGain = Math.round(baseFee * (1 - PRICING_CONFIG.delivery.driverCommissionRate));
+    return {
+      totalGroupedFee: baseFee,
+      baseFee,
+      additionalFee: 0,
+      sumIndividualFees,
+      savings: 0,
+      stopCount: 1,
+      driverTotalGain: driverGain,
+    };
+  }
+
+  const rate = customAdditionalRate ?? PRICING_CONFIG.groupedDelivery.additionalStopFee;
+  const additionalStops = stopCount - 1;
+  const additionalFee = additionalStops * rate;
+  const totalGroupedFee = baseFee + additionalFee;
+  const savings = Math.max(0, sumIndividualFees - totalGroupedFee);
+
+  const baseDriverGain = Math.round(baseFee * (1 - PRICING_CONFIG.delivery.driverCommissionRate));
+  const driverBonus = additionalStops * PRICING_CONFIG.groupedDelivery.driverBonusPerStop;
+  const driverTotalGain = baseDriverGain + driverBonus;
+
+  return {
+    totalGroupedFee,
+    baseFee,
+    additionalFee,
+    sumIndividualFees,
+    savings,
+    stopCount,
+    driverTotalGain,
+  };
+}
+

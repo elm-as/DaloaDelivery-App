@@ -2,7 +2,7 @@
   "expo": {
     "name": "DaloaDelivery",
     "slug": "daloadelivery",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "daloadelivery",
@@ -23,6 +23,7 @@
       ]
     },
     "android": {
+      "versionCode": 10,
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -187,11 +188,11 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "elmas-devs-team",
+    "owner": "elmas.rt",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a7f46ad7-d586-47be-a53c-891c03475367"
+        "projectId": "ad6fcbd5-9cdb-4f8d-a1d2-029fd33a4a99"
       }
     }
   }
