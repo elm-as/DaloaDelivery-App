@@ -18,8 +18,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.daloamarket.delivery",
       "associatedDomains": [
-        "applinks:delivery.daloamarket.com",
-        "applinks:www.delivery.daloamarket.com"
+        "applinks:delivery.daloamarket.com"
       ]
     },
     "android": {
@@ -78,52 +77,7 @@
             },
             {
               "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "pathPrefix": "/course/"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "pathPrefix": "/livreur/"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/dashboard"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/inscription"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/devenir-livreur"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/affiliations"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/livraisons"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
-              "path": "/commandes"
-            },
-            {
-              "scheme": "https",
               "host": "delivery.daloamarket.com",
-              "path": "/annuaire"
-            },
-            {
-              "scheme": "https",
-              "host": "www.delivery.daloamarket.com",
               "path": "/annuaire"
             }
           ],
