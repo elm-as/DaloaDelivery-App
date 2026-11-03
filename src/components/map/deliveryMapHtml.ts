@@ -23,7 +23,7 @@ export const DALOA_CENTER = { lat: 6.8774, lng: -6.4502 };
 
 const TILE_STREET = MAPBOX_PUBLIC_TOKEN
   ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_PUBLIC_TOKEN}`
-  : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 const TILE_SATELLITE = MAPBOX_PUBLIC_TOKEN
   ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_PUBLIC_TOKEN}`
@@ -48,7 +48,7 @@ export function buildDeliveryMapHtml(
     center: DALOA_CENTER,
     tileStreet: TILE_STREET,
     tileSatellite: TILE_SATELLITE,
-    attribution: MAPBOX_PUBLIC_TOKEN ? '&copy; Mapbox' : '&copy; CARTO',
+    attribution: MAPBOX_PUBLIC_TOKEN ? '&copy; Mapbox' : '&copy; OpenStreetMap contributors',
   }).replace(/</g, '\u003c');
 
   return `<!DOCTYPE html>

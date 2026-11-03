@@ -243,6 +243,26 @@ export default function DeliveryRunExecutionScreen() {
   const senderPhone = isExpress ? (assignment.sender_phone || order.sender_phone) : order.seller?.phone;
   const recipientPhone = isExpress ? (assignment.recipient_phone || order.recipient_phone) : order.buyer?.phone;
 
+  const isGenericPickup =
+    !assignment.pickup_location ||
+    assignment.pickup_location.toLowerCase() === 'boutique du vendeur' ||
+    assignment.pickup_location.toLowerCase() === 'boutique';
+
+  const sellerDistrict =
+    order.seller?.district ||
+    order.listings?.district ||
+    assignment.sender_district ||
+    null;
+
+  const pickupLocation = isGenericPickup
+    ? (order.seller?.shop_name || order.seller?.full_name || 'Boutique du vendeur')
+    : assignment.pickup_location;
+
+  const buyerDistrict =
+    order.buyer?.district ||
+    assignment.recipient_district ||
+    null;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -296,13 +316,14 @@ export default function DeliveryRunExecutionScreen() {
         <RunStageCard
           stepNumber={1}
           title={isExpress ? "Ramassage chez l'Expéditeur" : 'Ramassage chez le Vendeur'}
-          location={assignment.pickup_location || 'Quartier Vendeur'}
+          district={sellerDistrict}
+          location={pickupLocation || 'Quartier Vendeur'}
           partnerName={isExpress ? (assignment.sender_name || order.sender_name || 'Expéditeur') : (order.seller?.shop_name || order.seller?.full_name || 'Boutique Vendeur')}
           partnerPhone={senderPhone || 'Non renseigné'}
           isActive={isPickupStage}
           isDone={isDeliveryStage || isCompleted}
           onCall={() => makePhoneCall(senderPhone)}
-          onGps={() => openExternalGps(assignment.pickup_location, isExpress ? assignment.pickup_lat : order.seller?.shop_latitude, isExpress ? assignment.pickup_lng : order.seller?.shop_longitude)}
+          onGps={() => openExternalGps(pickupLocation, isExpress ? assignment.pickup_lat : order.seller?.shop_latitude, isExpress ? assignment.pickup_lng : order.seller?.shop_longitude)}
           onScan={() => { setOtpType('pickup'); setIsScannerOpen(true); }}
           onEnterOtp={() => handleOpenOtpModal('pickup')}
           scanButtonText={isExpress ? "Scanner le code de l'expéditeur" : 'Scanner le QR code du vendeur'}
@@ -311,6 +332,7 @@ export default function DeliveryRunExecutionScreen() {
         <RunStageCard
           stepNumber={2}
           title={isExpress ? 'Livraison au Destinataire' : "Livraison chez l'Acheteur"}
+          district={buyerDistrict}
           location={assignment.dropoff_location || 'Quartier Destinataire'}
           partnerName={isExpress ? (assignment.recipient_name || order.recipient_name || 'Destinataire') : (order.buyer?.full_name || 'Client Destinataire')}
           partnerPhone={recipientPhone || 'Non renseigné'}

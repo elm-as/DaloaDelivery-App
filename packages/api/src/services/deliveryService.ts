@@ -95,7 +95,9 @@ function mapAssignmentItem(item: any) {
     deliveredAt: item.delivered_at,
     pickupPhotoUrl: item.pickup_photo_url,
     deliveryPhotoUrl: item.delivery_photo_url,
-    pickupLocation: item.pickup_location || `${seller.shop_name || 'Vendeur'} (${seller.district || listing.district || 'Daloa'})`,
+    pickupLocation: (!item.pickup_location || item.pickup_location.toLowerCase().includes('boutique du vendeur'))
+      ? `${seller.shop_name || 'Vendeur'} (${seller.district || listing.district || 'Daloa'})`
+      : item.pickup_location,
     dropoffLocation:
       (typeof item.dropoff_location === 'string' && item.dropoff_location) ||
       (typeof item.dropoff_address === 'string' && item.dropoff_address) ||

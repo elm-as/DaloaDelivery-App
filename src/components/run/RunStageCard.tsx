@@ -7,6 +7,7 @@ interface Props {
   stepNumber: number;
   title: string;
   location: string;
+  district?: string | null;
   partnerName: string;
   partnerPhone: string;
   isActive: boolean;
@@ -26,6 +27,7 @@ export const RunStageCard: React.FC<Props> = ({
   stepNumber,
   title,
   location,
+  district,
   partnerName,
   partnerPhone,
   isActive,
@@ -55,9 +57,16 @@ export const RunStageCard: React.FC<Props> = ({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.stageTitle}>{title}</Text>
+          {district && (
+            <View style={[styles.districtBadge, stepNumber === 1 ? styles.districtBadgePickup : styles.districtBadgeDropoff]}>
+              <Text style={[styles.districtBadgeText, stepNumber === 1 ? styles.districtBadgeTextPickup : styles.districtBadgeTextDropoff]}>
+                📍 Quartier {district}
+              </Text>
+            </View>
+          )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
             <MapPin size={11} color={colors.grey[500]} />
-            <Text style={styles.stageDistrict} numberOfLines={1}>
+            <Text style={styles.stageDistrict} numberOfLines={2}>
               {location}
             </Text>
           </View>
@@ -122,7 +131,7 @@ export const RunStageCard: React.FC<Props> = ({
           />
           {onEnterOtp && (
             <Button
-              title="Saisir le code secret (OTP)"
+              title="Saisir le code à 6 chiffres"
               variant="outline"
               size="md"
               onPress={onEnterOtp}
@@ -141,35 +150,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.surface,
     borderRadius: radii.xl,
     padding: spacing[4],
-    marginBottom: spacing[4],
     borderWidth: 1,
     borderColor: colors.border.DEFAULT,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   stageCardActive: {
     borderColor: colors.primary.DEFAULT,
     borderWidth: 2,
-    backgroundColor: '#FFFDFB',
-    shadowColor: colors.primary.DEFAULT,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   stageCardDone: {
-    opacity: 0.85,
-    backgroundColor: colors.grey[50],
+    opacity: 0.75,
   },
   stageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
-    marginBottom: spacing[2],
+    gap: spacing[3],
+    marginBottom: spacing[3],
   },
   stageBadge: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.border.DEFAULT,
+    borderRadius: radii.full,
+    backgroundColor: colors.grey[200],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -177,22 +183,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary.DEFAULT,
   },
   stageBadgeText: {
-    color: colors.grey[600],
+    color: colors.grey[700],
     fontFamily: typography.families.bold,
-    fontSize: 14,
+    fontSize: 13,
   },
   stageBadgeTextActive: {
-    color: colors.text.inverse,
+    color: '#fff',
   },
   stageTitle: {
     color: colors.text.DEFAULT,
     fontFamily: typography.families.bold,
-    fontSize: 15,
+    fontSize: 14,
+  },
+  districtBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 9999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 3,
+    marginBottom: 2,
+  },
+  districtBadgePickup: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA',
+  },
+  districtBadgeDropoff: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  districtBadgeText: {
+    fontSize: 11,
+    fontFamily: typography.families.bold,
+  },
+  districtBadgeTextPickup: {
+    color: '#9A3412',
+  },
+  districtBadgeTextDropoff: {
+    color: '#065F46',
   },
   stageDistrict: {
-    color: colors.text.muted,
-    fontSize: 13,
-    marginTop: 2,
+    color: colors.grey[600],
+    fontSize: 12,
+    flex: 1,
   },
   partnerInfo: {
     backgroundColor: colors.bg.subtle,
