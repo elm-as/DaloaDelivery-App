@@ -306,7 +306,7 @@ export default function DeliveryRunExecutionScreen() {
           <RunPickupDeadlineBanner
             acceptedAt={assignment.accepted_at}
             createdAt={assignment.created_at}
-            isReleasing={isReleasingRun}
+            releasing={isReleasingRun}
             onRelease={handleReleaseRun}
           />
         )}
@@ -346,7 +346,7 @@ export default function DeliveryRunExecutionScreen() {
           }
         />
 
-        <RunOrderSummaryCard order={order} />
+        <RunOrderSummaryCard order={order} assignment={assignment} isExpress={false} deliveryPrice={deliveryPrice} />
 
         {!isCompleted && assignment.status !== 'cancelled' && (
           <TouchableOpacity onPress={() => setIsIncidentModalOpen(true)} style={styles.incidentBtn} activeOpacity={0.8}>

@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import * as Location from 'expo-location';
 import { Moon, Package, MapPin, RefreshCw } from 'lucide-react-native';
 import { colors, radii, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
@@ -292,15 +292,6 @@ export default function LivreurTabScreen() {
                       seller_phone: run.sellerPhone,
                       buyer_phone: run.buyerPhone,
                       created_at: run.createdAt,
-                      is_express: (run as any).isExpress,
-                      package_description: (run as any).packageDescription,
-                      package_type: (run as any).packageType,
-                      sender_name: (run as any).senderName,
-                      recipient_name: (run as any).recipientName,
-                      payer_role: (run as any).payerRole,
-                      is_grouped: (run as any).isGrouped,
-                      group_total_stops: (run as any).groupTotalStops,
-                      group_completed_stops: (run as any).groupCompletedStops,
                     }}
                     onPress={() => handleAcceptRun(run.assignmentId)}
                     onAccept={() => handleAcceptRun(run.assignmentId)}
