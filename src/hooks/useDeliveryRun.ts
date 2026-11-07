@@ -8,38 +8,27 @@ import {
   SAFE_DELIVERY_ASSIGNMENT_COLUMNS,
   attachContactPhones,
 } from '@daloa/api';
-import { isDemoRun, createDemoRunDetails } from '../services/demoRunService';
 
 interface UseDeliveryRunResult {
   assignment: any;
   order: any;
   loading: boolean;
-  isDemo: boolean;
-  demoStatus: string;
-  setDemoStatus: (status: string) => void;
   fetchRunData: () => Promise<void>;
   reportIncident: (reason: string) => Promise<void>;
   isSubmittingIncident: boolean;
+  releaseRun: () => Promise<boolean>;
+  isReleasingRun: boolean;
 }
 
 export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
-  const isDemo = isDemoRun(assignmentId);
-  const [demoStatus, setDemoStatus] = useState<string>('accepted');
   const [assignment, setAssignment] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
+  const [isReleasingRun, setIsReleasingRun] = useState(false);
 
   const fetchRunData = useCallback(async () => {
     if (!assignmentId) return;
-
-    if (isDemo) {
-      const demo = createDemoRunDetails(demoStatus);
-      setAssignment(demo.assignment);
-      setOrder(demo.order);
-      setLoading(false);
-      return;
-    }
 
     try {
       setLoading(true);
@@ -86,14 +75,14 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
     } finally {
       setLoading(false);
     }
-  }, [assignmentId, isDemo, demoStatus]);
+  }, [assignmentId]);
 
   useEffect(() => {
     fetchRunData();
   }, [fetchRunData]);
 
   useEffect(() => {
-    if (isDemo || !assignment?.id) return;
+    if (!assignment?.id) return;
     const channel = supabase
       .channel(`driver-run-v2-${assignment.id}`)
       .on(
@@ -108,6 +97,12 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
           } else if (next.status === 'disputed') {
             Haptics.warning();
             showAlert('Litige ouvert', 'Un litige a été ouvert sur cette course.');
+          } else if (next.status === 'awaiting_pickup' && !next.delivery_person_id) {
+            Haptics.warning();
+            showAlert(
+              'Course remise en ligne',
+              'Le délai de retrait chez le vendeur (3h30) est dépassé ou la course a été libérée.'
+            );
           }
         }
       )
@@ -116,19 +111,11 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isDemo, assignment?.id]);
+  }, [assignment?.id]);
 
   const reportIncident = useCallback(
     async (reason: string): Promise<void> => {
       if (!assignment?.id) return;
-
-      if (isDemo) {
-        showAlert(
-          'Incident démo signalé',
-          'En conditions réelles, le support logistique DaloaDelivery est immédiatement alerté.'
-        );
-        return;
-      }
 
       try {
         setIsSubmittingIncident(true);
@@ -141,18 +128,32 @@ export function useDeliveryRun(assignmentId?: string): UseDeliveryRunResult {
         setIsSubmittingIncident(false);
       }
     },
-    [assignment?.id, isDemo, fetchRunData]
+    [assignment?.id, fetchRunData]
   );
+
+  const releaseRun = useCallback(async (): Promise<boolean> => {
+    if (!assignment?.id) return false;
+    try {
+      setIsReleasingRun(true);
+      await deliveryService.releaseRun(assignment.id);
+      Haptics.warning();
+      return true;
+    } catch (err: any) {
+      showAlert('Impossible de libérer la course', err.message || 'Réessayez dans un instant.');
+      return false;
+    } finally {
+      setIsReleasingRun(false);
+    }
+  }, [assignment?.id]);
 
   return {
     assignment,
     order,
     loading,
-    isDemo,
-    demoStatus,
-    setDemoStatus,
     fetchRunData,
     reportIncident,
     isSubmittingIncident,
+    releaseRun,
+    isReleasingRun,
   };
 }

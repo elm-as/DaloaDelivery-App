@@ -11,6 +11,8 @@ import { useDriverAuth } from '../../src/context/DriverAuthContext';
 import { OtpVerificationModal } from '../../src/components/OtpVerificationModal';
 import { QrScannerModal } from '../../src/components/QrScannerModal';
 import { RunStageCard } from '../../src/components/run/RunStageCard';
+import { RunPickupDeadlineBanner } from '../../src/components/run/RunPickupDeadlineBanner';
+import { RunOrderSummaryCard } from '../../src/components/run/RunOrderSummaryCard';
 import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
 import { CodRefusalModal } from '../../src/components/run/CodRefusalModal';
 import { isCurfewActive } from '../../src/utils/security';
@@ -40,11 +42,11 @@ export default function DeliveryRunExecutionScreen() {
     assignment,
     order,
     loading,
-    isDemo,
-    setDemoStatus,
     fetchRunData,
     reportIncident,
     isSubmittingIncident,
+    releaseRun,
+    isReleasingRun,
   } = useDeliveryRun(assignmentId);
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
@@ -70,7 +72,7 @@ export default function DeliveryRunExecutionScreen() {
 
   const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
     setOtpType(type);
-    setScannedOtp(isDemo ? '123456' : '');
+    setScannedOtp('');
     setIsOtpModalOpen(true);
   };
 
@@ -81,15 +83,33 @@ export default function DeliveryRunExecutionScreen() {
     setIsOtpModalOpen(true);
   };
 
+  const handleReleaseRunConfirm = () => {
+    showAlert(
+      'Remettre la course en ligne ?',
+      'Si vous ne pouvez plus récupérer le colis chez le vendeur, la course sera immédiatement proposée aux autres livreurs disponibles.',
+      [
+        { text: 'Continuer la course', style: 'cancel' },
+        {
+          text: 'Oui, me désister',
+          style: 'destructive',
+          onPress: async () => {
+            const released = await releaseRun();
+            if (released) {
+              showAlert('Course remise en ligne', 'La livraison est de nouveau ouverte aux autres coursiers.', [
+                { text: 'OK', onPress: () => router.replace('/(tabs)/livreur') },
+              ]);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleConfirmGroupedStop = async (stop: GroupedPickupStop) => {
     if (!assignment?.id) return;
     try {
       setConfirmingStopIndex(stop.stopIndex);
-      const res = await groupedDeliveryService.confirmPickupStop(
-        assignment.id,
-        stop.stopIndex,
-        stop.sellerId
-      );
+      const res = await groupedDeliveryService.confirmPickupStop(assignment.id, stop.stopIndex, stop.sellerId);
       Haptics.success();
       await fetchRunData();
       showAlert(
@@ -106,25 +126,6 @@ export default function DeliveryRunExecutionScreen() {
   };
 
   const handleConfirmOtp = async (otp: string, photoUri?: string, photoBase64?: string | null) => {
-    if (isDemo) {
-      setIsVerifyingOtp(true);
-      setTimeout(() => {
-        setIsVerifyingOtp(false);
-        Haptics.success();
-        setIsOtpModalOpen(false);
-        if (otpType === 'pickup') {
-          setDemoStatus('in_transit');
-          showAlert('Ramassage validé ! 🎉', 'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur (Code: 123456).');
-        } else {
-          setDemoStatus('delivered');
-          showAlert('Livraison réussie ! 🚀', 'Félicitations ! Vos gains de 1 350 FCFA ont été crédités.', [
-            { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
-          ]);
-        }
-      }, 400);
-      return;
-    }
-
     try {
       setIsVerifyingOtp(true);
       const uploadedPhotoUrl = photoUri
@@ -140,7 +141,7 @@ export default function DeliveryRunExecutionScreen() {
         Haptics.success();
         setIsOtpModalOpen(false);
         await fetchRunData();
-        showAlert('Ramassage validé ! 🎉', 'Vous pouvez maintenant acheminer le colis chez le destinataire.');
+        showAlert('Ramassage validé ! 🎉', 'En route vers le destinataire.');
       } else {
         const dropoffCoords =
           order?.delivery_lat != null && order?.delivery_lng != null
@@ -172,14 +173,6 @@ export default function DeliveryRunExecutionScreen() {
         {
           text: 'Oui, encaissé',
           onPress: async () => {
-            if (isDemo) {
-              setDemoStatus('delivered');
-              Haptics.success();
-              showAlert('Livraison démo validée', 'Encaissement démo enregistré.', [
-                { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
-              ]);
-              return;
-            }
             try {
               setIsVerifyingOtp(true);
               const dropoffCoords =
@@ -238,8 +231,7 @@ export default function DeliveryRunExecutionScreen() {
   const isCompleted = assignment.status === 'delivered' || assignment.status === 'auto_released';
   const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
   const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
-  const curfew = isCurfewActive(isDemo);
-  const orderItems = Array.isArray(order.order_items) && order.order_items.length > 0 ? order.order_items : null;
+  const curfew = isCurfewActive();
   const senderPhone = isExpress ? (assignment.sender_phone || order.sender_phone) : order.seller?.phone;
   const recipientPhone = isExpress ? (assignment.recipient_phone || order.recipient_phone) : order.buyer?.phone;
 
@@ -248,20 +240,11 @@ export default function DeliveryRunExecutionScreen() {
     assignment.pickup_location.toLowerCase() === 'boutique du vendeur' ||
     assignment.pickup_location.toLowerCase() === 'boutique';
 
-  const sellerDistrict =
-    order.seller?.district ||
-    order.listings?.district ||
-    assignment.sender_district ||
-    null;
-
+  const sellerDistrict = order.seller?.district || order.listings?.district || assignment.sender_district || null;
   const pickupLocation = isGenericPickup
     ? (order.seller?.shop_name || order.seller?.full_name || 'Boutique du vendeur')
     : assignment.pickup_location;
-
-  const buyerDistrict =
-    order.buyer?.district ||
-    assignment.recipient_district ||
-    null;
+  const buyerDistrict = order.buyer?.district || assignment.recipient_district || null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -292,6 +275,15 @@ export default function DeliveryRunExecutionScreen() {
             <Text style={styles.stageStatusText}>{RUN_STAGE_LABELS[assignment.status] ?? 'Course indisponible'}</Text>
           </View>
         </View>
+
+        {isPickupStage && (
+          <RunPickupDeadlineBanner
+            acceptedAt={assignment.accepted_at}
+            createdAt={assignment.created_at}
+            onReleasePress={handleReleaseRunConfirm}
+            releasing={isReleasingRun}
+          />
+        )}
 
         {assignment.is_grouped && Array.isArray(assignment.grouped_stops) && assignment.grouped_stops.length > 0 && (
           <View style={{ marginBottom: 12 }}>
@@ -326,7 +318,7 @@ export default function DeliveryRunExecutionScreen() {
           onGps={() => openExternalGps(pickupLocation, isExpress ? assignment.pickup_lat : order.seller?.shop_latitude, isExpress ? assignment.pickup_lng : order.seller?.shop_longitude)}
           onScan={() => { setOtpType('pickup'); setIsScannerOpen(true); }}
           onEnterOtp={() => handleOpenOtpModal('pickup')}
-          scanButtonText={isExpress ? "Scanner le code de l'expéditeur" : 'Scanner le QR code du vendeur'}
+          scanButtonText="Scanner le QR code"
         />
 
         <RunStageCard
@@ -342,7 +334,7 @@ export default function DeliveryRunExecutionScreen() {
           onGps={() => openExternalGps(assignment.dropoff_location, isExpress ? assignment.dropoff_lat : order.delivery_lat, isExpress ? assignment.dropoff_lng : order.delivery_lng)}
           onScan={() => { setOtpType('delivery'); setIsScannerOpen(true); }}
           onEnterOtp={() => handleOpenOtpModal('delivery')}
-          scanButtonText={isExpress ? 'Scanner le code du destinataire' : 'Scanner le QR code du client'}
+          scanButtonText="Scanner le QR code"
           primaryAction={
             isCashOnDelivery
               ? { title: `Livré et encaissé · ${formatFCFA(Number(order.total_amount) || 0)}`, onPress: handleConfirmCashDelivery }
@@ -372,29 +364,12 @@ export default function DeliveryRunExecutionScreen() {
           }
         />
 
-        <View style={styles.itemCard}>
-          <Text style={styles.itemCardTitle}>{isExpress ? 'Format du colis (sécurisé)' : 'Contenu de la commande'}</Text>
-          {isExpress ? (
-            <>
-              <Text style={styles.itemTitle}>{assignment.package_description || order.package_description || 'Colis scellé standard'}</Text>
-              <Text style={styles.itemSub}>
-                {`Course Express • Règlement : ${assignment.payer_role === 'recipient' ? `Encaisser ${formatFCFA(deliveryPrice)} chez le destinataire` : "Encaisser au départ auprès de l'expéditeur"}`}
-              </Text>
-            </>
-          ) : orderItems ? (
-            orderItems.map((it: any, idx: number) => (
-              <View key={it.id || idx} style={{ marginTop: idx > 0 ? 6 : 0 }}>
-                <Text style={styles.itemTitle}>{it.listings?.title || order.listings?.title || 'Article'}</Text>
-                <Text style={styles.itemSub}>Quantité : {it.quantity || 1} • {formatFCFA(it.product_amount ?? it.unit_price ?? 0)}</Text>
-              </View>
-            ))
-          ) : (
-            <>
-              <Text style={styles.itemTitle}>{order.listings?.title || 'Article commandé'}</Text>
-              <Text style={styles.itemSub}>Quantité : {order.quantity || 1} • Prix article : {formatFCFA(order.product_amount ?? order.total_amount ?? 0)}</Text>
-            </>
-          )}
-        </View>
+        <RunOrderSummaryCard
+          assignment={assignment}
+          order={order}
+          isExpress={isExpress}
+          deliveryPrice={deliveryPrice}
+        />
 
         {!isCompleted && assignment.status !== 'cancelled' && (
           <TouchableOpacity onPress={() => setIsIncidentModalOpen(true)} style={styles.incidentBtn} activeOpacity={0.8}>
@@ -418,7 +393,6 @@ export default function DeliveryRunExecutionScreen() {
         initialCode={scannedOtp}
         onSubmit={handleConfirmOtp}
         loading={isVerifyingOtp}
-        isDemo={isDemo}
       />
       <RunIncidentModal
         visible={isIncidentModalOpen}

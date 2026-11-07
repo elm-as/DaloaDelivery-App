@@ -20,6 +20,17 @@ import { deliveryStorageService } from './deliveryStorageService';
 
 export const PLATFORM_COMMISSION_RATE = 0.1;
 
+let lastStaleSweepAt = 0;
+const STALE_SWEEP_INTERVAL_MS = 60_000;
+const PICKUP_TIMEOUT_MINUTES = 210; // 3h30
+
+async function sweepStaleAcceptedRunsIfNeeded(): Promise<void> {
+  const now = Date.now();
+  if (now - lastStaleSweepAt < STALE_SWEEP_INTERVAL_MS) return;
+  lastStaleSweepAt = now;
+  await deliveryVerificationService.releaseStaleAcceptedRuns(PICKUP_TIMEOUT_MINUTES);
+}
+
 export const SAFE_DELIVERY_ASSIGNMENT_COLUMNS =
   'id, order_id, delivery_person_id, status, is_private, is_express, is_grouped, delivery_group_id, group_total_stops, group_completed_stops, grouped_stops, pickup_confirmed_by_seller, pickup_confirmed_at, delivered_at, pickup_photo_url, delivery_photo_url, pickup_location, dropoff_location, dropoff_address, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, delivery_price, package_description, package_type, sender_name, sender_phone, recipient_name, recipient_phone, payer_role, pickup_otp_attempts, delivery_otp_attempts, current_driver_lat, current_driver_lng, location_updated_at, disputed_at, dispute_reason, accepted_at, created_at, updated_at';
 
@@ -150,6 +161,8 @@ export const deliveryService = {
   },
 
   async getAvailableRuns(_driverCoords?: Coordinates | null): Promise<AvailableDeliveryRun[]> {
+    await sweepStaleAcceptedRunsIfNeeded();
+
     const { data, error } = await (supabase.from('delivery_assignments') as any)
       .select(`${SAFE_DELIVERY_ASSIGNMENT_COLUMNS}, ${ORDER_WITH_RELATIONS}`)
       .eq('status', 'awaiting_pickup')
@@ -173,6 +186,8 @@ export const deliveryService = {
   },
 
   async getAvailableRunsBrief(limit = 5): Promise<AvailableRunsBrief> {
+    await sweepStaleAcceptedRunsIfNeeded();
+
     const { data, count, error } = await supabase
       .from('delivery_assignments')
       .select('id, pickup_location, dropoff_location, delivery_price, created_at', { count: 'exact' })
@@ -205,7 +220,13 @@ export const deliveryService = {
     }
   },
 
+  async releaseRun(assignmentId: string, reason?: string): Promise<void> {
+    return deliveryVerificationService.releaseRun(assignmentId, reason);
+  },
+
   async getActiveRun(driverId: string): Promise<ActiveDeliveryRunDetails | null> {
+    await sweepStaleAcceptedRunsIfNeeded();
+
     const { data, error } = await (supabase.from('delivery_assignments') as any)
       .select(`${SAFE_DELIVERY_ASSIGNMENT_COLUMNS}, ${ORDER_WITH_RELATIONS}`)
       .eq('delivery_person_id', driverId)

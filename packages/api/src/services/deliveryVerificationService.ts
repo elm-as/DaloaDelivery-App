@@ -166,10 +166,6 @@ export const deliveryVerificationService = {
    * Signale un incident / litige sur une livraison
    */
   async reportIncident(assignmentId: string, reason: string): Promise<void> {
-    // Pas de repli en UPDATE direct : `delivery_assignments` refuse les écritures
-    // directes sur `status` (trigger `protect_delivery_assignments_columns`), donc
-    // le repli ne modifiait rien tout en signalant un succès. La RPC bascule aussi
-    // la commande en litige, ce que l'UPDATE ne faisait pas.
     const { data, error } = await supabase.rpc('report_delivery_dispute', {
       p_assignment_id: assignmentId,
       p_reason: reason,
@@ -179,6 +175,37 @@ export const deliveryVerificationService = {
     const res = rpcOutcome(data);
     if (res && !res.success) {
       throw new Error(res.reason || 'Signalement du litige refusé par le serveur.');
+    }
+  },
+
+  /**
+   * Libère une course acceptée avant le ramassage chez le vendeur et la remet en ligne.
+   */
+  async releaseRun(assignmentId: string, reason = 'driver_released'): Promise<void> {
+    const { data, error } = await supabase.rpc('release_delivery_assignment', {
+      p_assignment_id: assignmentId,
+      p_reason: reason,
+    });
+
+    if (error) throw error;
+    const res = rpcOutcome(data);
+    if (res && !res.success) {
+      throw new Error((data as any)?.message || res.reason || 'Impossible de libérer cette course.');
+    }
+  },
+
+  /**
+   * Remet automatiquement en ligne les courses acceptées depuis plus de 3h30 (210 min) sans retrait.
+   */
+  async releaseStaleAcceptedRuns(timeoutMinutes = 210): Promise<number> {
+    try {
+      const { data, error } = await supabase.rpc('release_stale_accepted_assignments', {
+        p_timeout_minutes: timeoutMinutes,
+      });
+      if (error || !data) return 0;
+      return Number((data as any)?.released_count) || 0;
+    } catch {
+      return 0;
     }
   },
 };

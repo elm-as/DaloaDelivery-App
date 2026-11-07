@@ -17,7 +17,7 @@ interface Props {
   onScan: () => void;
   scanButtonText: string;
   onEnterOtp?: () => void;
-  /** Remplace « Scanner » et « Saisir le code » (ex. course payée en espèces : pas de code acheteur). */
+  /** Remplace « Saisir le code » et « Scanner » (ex. course payée en espèces : pas de code acheteur). */
   primaryAction?: { title: string; onPress: () => void };
   secondaryAction?: { title: string; onPress: () => void; variant?: 'outline' | 'danger' | 'ghost' };
   reliabilityBadge?: React.ReactNode;
@@ -41,6 +41,8 @@ export const RunStageCard: React.FC<Props> = ({
   secondaryAction,
   reliabilityBadge,
 }) => {
+  const isPickupStep = stepNumber === 1;
+
   return (
     <View
       style={[
@@ -58,8 +60,8 @@ export const RunStageCard: React.FC<Props> = ({
         <View style={{ flex: 1 }}>
           <Text style={styles.stageTitle}>{title}</Text>
           {district && (
-            <View style={[styles.districtBadge, stepNumber === 1 ? styles.districtBadgePickup : styles.districtBadgeDropoff]}>
-              <Text style={[styles.districtBadgeText, stepNumber === 1 ? styles.districtBadgeTextPickup : styles.districtBadgeTextDropoff]}>
+            <View style={[styles.districtBadge, isPickupStep ? styles.districtBadgePickup : styles.districtBadgeDropoff]}>
+              <Text style={[styles.districtBadgeText, isPickupStep ? styles.districtBadgeTextPickup : styles.districtBadgeTextDropoff]}>
                 📍 Quartier {district}
               </Text>
             </View>
@@ -121,24 +123,24 @@ export const RunStageCard: React.FC<Props> = ({
 
       {isActive && !primaryAction && (
         <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
-          <Button
-            title={scanButtonText}
-            variant="primary"
-            size="lg"
-            onPress={onScan}
-            leftIcon={<ScanLine size={18} color={colors.text.inverse} />}
-            fullWidth
-          />
           {onEnterOtp && (
             <Button
-              title="Saisir le code à 6 chiffres"
-              variant="outline"
-              size="md"
+              title={isPickupStep ? 'Entrer le code Vendeur (6 chiffres)' : 'Entrer le code Client (6 chiffres)'}
+              variant="primary"
+              size="lg"
               onPress={onEnterOtp}
-              leftIcon={<KeyRound size={16} color={colors.primary.DEFAULT} />}
+              leftIcon={<KeyRound size={18} color={colors.text.inverse} />}
               fullWidth
             />
           )}
+          <Button
+            title={scanButtonText}
+            variant="outline"
+            size="md"
+            onPress={onScan}
+            leftIcon={<ScanLine size={16} color={colors.primary.DEFAULT} />}
+            fullWidth
+          />
         </View>
       )}
     </View>
@@ -152,11 +154,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     borderWidth: 1,
     borderColor: colors.border.DEFAULT,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: spacing[3],
   },
   stageCardActive: {
     borderColor: colors.primary.DEFAULT,
@@ -242,6 +240,7 @@ const styles = StyleSheet.create({
     color: colors.grey[600],
     fontSize: 13,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   actionRow: {
     flexDirection: 'row',
