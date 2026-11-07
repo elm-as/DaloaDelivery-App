@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Redirect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Moon, Package, MapPin, RefreshCw } from 'lucide-react-native';
 import { colors, radii, DeliveryOrderCard, Skeleton, showAlert } from '@daloa/ui';
@@ -22,7 +22,6 @@ import { DriverHeroHeader } from '../../src/components/DriverHeroHeader';
 import { DeliveryMap } from '../../src/components/map/DeliveryMap';
 import { styles } from '../../src/components/livreur/livreurStyles';
 import { isCurfewActive } from '../../src/utils/security';
-import { DemoRunCard } from '../../src/components/DemoRunCard';
 import { LivreurDailySummary } from '../../src/components/livreur/LivreurDailySummary';
 import { LivreurStatsGrid } from '../../src/components/livreur/LivreurStatsGrid';
 import { DriverGuestView } from '../../src/components/livreur/DriverGuestView';
@@ -221,9 +220,6 @@ export default function LivreurTabScreen() {
                 <Text style={styles.curfewSub}>
                   Les attributions de courses sont automatiquement suspendues durant la nuit pour protéger les livreurs et les marchandises à Daloa.
                 </Text>
-                <View style={{ marginTop: 12 }}>
-                  <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
-                </View>
               </View>
             </View>
           ) : (
@@ -266,21 +262,18 @@ export default function LivreurTabScreen() {
                   <Skeleton width="100%" height={160} borderRadius={radii['2xl']} />
                 </View>
               ) : sortedRuns.length === 0 ? (
-                <View>
-                  <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
-                  <View style={styles.emptyRunsCard}>
-                    <View style={styles.emptyRunsIcon}>
-                      <Package size={30} color={colors.grey[300]} />
-                    </View>
-                    <Text style={styles.emptyRunsTitle}>Aucune course pour le moment</Text>
-                    <Text style={styles.emptyRunsSub}>
-                      Restez en ligne, les nouvelles livraisons dans vos zones apparaîtront ici automatiquement avec une alerte sonore.
-                    </Text>
-                    <TouchableOpacity style={styles.emptyRunsBtn} activeOpacity={0.8} onPress={handleRefresh}>
-                      <RefreshCw size={13} color={colors.text.body} />
-                      <Text style={styles.emptyRunsBtnText}>Actualiser</Text>
-                    </TouchableOpacity>
+                <View style={styles.emptyRunsCard}>
+                  <View style={styles.emptyRunsIcon}>
+                    <Package size={30} color={colors.grey[300]} />
                   </View>
+                  <Text style={styles.emptyRunsTitle}>Aucune course pour le moment</Text>
+                  <Text style={styles.emptyRunsSub}>
+                    Restez en ligne, les nouvelles livraisons dans vos zones apparaîtront ici automatiquement avec une alerte sonore.
+                  </Text>
+                  <TouchableOpacity style={styles.emptyRunsBtn} activeOpacity={0.8} onPress={handleRefresh}>
+                    <RefreshCw size={13} color={colors.text.body} />
+                    <Text style={styles.emptyRunsBtnText}>Actualiser</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 sortedRuns.map((run) => (
@@ -299,6 +292,15 @@ export default function LivreurTabScreen() {
                       seller_phone: run.sellerPhone,
                       buyer_phone: run.buyerPhone,
                       created_at: run.createdAt,
+                      is_express: (run as any).isExpress,
+                      package_description: (run as any).packageDescription,
+                      package_type: (run as any).packageType,
+                      sender_name: (run as any).senderName,
+                      recipient_name: (run as any).recipientName,
+                      payer_role: (run as any).payerRole,
+                      is_grouped: (run as any).isGrouped,
+                      group_total_stops: (run as any).groupTotalStops,
+                      group_completed_stops: (run as any).groupCompletedStops,
                     }}
                     onPress={() => handleAcceptRun(run.assignmentId)}
                     onAccept={() => handleAcceptRun(run.assignmentId)}

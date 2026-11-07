@@ -17,8 +17,7 @@ import { colors, radii, spacing, typography, DeliveryOrderCard, Skeleton, Button
 import { Zap, AlertCircle, ArrowLeft, Moon } from 'lucide-react-native';
 import { Haptics } from '@daloa/utils';
 import { isCurfewActive } from '../../src/utils/security';
-import { DemoRunCard } from '../../src/components/DemoRunCard';
-import { isDemoRun } from '../../src/services/demoRunService';
+import { runAlertEngine } from '../../src/services/runAlertEngine';
 
 export default function AvailableRunsScreen() {
   const router = useRouter();
@@ -48,11 +47,7 @@ export default function AvailableRunsScreen() {
   );
 
   const handleAcceptRun = async (assignmentId: string) => {
-    if (isDemoRun(assignmentId)) {
-      Haptics.success();
-      router.push(`/run/${assignmentId}` as any);
-      return;
-    }
+    runAlertEngine.stopCurrentAlert(assignmentId);
 
     if (isCurfewActive()) {
       showAlert(
@@ -73,8 +68,6 @@ export default function AvailableRunsScreen() {
       await refetch();
       router.push(`/run/${assignmentId}` as any);
     } catch (err: any) {
-      // Ne plus supposer la cause : la RPC renvoie le vrai motif du refus
-      // (`assignment_unavailable`, `not_a_delivery_person`, erreur réseau…).
       showAlert(
         'Acceptation impossible',
         err?.message || 'Un autre coursier vient d’accepter cette course.'
@@ -85,7 +78,6 @@ export default function AvailableRunsScreen() {
     }
   };
 
-  // 1. Chargement de la session auth
   if (authLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -96,12 +88,10 @@ export default function AvailableRunsScreen() {
     );
   }
 
-  // 2. Visiteur non connecté -> Redirection immédiate vers l'Accueil public
   if (!isAuthenticated) {
     return <Redirect href="/(tabs)" />;
   }
 
-  // 3. Utilisateur connecté mais sans fiche livreur
   if (!driverProfile) {
     return (
       <SafeAreaView style={styles.container}>
@@ -156,9 +146,6 @@ export default function AvailableRunsScreen() {
           <Text style={styles.curfewSub}>
             L'attribution et la prise de courses sont suspendues entre 22h30 et 05h30 pour protéger les livreurs partenaires.
           </Text>
-          <View style={{ marginTop: 16, width: '100%' }}>
-            <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
-          </View>
         </View>
       ) : !isOnline ? (
         <View style={styles.offlineBox}>
@@ -195,15 +182,12 @@ export default function AvailableRunsScreen() {
               <Skeleton width="100%" height={160} borderRadius={radii.xl} />
             </View>
           ) : runList.length === 0 ? (
-            <View>
-              <DemoRunCard onStartDemo={() => router.push('/run/demo-run')} />
-              <View style={styles.emptyBox}>
-                <Zap size={44} color={colors.grey[300]} />
-                <Text style={styles.emptyTitle}>Aucune course en attente</Text>
-                <Text style={styles.emptySub}>
-                  Toutes les livraisons à Daloa sont prises en charge. Restez connecté, de nouvelles commandes arrivent !
-                </Text>
-              </View>
+            <View style={styles.emptyBox}>
+              <Zap size={44} color={colors.grey[300]} />
+              <Text style={styles.emptyTitle}>Aucune course en attente</Text>
+              <Text style={styles.emptySub}>
+                Toutes les livraisons à Daloa sont prises en charge. Restez connecté, de nouvelles commandes arrivent !
+              </Text>
             </View>
           ) : (
             runList.map((run: AvailableDeliveryRun) => (
@@ -222,6 +206,19 @@ export default function AvailableRunsScreen() {
                   seller_phone: run.sellerPhone,
                   buyer_phone: run.buyerPhone,
                   created_at: run.createdAt,
+                  is_express: (run as any).isExpress,
+                  package_description: (run as any).packageDescription,
+                  package_type: (run as any).packageType,
+                  sender_name: (run as any).senderName,
+                  recipient_name: (run as any).recipientName,
+                  payer_role: (run as any).payerRole,
+                  is_cod: (run as any).isCod,
+                  buyer_cod_reliability_score: (run as any).buyerCodReliabilityScore,
+                  buyer_cod_delivered_count: (run as any).buyerCodDeliveredCount,
+                  buyer_cod_refused_count: (run as any).buyerCodRefusedCount,
+                  is_grouped: (run as any).isGrouped,
+                  group_total_stops: (run as any).groupTotalStops,
+                  group_completed_stops: (run as any).groupCompletedStops,
                 }}
                 onPress={() => handleAcceptRun(run.assignmentId)}
                 onAccept={() => handleAcceptRun(run.assignmentId)}
@@ -313,28 +310,9 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: colors.bg.DEFAULT,
   },
-  curfewBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: colors.bg.inverse,
-    borderRadius: radii.xl,
-    margin: spacing[4],
-  },
-  curfewTitle: {
-    fontSize: 17,
-    fontFamily: typography.families.extrabold,
-    color: colors.status.warning,
-    marginTop: 12,
-  },
-  curfewSub: {
-    fontSize: 13,
-    color: colors.grey[400],
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 18,
-    maxWidth: 280,
-  },
+  curfewBox: { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg.inverse, borderRadius: radii.xl, margin: spacing[4] },
+  curfewTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: colors.status.warning, marginTop: 12 },
+  curfewSub: { fontSize: 13, color: colors.grey[400], textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 280 },
   offlineBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg.DEFAULT },
   offlineTitle: { fontSize: 17, fontFamily: typography.families.extrabold, color: colors.text.DEFAULT, marginTop: 12 },
   offlineSub: { fontSize: 13, color: colors.grey[600], textAlign: 'center', marginTop: 6, lineHeight: 18, maxWidth: 260 },

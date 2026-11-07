@@ -8,18 +8,17 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { BottomSheet, Button, OtpInput, colors, radii, spacing, typography, showAlert } from '@daloa/ui';
-import { Camera, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { Camera, CheckCircle2 } from 'lucide-react-native';
 import { Haptics, formatUserErrorMessage } from '@daloa/utils';
 
 export interface OtpVerificationModalProps {
   visible: boolean;
   onClose: () => void;
   type: 'pickup' | 'delivery';
-  /** Code pré-rempli (ex. issu d'un scan QR). */
+  /** Code pré-rempli uniquement lors d'un scan QR réel. */
   initialCode?: string;
   onSubmit: (otp: string, photoUri: string, photoBase64?: string | null) => Promise<void>;
   loading?: boolean;
-  isDemo?: boolean;
 }
 
 export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
@@ -29,13 +28,11 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   initialCode = '',
   onSubmit,
   loading = false,
-  isDemo = false,
 }) => {
   const [otpCode, setOtpCode] = useState(initialCode);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  // Le rouge des cases ne s'applique qu'à une erreur de code, pas à la photo.
   const [codeError, setCodeError] = useState(false);
 
   const handleCodeChange = (code: string) => {
@@ -46,7 +43,6 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
   };
 
-  // Synchronise le code pré-rempli (ex. après un scan QR) à l'ouverture.
   React.useEffect(() => {
     if (visible) {
       setOtpCode(initialCode);
@@ -56,8 +52,8 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   }, [visible, initialCode]);
 
   const isPickup = type === 'pickup';
-  const modalTitle = isPickup ? 'Validation Ramassage Vendeur' : 'Validation Livraison Acheteur';
-  const personRole = isPickup ? 'le vendeur' : 'l’acheteur';
+  const modalTitle = isPickup ? 'Code Vendeur (6 chiffres)' : 'Code Client (6 chiffres)';
+  const personRole = isPickup ? 'le vendeur' : 'le client';
 
   const handleTakePhoto = async () => {
     Haptics.lightImpact();
@@ -70,14 +66,12 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.5,
       allowsEditing: true,
-      // Binaire lu par l'appareil : l'envoi ne dépend plus de fetch(file://…).
       base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
       setPhotoBase64(result.assets[0].base64 ?? null);
-      // La photo manquait : son message d'erreur n'a plus lieu d'être.
       if (!codeError) setErrorMsg(null);
       Haptics.selection();
     }
@@ -86,82 +80,76 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   const handleConfirm = async () => {
     if (otpCode.length !== 6) {
       setCodeError(true);
-      setErrorMsg(`Veuillez saisir le code OTP à 6 chiffres fourni par ${personRole}.`);
+      setErrorMsg(`Saisissez les 6 chiffres donnés par ${personRole}.`);
       return;
     }
-    const effectivePhoto = photoUri || (isDemo ? 'https://daloamarket.com/demo-proof.jpg' : null);
-    if (!effectivePhoto) {
+    if (!photoUri) {
       setCodeError(false);
-      setErrorMsg('La photo de preuve du colis est obligatoire avant validation.');
+      setErrorMsg('Prenez une photo du colis avant de confirmer.');
       return;
     }
 
     try {
       setErrorMsg(null);
       setCodeError(false);
-      await onSubmit(otpCode, effectivePhoto, photoBase64);
+      await onSubmit(otpCode, photoUri, photoBase64);
       setOtpCode('');
       setPhotoUri(null);
       setPhotoBase64(null);
     } catch (err: any) {
-      // Refus du serveur : le plus souvent un code erroné.
       setCodeError(true);
-      setErrorMsg(formatUserErrorMessage(err, 'Code OTP incorrect ou erreur de validation'));
+      setErrorMsg(formatUserErrorMessage(err, 'Code incorrect ou erreur de validation'));
     }
   };
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={modalTitle}>
       <View style={styles.content}>
-        {/* Instruction */}
-        <Text style={styles.instructions}>
-          {isPickup
-            ? 'Demandez le code secret de ramassage au vendeur et prenez une photo nette du colis.'
-            : 'Demandez le code secret de livraison à l’acheteur et prenez une photo de la remise du colis.'}
-        </Text>
-
-        {/* OTP Input */}
-        <Text style={styles.inputLabel}>Code Secret OTP (6 chiffres) *</Text>
         <OtpInput
           length={6}
           value={otpCode}
           onChange={handleCodeChange}
           isError={codeError}
-          autoFocus={visible}
+          autoFocus={visible && initialCode.length < 6}
         />
 
-        {/* Photo Proof Capture */}
-        <Text style={styles.inputLabel}>Photo de preuve obligatoire *</Text>
         {photoUri ? (
-          <View style={styles.photoPreviewContainer}>
-            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            <TouchableOpacity
-              onPress={handleTakePhoto}
-              style={styles.retakeBtn}
-            >
-              <Camera size={16} color={colors.grey[700]} />
-              <Text style={styles.retakeText}>Reprendre la photo</Text>
+          <View style={styles.photoRowDone}>
+            <Image source={{ uri: photoUri }} style={styles.photoThumb} />
+            <View style={{ flex: 1 }}>
+              <View style={styles.photoStatusRow}>
+                <CheckCircle2 size={15} color="#059669" />
+                <Text style={styles.photoDoneText}>Photo du colis prête</Text>
+              </View>
+              <Text style={styles.photoDoneSub}>Prête pour validation</Text>
+            </View>
+            <TouchableOpacity onPress={handleTakePhoto} style={styles.retakeBtn} activeOpacity={0.8}>
+              <Camera size={14} color={colors.grey[700]} />
+              <Text style={styles.retakeText}>Refaire</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
             onPress={handleTakePhoto}
-            activeOpacity={0.8}
-            style={styles.cameraBox}
+            activeOpacity={0.85}
+            style={styles.cameraRow}
           >
-            <Camera size={28} color={colors.primary.DEFAULT} />
-            <Text style={styles.cameraText}>
-              {isPickup ? 'Prendre la photo du colis' : 'Prendre la photo de la livraison'}
-            </Text>
-            <Text style={styles.cameraSub}>Photo nette du paquet ou de l’article</Text>
+            <View style={styles.cameraIconWrap}>
+              <Camera size={20} color={colors.primary.DEFAULT} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cameraText}>
+                {isPickup ? 'Prendre la photo du colis' : 'Photo de remise au client'}
+              </Text>
+              <Text style={styles.cameraSub}>Appuyez ici pour ouvrir l’appareil photo</Text>
+            </View>
           </TouchableOpacity>
         )}
 
         {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
-        {/* Submit */}
         <Button
-          title={isPickup ? 'Confirmer le ramassage' : 'Confirmer la livraison'}
+          title={isPickup ? 'Valider le ramassage' : 'Valider la livraison'}
           variant={isPickup ? 'primary' : 'secondary'}
           size="lg"
           loading={loading}
@@ -177,75 +165,98 @@ export const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: spacing[4],
+    paddingBottom: spacing[2],
+    gap: spacing[2],
   },
-  instructions: {
-    color: colors.grey[600],
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: spacing[4],
-  },
-  inputLabel: {
-    color: colors.text.DEFAULT,
-    fontSize: typography.sizes.sm,
-    fontFamily: typography.families.bold,
-    marginBottom: spacing[2],
-  },
-  cameraBox: {
+  cameraRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
     borderWidth: 1.5,
     borderColor: colors.primary[200],
     borderStyle: 'dashed',
     borderRadius: radii.xl,
     backgroundColor: colors.primary[50],
-    padding: spacing[4],
+    paddingHorizontal: spacing[3],
+    paddingVertical: 10,
+    marginTop: spacing[1],
+  },
+  cameraIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.lg,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing[4],
-    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.primary[100],
   },
   cameraText: {
     color: colors.primary[700],
-    fontSize: typography.sizes.sm,
+    fontSize: 13,
     fontFamily: typography.families.bold,
   },
   cameraSub: {
-    color: colors.grey[500],
+    color: colors.grey[600],
     fontSize: 11,
+    marginTop: 1,
   },
-  photoPreviewContainer: {
+  photoRowDone: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing[4],
-  },
-  photoPreview: {
-    width: '100%',
-    height: 160,
+    gap: spacing[3],
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
     borderRadius: radii.xl,
+    padding: 8,
+    marginTop: spacing[1],
+  },
+  photoThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.lg,
     backgroundColor: colors.bg.subtle,
+  },
+  photoStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  photoDoneText: {
+    color: '#065F46',
+    fontSize: 13,
+    fontFamily: typography.families.bold,
+  },
+  photoDoneSub: {
+    color: '#047857',
+    fontSize: 11,
+    marginTop: 1,
   },
   retakeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bg.subtle,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.border.DEFAULT,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    borderColor: '#D1FAE5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: radii.md,
-    gap: 6,
-    marginTop: spacing[2],
+    gap: 5,
   },
   retakeText: {
     color: colors.grey[800],
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontFamily: typography.families.semibold,
   },
   errorText: {
     color: colors.status.error,
-    fontSize: typography.sizes.xs,
+    fontSize: 12,
+    fontFamily: typography.families.medium,
     textAlign: 'center',
-    marginBottom: spacing[3],
+    marginTop: 2,
   },
   submitBtn: {
-    marginTop: spacing[2],
+    marginTop: spacing[1],
   },
 });

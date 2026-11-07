@@ -3,8 +3,7 @@
  * Suspend l'attribution et l'acceptation des courses nocturnes pour protéger
  * l'intégrité physique des coursiers et la marchandise.
  */
-export const isCurfewActive = (isDemo: boolean = false): boolean => {
-  if (isDemo) return false;
+export const isCurfewActive = (): boolean => {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();

@@ -96,24 +96,24 @@ export const RunStageCard: React.FC<Props> = ({
 
       {isActive && !primaryAction && (
         <View style={{ marginTop: spacing[3], gap: spacing[2] }}>
-          <Button
-            title={scanButtonText}
-            variant="primary"
-            size="lg"
-            onPress={onScan}
-            leftIcon={<ScanLine size={18} color={colors.text.inverse} />}
-            fullWidth
-          />
           {onEnterOtp && (
             <Button
-              title="Saisir le code secret (OTP)"
-              variant="outline"
-              size="md"
+              title={stepNumber === 1 ? 'Entrer le code Vendeur (6 chiffres)' : 'Entrer le code Client (6 chiffres)'}
+              variant="primary"
+              size="lg"
               onPress={onEnterOtp}
-              leftIcon={<KeyRound size={16} color={colors.primary.DEFAULT} />}
+              leftIcon={<KeyRound size={18} color={colors.text.inverse} />}
               fullWidth
             />
           )}
+          <Button
+            title={scanButtonText}
+            variant="outline"
+            size="md"
+            onPress={onScan}
+            leftIcon={<ScanLine size={16} color={colors.primary.DEFAULT} />}
+            fullWidth
+          />
         </View>
       )}
     </View>

@@ -1,24 +1,19 @@
 import { supabase } from '../supabase';
 import { attachContactPhones } from '../lib/contacts';
-import {
-  AvailableDeliveryRun,
-  ActiveDeliveryRunDetails,
-  DriverDailyStats,
-  DeliveryPersonRow,
-  Coordinates,
-  DeliveryRunStatus,
-} from '@daloa/types';
+import { AvailableDeliveryRun, ActiveDeliveryRunDetails, DriverDailyStats, DeliveryPersonRow, Coordinates, DeliveryRunStatus } from '@daloa/types';
 import { haversineDistance, isLocationInDaloa, serializeGeoPoint } from '@daloa/utils';
 import { DALOA_CENTER, DALOA_DISTRICT_COORDINATES } from '@daloa/config';
-import {
-  deliveryVerificationService,
-  VerifyPickupParams,
-  VerifyDeliveryParams,
-  VerificationResult,
-} from './deliveryVerificationService';
+import { deliveryVerificationService, VerifyPickupParams, VerifyDeliveryParams, VerificationResult } from './deliveryVerificationService';
 import { deliveryStorageService } from './deliveryStorageService';
 
 export const PLATFORM_COMMISSION_RATE = 0.1;
+
+let lastStaleSweepAt = 0;
+async function sweepStaleAcceptedRunsIfNeeded(): Promise<void> {
+  if (Date.now() - lastStaleSweepAt < 60_000) return;
+  lastStaleSweepAt = Date.now();
+  await deliveryVerificationService.releaseStaleAcceptedRuns(210);
+}
 
 export const SAFE_DELIVERY_ASSIGNMENT_COLUMNS =
   'id, order_id, delivery_person_id, status, is_private, delivery_price, pickup_location, dropoff_location, dropoff_address, pickup_confirmed_by_seller, pickup_confirmed_at, pickup_photo_url, pickup_gps, pickup_gps_distance_m, pickup_otp_attempts, delivery_photo_url, delivery_gps, delivery_gps_distance_m, delivery_otp_attempts, delivered_at, buyer_confirmed_at, disputed_at, dispute_reason, accepted_at, created_at, updated_at';
@@ -79,6 +74,7 @@ export const deliveryService = {
   },
 
   async getAvailableRuns(_driverCoords?: Coordinates | null): Promise<AvailableDeliveryRun[]> {
+    await sweepStaleAcceptedRunsIfNeeded();
     const { data, error } = await supabase
       .from('delivery_assignments')
       .select(`${SAFE_DELIVERY_ASSIGNMENT_COLUMNS}, ${ORDER_WITH_RELATIONS}`)
@@ -225,40 +221,16 @@ export const deliveryService = {
     return deliveryVerificationService.verifyPickup(params);
   },
 
-  async verifyPickupOtp(
-    assignmentId: string,
-    enteredOtp: string,
-    photoUrl: string,
-    driverCoords?: Coordinates,
-    targetCoords?: Coordinates | null
-  ): Promise<VerificationResult> {
-    return deliveryVerificationService.verifyPickup({
-      assignmentId,
-      enteredOtp,
-      photoUrl,
-      driverCoords: driverCoords || { lat: 6.8773, lng: -6.4502 },
-      targetCoords,
-    });
+  async verifyPickupOtp(assignmentId: string, enteredOtp: string, photoUrl: string, driverCoords?: Coordinates, targetCoords?: Coordinates | null): Promise<VerificationResult> {
+    return deliveryVerificationService.verifyPickup({ assignmentId, enteredOtp, photoUrl, driverCoords: driverCoords || { lat: 6.8773, lng: -6.4502 }, targetCoords });
   },
 
   async verifyDeliveryWithOtpAndGps(params: VerifyDeliveryParams): Promise<VerificationResult> {
     return deliveryVerificationService.verifyDelivery(params);
   },
 
-  async verifyDeliveryOtp(
-    assignmentId: string,
-    enteredOtp: string,
-    photoUrl: string,
-    driverCoords?: Coordinates,
-    targetCoords?: Coordinates | null
-  ): Promise<VerificationResult> {
-    return deliveryVerificationService.verifyDelivery({
-      assignmentId,
-      enteredOtp,
-      photoUrl,
-      driverCoords: driverCoords || { lat: 6.8773, lng: -6.4502 },
-      targetCoords,
-    });
+  async verifyDeliveryOtp(assignmentId: string, enteredOtp: string, photoUrl: string, driverCoords?: Coordinates, targetCoords?: Coordinates | null): Promise<VerificationResult> {
+    return deliveryVerificationService.verifyDelivery({ assignmentId, enteredOtp, photoUrl, driverCoords: driverCoords || { lat: 6.8773, lng: -6.4502 }, targetCoords });
   },
 
   async getDriverDailyStats(driverId: string): Promise<DriverDailyStats> {
@@ -351,5 +323,13 @@ export const deliveryService = {
 
   async reportIncident(assignmentId: string, reason: string): Promise<void> {
     return deliveryVerificationService.reportIncident(assignmentId, reason);
+  },
+
+  async releaseRun(assignmentId: string, reason = 'driver_released'): Promise<void> {
+    return deliveryVerificationService.releaseRun(assignmentId, reason);
+  },
+
+  async releaseStaleAcceptedRuns(timeoutMinutes = 210): Promise<number> {
+    return deliveryVerificationService.releaseStaleAcceptedRuns(timeoutMinutes);
   },
 };

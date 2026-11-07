@@ -17,9 +17,10 @@ import { OtpVerificationModal } from '../../src/components/OtpVerificationModal'
 import { QrScannerModal } from '../../src/components/QrScannerModal';
 import { RunStageCard } from '../../src/components/run/RunStageCard';
 import { RunIncidentModal } from '../../src/components/run/RunIncidentModal';
+import { RunPickupDeadlineBanner } from '../../src/components/run/RunPickupDeadlineBanner';
+import { RunOrderSummaryCard } from '../../src/components/run/RunOrderSummaryCard';
 import { isCurfewActive } from '../../src/utils/security';
 import { makePhoneCall, openExternalGps } from '../../src/utils/navigationHelper';
-import { isDemoRun, createDemoRunDetails } from '../../src/services/demoRunService';
 import { runStyles as styles } from '../../src/components/run/runStyles';
 
 const RUN_STAGE_LABELS: Record<string, string> = {
@@ -39,8 +40,6 @@ export default function DeliveryRunExecutionScreen() {
   const router = useRouter();
   const { driverLocation } = useDriverAuth();
 
-  const isDemo = isDemoRun(assignmentId);
-  const [demoStatus, setDemoStatus] = useState<string>('accepted');
   const [assignment, setAssignment] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -52,16 +51,10 @@ export default function DeliveryRunExecutionScreen() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
+  const [isReleasingRun, setIsReleasingRun] = useState(false);
 
   const fetchRunData = useCallback(async () => {
     if (!assignmentId) return;
-    if (isDemo) {
-      const demo = createDemoRunDetails(demoStatus);
-      setAssignment(demo.assignment);
-      setOrder(demo.order);
-      setLoading(false);
-      return;
-    }
 
     try {
       setLoading(true);
@@ -99,14 +92,14 @@ export default function DeliveryRunExecutionScreen() {
     } finally {
       setLoading(false);
     }
-  }, [assignmentId, isDemo, demoStatus]);
+  }, [assignmentId]);
 
   useEffect(() => {
     fetchRunData();
   }, [fetchRunData]);
 
   useEffect(() => {
-    if (isDemo || !assignment?.id) return;
+    if (!assignment?.id) return;
     const channel = supabase
       .channel(`driver-run-${assignment.id}`)
       .on(
@@ -121,6 +114,11 @@ export default function DeliveryRunExecutionScreen() {
           } else if (next.status === 'disputed') {
             Haptics.warning();
             showAlert('Litige ouvert', 'Un litige a été ouvert sur cette course.');
+          } else if (next.status === 'awaiting_pickup' && !next.delivery_person_id) {
+            Haptics.warning();
+            showAlert('Course remise en ligne', 'Cette course a été remise à disposition des autres livreurs.', [
+              { text: 'Retour', onPress: () => router.replace('/(tabs)/livreur') },
+            ]);
           }
         }
       )
@@ -128,11 +126,11 @@ export default function DeliveryRunExecutionScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isDemo, assignment?.id]);
+  }, [assignment?.id, router]);
 
   const handleOpenOtpModal = (type: 'pickup' | 'delivery') => {
     setOtpType(type);
-    setScannedOtp(isDemo ? '123456' : '');
+    setScannedOtp('');
     setIsOtpModalOpen(true);
   };
 
@@ -144,25 +142,6 @@ export default function DeliveryRunExecutionScreen() {
   };
 
   const handleConfirmOtp = async (otp: string, photoUri?: string, photoBase64?: string | null) => {
-    if (isDemo) {
-      setIsVerifyingOtp(true);
-      setTimeout(() => {
-        setIsVerifyingOtp(false);
-        Haptics.success();
-        setIsOtpModalOpen(false);
-        if (otpType === 'pickup') {
-          setDemoStatus('in_transit');
-          showAlert('Ramassage validé ! 🎉', 'Colis récupéré chez le vendeur. Dirigez-vous vers l’acheteur (Code: 123456).');
-        } else {
-          setDemoStatus('delivered');
-          showAlert('Livraison réussie ! 🚀', 'Félicitations ! Vos gains de 1 350 FCFA ont été crédités.', [
-            { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
-          ]);
-        }
-      }, 400);
-      return;
-    }
-
     try {
       setIsVerifyingOtp(true);
       const uploadedPhotoUrl = photoUri
@@ -209,14 +188,6 @@ export default function DeliveryRunExecutionScreen() {
         {
           text: 'Oui, encaissé',
           onPress: async () => {
-            if (isDemo) {
-              setDemoStatus('delivered');
-              Haptics.success();
-              showAlert('Livraison démo validée', 'Encaissement démo enregistré.', [
-                { text: 'Voir mes courses', onPress: () => router.replace('/(tabs)/livreur') },
-              ]);
-              return;
-            }
             try {
               setIsVerifyingOtp(true);
               const dropoffCoords =
@@ -243,12 +214,6 @@ export default function DeliveryRunExecutionScreen() {
   };
 
   const handleReportIncident = async (reason: string) => {
-    if (isDemo) {
-      setIsIncidentModalOpen(false);
-      Haptics.warning();
-      showAlert('Incident démo signalé', 'En conditions réelles, le support logistique DaloaDelivery est alerté.');
-      return;
-    }
     try {
       setIsSubmittingIncident(true);
       await deliveryService.reportIncident(assignment.id, reason);
@@ -261,6 +226,34 @@ export default function DeliveryRunExecutionScreen() {
     } finally {
       setIsSubmittingIncident(false);
     }
+  };
+
+  const handleReleaseRun = () => {
+    showAlert(
+      'Annuler ma prise en charge ?',
+      'La course sera immédiatement remise en ligne pour qu’un autre livreur puisse aller récupérer le colis chez le vendeur.',
+      [
+        { text: 'Garder la course', style: 'cancel' },
+        {
+          text: 'Remettre en ligne',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsReleasingRun(true);
+              await deliveryService.releaseRun(assignment.id, 'driver_released');
+              Haptics.warning();
+              showAlert('Course remise en ligne', 'La course est de nouveau disponible pour les autres livreurs.', [
+                { text: 'Retour', onPress: () => router.replace('/(tabs)/livreur') },
+              ]);
+            } catch (err: any) {
+              showAlert('Erreur', err.message || 'Impossible de libérer cette course.');
+            } finally {
+              setIsReleasingRun(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading || !assignment || !order) {
@@ -277,8 +270,7 @@ export default function DeliveryRunExecutionScreen() {
   const isCompleted = assignment.status === 'delivered' || assignment.status === 'auto_released';
   const deliveryPrice = Number(assignment.delivery_price ?? order?.delivery_fee ?? 500);
   const netGain = deliveryPrice - Math.round(deliveryPrice * 0.1);
-  const curfew = isCurfewActive(isDemo);
-  const orderItems = Array.isArray(order.order_items) && order.order_items.length > 0 ? order.order_items : null;
+  const curfew = isCurfewActive();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -309,6 +301,15 @@ export default function DeliveryRunExecutionScreen() {
             <Text style={styles.stageStatusText}>{RUN_STAGE_LABELS[assignment.status] ?? 'Course indisponible'}</Text>
           </View>
         </View>
+
+        {isPickupStage && (
+          <RunPickupDeadlineBanner
+            acceptedAt={assignment.accepted_at}
+            createdAt={assignment.created_at}
+            isReleasing={isReleasingRun}
+            onRelease={handleReleaseRun}
+          />
+        )}
 
         <RunStageCard
           stepNumber={1}
@@ -345,22 +346,7 @@ export default function DeliveryRunExecutionScreen() {
           }
         />
 
-        <View style={styles.itemCard}>
-          <Text style={styles.itemCardTitle}>Contenu de la commande</Text>
-          {orderItems ? (
-            orderItems.map((it: any, idx: number) => (
-              <View key={it.id || idx} style={{ marginTop: idx > 0 ? 6 : 0 }}>
-                <Text style={styles.itemTitle}>{it.listings?.title || order.listings?.title || 'Article'}</Text>
-                <Text style={styles.itemSub}>Quantité : {it.quantity || 1} • {formatFCFA(it.product_amount ?? it.unit_price ?? 0)}</Text>
-              </View>
-            ))
-          ) : (
-            <>
-              <Text style={styles.itemTitle}>{order.listings?.title || 'Article commandé'}</Text>
-              <Text style={styles.itemSub}>Quantité : {order.quantity || 1} • Prix article : {formatFCFA(order.product_amount ?? order.total_amount ?? 0)}</Text>
-            </>
-          )}
-        </View>
+        <RunOrderSummaryCard order={order} />
 
         {!isCompleted && assignment.status !== 'cancelled' && (
           <TouchableOpacity onPress={() => setIsIncidentModalOpen(true)} style={styles.incidentBtn} activeOpacity={0.8}>
@@ -384,7 +370,6 @@ export default function DeliveryRunExecutionScreen() {
         initialCode={scannedOtp}
         onSubmit={handleConfirmOtp}
         loading={isVerifyingOtp}
-        isDemo={isDemo}
       />
       <RunIncidentModal
         visible={isIncidentModalOpen}
