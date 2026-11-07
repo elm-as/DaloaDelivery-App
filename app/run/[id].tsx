@@ -307,7 +307,7 @@ export default function DeliveryRunExecutionScreen() {
             acceptedAt={assignment.accepted_at}
             createdAt={assignment.created_at}
             releasing={isReleasingRun}
-            onReleaseRun={handleReleaseRun}
+            onReleasePress={handleReleaseRun}
           />
         )}
 
